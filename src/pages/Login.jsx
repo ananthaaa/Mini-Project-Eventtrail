@@ -54,6 +54,30 @@ const LoginPage = () => {
     navigate(role === 'admin' ? '/admin' : '/student', { replace: true });
   };
 
+  // Quick admin login — auto-fills pre-seeded admin credentials from .env.local (dev only)
+  const handleQuickAdminLogin = async () => {
+    const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+    if (!adminEmail || !adminPassword) {
+      setError('VITE_ADMIN_EMAIL / VITE_ADMIN_PASSWORD not set in .env.local');
+      return;
+    }
+    setEmail(adminEmail);
+    setPassword(adminPassword);
+    setError('');
+    setLoading(true);
+    try {
+      const session = await login(adminEmail, adminPassword);
+      const userRole = session?.role || 'admin';
+      navigate(userRole === 'admin' ? '/admin' : '/student', { replace: true });
+    } catch (err) {
+      console.error('Quick admin login error:', err);
+      setError(err.message || 'Quick admin login failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const inputClass = "w-full border-3 border-black p-3 font-bold text-sm outline-none focus:bg-pastel-yellow transition-colors placeholder:text-black/40";
 
   return (
@@ -177,7 +201,7 @@ const LoginPage = () => {
             )}
           </Button>
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col gap-2">
             <button
               type="button"
               onClick={handleQuickDemo}
@@ -186,6 +210,19 @@ const LoginPage = () => {
               <Zap size={14} strokeWidth={3} />
               Quick Demo Login as {role === 'student' ? 'Student' : 'Admin'} (Offline/No-Auth)
             </button>
+
+            {/* Quick Admin Login — only shown on Admin tab, uses pre-seeded Cognito credentials */}
+            {role === 'admin' && import.meta.env.VITE_ADMIN_EMAIL && (
+              <button
+                type="button"
+                onClick={handleQuickAdminLogin}
+                disabled={loading}
+                className="w-full border-3 border-black bg-pastel-mint hover:bg-accent-yellow p-3 font-bold text-xs uppercase transition-colors neo-shadow-sm flex items-center justify-center gap-2"
+              >
+                <ShieldCheck size={14} strokeWidth={3} />
+                Quick Admin Login (Real Cognito)
+              </button>
+            )}
           </div>
         </form>
 

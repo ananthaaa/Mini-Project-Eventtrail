@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
-    "test:auth": "node src/scripts/testAuth.js"
+    "test:auth": "node src/scripts/testAuth.js",
+    "create:admin": "node src/scripts/createAdminUser.js"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1095.0",
