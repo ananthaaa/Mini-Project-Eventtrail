@@ -30,6 +30,10 @@ export const authService = {
    */
   signUp: async (email, password, name, role = 'student', clubId = null) => {
     return new Promise((resolve, reject) => {
+      // Cognito User Pool uses email as an ALIAS — Username must NOT be an email.
+      // Generate a plain username; users will sign in via email alias.
+      const username = `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
       const attributeList = [
         new CognitoUserAttribute({ Name: 'email', Value: email }),
         new CognitoUserAttribute({ Name: 'name', Value: name }),
@@ -40,7 +44,7 @@ export const authService = {
         attributeList.push(new CognitoUserAttribute({ Name: 'custom:clubId', Value: clubId }));
       }
 
-      getUserPool().signUp(email, password, attributeList, null, (err, result) => {
+      getUserPool().signUp(username, password, attributeList, null, (err, result) => {
         if (err) {
           console.error('Cognito signUp error:', err);
           return reject(err);
@@ -49,6 +53,8 @@ export const authService = {
           user: result.user,
           userConfirmed: result.userConfirmed,
           sub: result.userSub,
+          // Store the generated username so confirmSignUp can use it
+          username,
         });
       });
     });
@@ -57,10 +63,15 @@ export const authService = {
   /**
    * Confirm email address with OTP code
    */
-  confirmSignUp: async (email, code) => {
+  /**
+   * Confirm email address with OTP code
+   * @param {string} username - The generated username returned by signUp (NOT email)
+   * @param {string} code - 6-digit OTP from email
+   */
+  confirmSignUp: async (username, code) => {
     return new Promise((resolve, reject) => {
       const user = new CognitoUser({
-        Username: email,
+        Username: username,
         Pool: getUserPool(),
       });
 
@@ -76,11 +87,12 @@ export const authService = {
 
   /**
    * Resend confirmation verification code
+   * @param {string} username - The generated username returned by signUp (NOT email)
    */
-  resendConfirmationCode: async (email) => {
+  resendConfirmationCode: async (username) => {
     return new Promise((resolve, reject) => {
       const user = new CognitoUser({
-        Username: email,
+        Username: username,
         Pool: getUserPool(),
       });
 
@@ -155,7 +167,7 @@ export const authService = {
       claims,
       sub: claims.sub,
       email: claims.email,
-      name: claims.name || claims.fullname || claims.email || 'Campus User',
+      name: claims.name || claims.email || 'Campus User',
       groups: Array.isArray(groups) ? groups : [groups],
       role,
       clubId: claims['custom:clubId'] || null,

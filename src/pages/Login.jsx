@@ -173,6 +173,8 @@ const LoginPage = () => {
               <>
                 Sign In
                 <ArrowRight size={18} strokeWidth={3} />
+              </>
+            )}
           </Button>
 
           <div className="pt-2">

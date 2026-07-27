@@ -105,6 +105,7 @@ export const RoleProvider = ({ children }) => {
         needsConfirmation: !result.userConfirmed,
         email,
         sub: result.sub,
+        username: result.username, // generated username (not email) — needed for confirmSignUp
       };
     } else {
       // Fallback mock registration
@@ -124,9 +125,11 @@ export const RoleProvider = ({ children }) => {
 
   /**
    * Confirm email verification code
+   * @param {string} username - The generated username from signUp result (NOT email)
+   * @param {string} code - 6-digit OTP
    */
-  const confirmSignup = async (email, code) => {
-    const res = await authService.confirmSignUp(email, code);
+  const confirmSignup = async (username, code) => {
+    const res = await authService.confirmSignUp(username, code);
     return res;
   };
 

@@ -12,6 +12,7 @@ const SignupPage = () => {
   const [step, setStep] = useState('signup'); // 'signup' | 'confirm'
   const [form, setForm] = useState({ name: '', email: '', password: '', studentId: '' });
   const [confirmationCode, setConfirmationCode] = useState('');
+  const [cognitoUsername, setCognitoUsername] = useState(''); // generated username from Cognito (not email)
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -47,6 +48,7 @@ const SignupPage = () => {
         role: 'student',
       });
       if (res.needsConfirmation) {
+        setCognitoUsername(res.username || ''); // store the generated Cognito username for OTP confirmation
         setStep('confirm');
       } else {
         navigate('/student', { replace: true });
@@ -71,8 +73,8 @@ const SignupPage = () => {
     }
     setLoading(true);
     try {
-      await confirmSignup(form.email, confirmationCode);
-      // Auto login after confirmation or navigate to login
+      await confirmSignup(cognitoUsername, confirmationCode);
+      // Auto login after confirmation uses email (Cognito alias)
       await login(form.email, form.password);
       navigate('/student', { replace: true });
     } catch (err) {
