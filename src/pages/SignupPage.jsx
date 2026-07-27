@@ -2,14 +2,16 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleContext } from '../context/RoleContext';
-import { Zap, User, Mail, Lock, Hash, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Zap, User, Mail, Lock, Hash, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 
 const SignupPage = () => {
-  const { signup } = useContext(RoleContext);
+  const { signup, confirmSignup, login } = useContext(RoleContext);
   const navigate = useNavigate();
 
+  const [step, setStep] = useState('signup'); // 'signup' | 'confirm'
   const [form, setForm] = useState({ name: '', email: '', password: '', studentId: '' });
+  const [confirmationCode, setConfirmationCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -25,7 +27,7 @@ const SignupPage = () => {
     if (!form.email.trim()) errs.email = 'Required';
     else if (!/\S+@\S+\.\S+/.test(form.email)) errs.email = 'Invalid email';
     if (!form.password) errs.password = 'Required';
-    else if (form.password.length < 6) errs.password = 'Min 6 chars';
+    else if (form.password.length < 8) errs.password = 'Min 8 chars';
     if (!form.studentId.trim()) errs.studentId = 'Required';
     return errs;
   };
@@ -36,9 +38,59 @@ const SignupPage = () => {
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
     setLoading(true);
-    // Simulate async signup
-    await new Promise(r => setTimeout(r, 800));
-    signup({ name: form.name, email: form.email, studentId: form.studentId });
+    try {
+      const res = await signup({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        studentId: form.studentId,
+        role: 'student',
+      });
+      if (res.needsConfirmation) {
+        setStep('confirm');
+      } else {
+        navigate('/student', { replace: true });
+      }
+    } catch (err) {
+      console.error('Cognito sign up error:', err);
+      if (err.code === 'UsernameExistsException' || err.name === 'UsernameExistsException') {
+        setErrors({ email: 'An account with this email already exists.' });
+      } else {
+        setErrors({ general: err.message || 'Failed to sign up.' });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirm = async (e) => {
+    e.preventDefault();
+    if (!confirmationCode) {
+      setErrors({ confirm: 'Please enter the verification code.' });
+      return;
+    }
+    setLoading(true);
+    try {
+      await confirmSignup(form.email, confirmationCode);
+      // Auto login after confirmation or navigate to login
+      await login(form.email, form.password);
+      navigate('/student', { replace: true });
+    } catch (err) {
+      console.error('Confirmation error:', err);
+      setErrors({ confirm: err.message || 'Invalid verification code.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickDemo = () => {
+    const userData = {
+      id: form.email || 'student-demo-1',
+      email: form.email || 'alex@campus.edu',
+      name: form.name || 'Alex Rivera (Demo)',
+      avatar: 'https://i.pravatar.cc/150?u=alex',
+    };
+    login('student', userData);
     navigate('/student', { replace: true });
   };
 
@@ -66,81 +118,156 @@ const SignupPage = () => {
           </div>
         </div>
 
-        <h1 className="font-display font-black text-3xl uppercase text-center mb-2">
-          Create Account
-        </h1>
-        <p className="text-center text-sm font-bold text-black/60 mb-8 uppercase tracking-wider">
-          Join thousands of students
-        </p>
+        {step === 'signup' ? (
+          <>
+            <h1 className="font-display font-black text-3xl uppercase text-center mb-2">
+              Create Account
+            </h1>
+            <p className="text-center text-sm font-bold text-black/60 mb-8 uppercase tracking-wider">
+              Join thousands of students
+            </p>
 
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-          {fields.map(({ key, label, type, icon: Icon, placeholder }) => (
-            <div key={key}>
-              <label className="block font-display font-black text-sm uppercase mb-2 flex justify-between">
-                {label}
-                {errors[key] && <span className="text-red-500">{errors[key]}</span>}
-              </label>
-              <div className="relative">
-                <Icon size={18} strokeWidth={2.5} className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors[key] ? 'text-red-500' : 'text-black/40'}`} />
+            {errors.general && (
+              <div className="bg-pastel-peach border-3 border-black p-3 text-sm font-bold text-center text-black mb-4 neo-shadow-sm">
+                {errors.general}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+              {fields.map(({ key, label, type, icon: Icon, placeholder }) => (
+                <div key={key}>
+                  <label className="block font-display font-black text-sm uppercase mb-2 flex justify-between">
+                    {label}
+                    {errors[key] && <span className="text-red-500">{errors[key]}</span>}
+                  </label>
+                  <div className="relative">
+                    <Icon size={18} strokeWidth={2.5} className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors[key] ? 'text-red-500' : 'text-black/40'}`} />
+                    <input
+                      id={`signup-${key}`}
+                      type={type}
+                      value={form[key]}
+                      onChange={handleChange(key)}
+                      placeholder={placeholder}
+                      className={`${inputClass(key)} pl-10`}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {/* Password */}
+              <div>
+                <label className="block font-display font-black text-sm uppercase mb-2 flex justify-between">
+                  Password
+                  {errors.password && <span className="text-red-500">{errors.password}</span>}
+                </label>
+                <div className="relative">
+                  <Lock size={18} strokeWidth={2.5} className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors.password ? 'text-red-500' : 'text-black/40'}`} />
+                  <input
+                    id="signup-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={form.password}
+                    onChange={handleChange('password')}
+                    placeholder="Min. 8 characters"
+                    className={`${inputClass('password')} pl-10 pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 hover:text-black transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                variant="primary"
+                className="w-full py-4 text-base mt-2 bg-pastel-mint"
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="animate-spin">
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    Creating account...
+                  </span>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight size={18} strokeWidth={3} />
+                  </>
+                )}
+              </Button>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleQuickDemo}
+                  className="w-full border-3 border-black bg-pastel-yellow hover:bg-pastel-peach p-3 font-bold text-xs uppercase transition-colors neo-shadow-sm flex items-center justify-center gap-2"
+                >
+                  <Zap size={14} strokeWidth={3} />
+                  Quick Demo Signup (Offline/No-Auth)
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          /* Confirmation Code Step */
+          <>
+            <div className="flex justify-center mb-4 text-green-600">
+              <CheckCircle size={48} strokeWidth={2.5} />
+            </div>
+            <h1 className="font-display font-black text-2xl uppercase text-center mb-2">
+              Verify Your Email
+            </h1>
+            <p className="text-center text-sm font-bold text-black/60 mb-6 uppercase tracking-wider">
+              We sent a 6-digit confirmation code to <span className="text-black">{form.email}</span>
+            </p>
+
+            {errors.confirm && (
+              <div className="bg-pastel-peach border-3 border-black p-3 text-sm font-bold text-center text-black mb-4 neo-shadow-sm">
+                {errors.confirm}
+              </div>
+            )}
+
+            <form onSubmit={handleConfirm} className="flex flex-col gap-5">
+              <div>
+                <label className="block font-display font-black text-sm uppercase mb-2">
+                  Verification Code
+                </label>
                 <input
-                  id={`signup-${key}`}
-                  type={type}
-                  value={form[key]}
-                  onChange={handleChange(key)}
-                  placeholder={placeholder}
-                  className={`${inputClass(key)} pl-10`}
+                  type="text"
+                  value={confirmationCode}
+                  onChange={(e) => {
+                    setConfirmationCode(e.target.value);
+                    if (errors.confirm) setErrors({});
+                  }}
+                  placeholder="e.g. 123456"
+                  className="w-full border-3 border-black p-3 font-bold text-center tracking-widest text-lg outline-none focus:bg-pastel-yellow transition-colors"
                 />
               </div>
-            </div>
-          ))}
 
-          {/* Password */}
-          <div>
-            <label className="block font-display font-black text-sm uppercase mb-2 flex justify-between">
-              Password
-              {errors.password && <span className="text-red-500">{errors.password}</span>}
-            </label>
-            <div className="relative">
-              <Lock size={18} strokeWidth={2.5} className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors.password ? 'text-red-500' : 'text-black/40'}`} />
-              <input
-                id="signup-password"
-                type={showPassword ? 'text' : 'password'}
-                value={form.password}
-                onChange={handleChange('password')}
-                placeholder="Min. 6 characters"
-                className={`${inputClass('password')} pl-10 pr-10`}
-              />
+              <Button
+                type="submit"
+                disabled={loading}
+                variant="primary"
+                className="w-full py-4 text-base bg-pastel-mint"
+              >
+                {loading ? 'Verifying...' : 'Verify & Login'}
+              </Button>
+
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-black/40 hover:text-black transition-colors"
+                onClick={() => setStep('signup')}
+                className="text-center font-bold text-xs uppercase text-black/60 hover:text-black mt-2"
               >
-                {showPassword ? <EyeOff size={18} strokeWidth={2.5} /> : <Eye size={18} strokeWidth={2.5} />}
+                ← Back to sign up
               </button>
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={loading}
-            variant="primary"
-            className="w-full py-4 text-base mt-4 bg-pastel-mint"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="animate-spin">
-                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                </svg>
-                Creating account...
-              </span>
-            ) : (
-              <>
-                Create Account
-                <ArrowRight size={18} strokeWidth={3} />
-              </>
-            )}
-          </Button>
-        </form>
+            </form>
+          </>
+        )}
 
         <p className="text-center mt-6 font-bold text-sm">
           <span className="text-black/60 uppercase">Already have an account? </span>

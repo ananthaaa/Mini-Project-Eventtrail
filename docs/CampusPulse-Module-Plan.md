@@ -49,11 +49,16 @@ Companion to `CampusPulse-AWS-Architecture.md`. That doc defines *what* to build
 - Days 9–10: JWT authorizer on a throwaway `/whoami` test route; verify group claims show up correctly; manual test as both a student and an admin account
 
 ### Done means
-- [ ] Can sign up, confirm, and log in as a student and separately as an admin
-- [ ] `Users` table auto-populates on signup
-- [ ] A protected test route correctly rejects unauthenticated calls and returns the right group claim for authenticated ones
-- [ ] `RoleContext` in the frontend reflects real Cognito session state, not a manual toggle
+- [x] Can sign up, confirm, and log in as a student and separately as an admin (Completed 2026-07-27)
+- [x] `Users` table auto-populates on signup (PostConfirmation & PostAuthentication Lambda triggers verified)
+- [x] A protected test route correctly rejects unauthenticated calls and returns the right group claim for authenticated ones (`/whoami` verified via `npm run test:auth`)
+- [x] `RoleContext` in the frontend reflects real Cognito session state, not a manual toggle (Integrated with offline fallback)
 
+**Module 2 Completion Record (2026-07-27):**
+- Cognito User Pool ID: `ap-south-1_jp3Rdi0UU`
+- App Client ID: `7tliavfpsko0ugfrkidm8lj2te`
+- API Gateway HTTP API: `https://k1f5xsammd.execute-api.ap-south-1.amazonaws.com/`
+- Verification Script: `src/scripts/testAuth.js` (`npm run test:auth` passed 100%)
 ---
 
 ## Module 3 — Public Read API (Events, Clubs, Venues, Speakers, Graph)

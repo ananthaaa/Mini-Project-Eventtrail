@@ -23,15 +23,33 @@ const LoginPage = () => {
     setError('');
     setLoading(true);
 
-    // Mock login — simulate async check
-    await new Promise(r => setTimeout(r, 700));
+    try {
+      const session = await login(email, password);
+      const userRole = session?.role || role;
+      navigate(userRole === 'admin' ? '/admin' : '/student', { replace: true });
+    } catch (err) {
+      console.error('Cognito sign in error:', err);
+      if (err.code === 'UserNotConfirmedException' || err.name === 'UserNotConfirmedException') {
+        setError('Your email is not verified yet. Please check your email or sign up again to confirm.');
+      } else if (err.code === 'NotAuthorizedException' || err.name === 'NotAuthorizedException') {
+        setError('Incorrect email or password.');
+      } else if (err.code === 'UserNotFoundException' || err.name === 'UserNotFoundException') {
+        setError('User does not exist in Cognito. Try signing up or use Quick Demo Login below!');
+      } else {
+        setError(err.message || 'Failed to sign in.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleQuickDemo = () => {
     const userData = {
-      email,
-      name: role === 'student' ? 'Alex Student' : 'Admin User',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + email,
+      id: email || (role === 'student' ? 'student-1' : 'admin-1'),
+      email: email || (role === 'student' ? 'alex@campus.edu' : 'admin@campus.edu'),
+      name: role === 'student' ? 'Alex Rivera (Demo)' : 'Sarah Chen (Demo)',
+      avatar: 'https://i.pravatar.cc/150?u=' + (role === 'student' ? 'alex' : 'sarah'),
     };
-
     login(role, userData);
     navigate(role === 'admin' ? '/admin' : '/student', { replace: true });
   };
@@ -155,9 +173,18 @@ const LoginPage = () => {
               <>
                 Sign In
                 <ArrowRight size={18} strokeWidth={3} />
-              </>
-            )}
           </Button>
+
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={handleQuickDemo}
+              className="w-full border-3 border-black bg-pastel-yellow hover:bg-pastel-mint p-3 font-bold text-xs uppercase transition-colors neo-shadow-sm flex items-center justify-center gap-2"
+            >
+              <Zap size={14} strokeWidth={3} />
+              Quick Demo Login as {role === 'student' ? 'Student' : 'Admin'} (Offline/No-Auth)
+            </button>
+          </div>
         </form>
 
         {/* Signup link — only for student */}

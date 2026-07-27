@@ -1,14 +1,15 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { RoleContext } from '../context/RoleContext';
 import { RsvpContext } from '../context/RsvpContext';
 import PageShell from '../components/layout/PageShell';
 import RSVPTicket from '../components/ui/RSVPTicket';
 import Badge from '../components/ui/Badge';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, ShieldCheck, Key } from 'lucide-react';
 
 const StudentProfile = () => {
-  const { currentUser } = useContext(RoleContext);
+  const { currentUser, testWhoAmI } = useContext(RoleContext);
   const { userRsvps, events } = useContext(RsvpContext);
+  const [jwtStatus, setJwtStatus] = useState('');
 
   // Find actual event details for user's RSVPs
   const myTickets = Object.entries(userRsvps).map(([eventId, rsvpInfo]) => {
@@ -42,8 +43,54 @@ const StudentProfile = () => {
               <Badge variant="mint" className="shadow-[2px_2px_0px_0px_#000]">Computer Science</Badge>
               <Badge variant="yellow" className="shadow-[2px_2px_0px_0px_#000]">Class of 2026</Badge>
               <Badge variant="white" className="shadow-[2px_2px_0px_0px_#000]">{currentUser?.email || 'student@campus.edu'}</Badge>
+              <Badge variant={currentUser?.token ? "mint" : "dark"} className="shadow-[2px_2px_0px_0px_#000]">
+                {currentUser?.token ? "Cognito Verified" : "Offline Demo"}
+              </Badge>
             </div>
           </div>
+        </div>
+
+        {/* Cognito Auth & JWT Authorizer Test Section */}
+        <div className="bg-white border-3 border-black p-6 md:p-8 neo-shadow">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b-3 border-black">
+            <h2 className="text-xl md:text-2xl font-display font-black text-black uppercase tracking-tight m-0 flex items-center gap-2">
+              <ShieldCheck size={24} className="text-accent" />
+              Cognito JWT Verification
+            </h2>
+            <Badge variant={currentUser?.token ? "mint" : "yellow"} className="shadow-[2px_2px_0px_0px_#000]">
+              {currentUser?.token ? "Session Active" : "Mock / Offline Mode"}
+            </Badge>
+          </div>
+          <p className="font-bold text-sm text-black/70 mb-4">
+            Verify your live AWS Cognito ID Token against the API Gateway HTTP API JWT Authorizer by calling the protected <code className="bg-bg-surface px-2 py-1 border border-black font-mono">/whoami</code> route.
+          </p>
+          <div className="flex flex-wrap gap-4 items-center">
+            <button
+              onClick={async () => {
+                try {
+                  setJwtStatus('Verifying token against AWS API Gateway...');
+                  const res = await testWhoAmI();
+                  setJwtStatus(JSON.stringify(res, null, 2));
+                } catch (err) {
+                  setJwtStatus('Error: ' + err.message + '\n(Make sure you logged in with real Cognito credentials to obtain an ID token!)');
+                }
+              }}
+              className="bg-pastel-yellow hover:bg-pastel-mint border-3 border-black px-6 py-3 font-display font-black text-sm uppercase neo-shadow-sm transition-colors flex items-center gap-2"
+            >
+              <Key size={16} />
+              Test /whoami Route
+            </button>
+            {currentUser?.token && (
+              <span className="font-mono text-xs text-black/60 truncate max-w-xs">
+                Token: {currentUser.token.substring(0, 24)}...
+              </span>
+            )}
+          </div>
+          {jwtStatus && (
+            <pre className="mt-4 p-4 bg-bg-neobrutalist border-3 border-black font-mono text-xs overflow-x-auto text-black shadow-[2px_2px_0px_0px_#000] whitespace-pre-wrap">
+              {jwtStatus}
+            </pre>
+          )}
         </div>
 
         {/* Tickets Section */}

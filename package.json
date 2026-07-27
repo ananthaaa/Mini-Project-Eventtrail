@@ -9,9 +9,11 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "test:auth": "node src/scripts/testAuth.js"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1095.0",
     "@aws-sdk/client-dynamodb": "^3.1088.0",
     "@aws-sdk/lib-dynamodb": "^3.1088.0",
     "@turf/along": "^7.3.5",
@@ -19,6 +21,7 @@
     "@turf/buffer": "^7.3.5",
     "@turf/helpers": "^7.3.5",
     "@turf/nearest-point-on-line": "^7.3.5",
+    "amazon-cognito-identity-js": "^6.3.20",
     "framer-motion": "^12.42.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.24.0",

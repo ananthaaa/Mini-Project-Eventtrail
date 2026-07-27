@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { authService } from '../services/authService';
 
 export const RoleContext = createContext();
 
@@ -16,6 +17,38 @@ export const RoleProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Initialize session from Cognito on mount
+  const checkSession = useCallback(async () => {
+    try {
+      setAuthLoading(true);
+      const session = await authService.getCurrentSession();
+      if (session && session.isValid) {
+        const userData = {
+          id: session.sub || session.email,
+          email: session.email,
+          name: session.name,
+          role: session.role,
+          clubId: session.clubId,
+          avatar: session.avatar,
+          token: session.idToken,
+        };
+        setCurrentRole(session.role);
+        setIsLoggedIn(true);
+        setCurrentUser(userData);
+      }
+    } catch (err) {
+      console.warn('No active Cognito session found:', err.message);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
   useEffect(() => {
     localStorage.setItem('cp_role', currentRole);
   }, [currentRole]);
@@ -29,31 +62,110 @@ export const RoleProvider = ({ children }) => {
     }
   }, [isLoggedIn, currentUser]);
 
-  const login = (role, userData) => {
-    setCurrentRole(role);
-    setIsLoggedIn(true);
-    setCurrentUser(userData);
+  /**
+   * Real Cognito Sign In (with fallback to mock if email/password not provided for offline demo)
+   */
+  const login = async (emailOrRole, passwordOrUserData) => {
+    // If second argument is a string (password), perform real Cognito login
+    if (typeof passwordOrUserData === 'string') {
+      const email = emailOrRole;
+      const password = passwordOrUserData;
+      const session = await authService.signIn(email, password);
+      const userData = {
+        id: session.sub || session.email,
+        email: session.email,
+        name: session.name,
+        role: session.role,
+        clubId: session.clubId,
+        avatar: session.avatar,
+        token: session.idToken,
+      };
+      setCurrentRole(session.role);
+      setIsLoggedIn(true);
+      setCurrentUser(userData);
+      return session;
+    } else {
+      // Fallback for mock demo toggle: login(role, userData)
+      const role = emailOrRole;
+      const userData = passwordOrUserData;
+      setCurrentRole(role);
+      setIsLoggedIn(true);
+      setCurrentUser(userData);
+      return { role, userData };
+    }
   };
 
-  const signup = (userData) => {
-    // Student self-registration — always sets role to student
-    const newUser = {
-      ...userData,
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + userData.email,
-    };
-    setCurrentRole('student');
-    setIsLoggedIn(true);
-    setCurrentUser(newUser);
+  /**
+   * Real Cognito Sign Up
+   */
+  const signup = async ({ name, email, password, role = 'student', studentId, clubId }) => {
+    if (password) {
+      const result = await authService.signUp(email, password, name, role, clubId);
+      return {
+        needsConfirmation: !result.userConfirmed,
+        email,
+        sub: result.sub,
+      };
+    } else {
+      // Fallback mock registration
+      const newUser = {
+        name,
+        email,
+        studentId,
+        role: 'student',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(email),
+      };
+      setCurrentRole('student');
+      setIsLoggedIn(true);
+      setCurrentUser(newUser);
+      return { needsConfirmation: false, user: newUser };
+    }
   };
 
+  /**
+   * Confirm email verification code
+   */
+  const confirmSignup = async (email, code) => {
+    const res = await authService.confirmSignUp(email, code);
+    return res;
+  };
+
+  /**
+   * Sign out from Cognito and clear state
+   */
   const logout = () => {
+    try {
+      authService.signOut();
+    } catch (err) {
+      console.warn('Cognito signOut error:', err);
+    }
     setIsLoggedIn(false);
     setCurrentUser(null);
-    setCurrentRole('student'); // default back to student view logic maybe, or guest
+    setCurrentRole('student');
+  };
+
+  /**
+   * Test JWT Authorizer against API Gateway /whoami
+   */
+  const testWhoAmI = async () => {
+    return await authService.testWhoAmI();
   };
 
   return (
-    <RoleContext.Provider value={{ currentRole, isLoggedIn, currentUser, login, signup, logout }}>
+    <RoleContext.Provider
+      value={{
+        currentRole,
+        isLoggedIn,
+        currentUser,
+        authLoading,
+        login,
+        signup,
+        confirmSignup,
+        logout,
+        testWhoAmI,
+        checkSession,
+      }}
+    >
       {children}
     </RoleContext.Provider>
   );
