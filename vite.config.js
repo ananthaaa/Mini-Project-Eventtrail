@@ -4,7 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  // GitHub Pages serves at /Mini-Project-Eventtrail/ — use '/' for local dev via VITE env
+  base: process.env.NODE_ENV === 'production' ? '/Mini-Project-Eventtrail/' : '/',
   define: {
     // Fix amazon-cognito-identity-js using Node.js `global` in browser
     global: 'globalThis',
