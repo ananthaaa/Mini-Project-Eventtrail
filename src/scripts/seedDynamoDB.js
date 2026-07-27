@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const env = process.env.ENV || 'dev';
-const region = process.env.AWS_REGION || 'us-east-1';
+const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'ap-south-1';
 const client = new DynamoDBClient({ region });
 const ddbDocClient = DynamoDBDocumentClient.from(client);
 
@@ -19,20 +19,24 @@ const getTableName = (baseName) => {
 async function seedTable(tableName, items, idKey = 'id') {
   console.log(`\n--- Seeding ${tableName} (${items.length} items) ---`);
   let successCount = 0;
-  for (const item of items) {
-    try {
-      await ddbDocClient.send(
-        new PutCommand({
-          TableName: tableName,
-          Item: item,
-        })
-      );
-      const identifier = item[idKey] || `${item.eventId}#${item.userId}`;
-      console.log(`  [OK] Inserted into ${tableName}: ${identifier}`);
-      successCount++;
-    } catch (err) {
-      console.error(`  [ERROR] Failed to insert into ${tableName}:`, err.message || err);
-    }
+  const chunkSize = 20;
+  for (let i = 0; i < items.length; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    await Promise.all(
+      chunk.map(async (item) => {
+        try {
+          await ddbDocClient.send(
+            new PutCommand({
+              TableName: tableName,
+              Item: item,
+            })
+          );
+          successCount++;
+        } catch (err) {
+          console.error(`  [ERROR] Failed to insert into ${tableName}:`, err.message || err);
+        }
+      })
+    );
   }
   console.log(`Completed ${tableName}: ${successCount}/${items.length} successful.`);
 }

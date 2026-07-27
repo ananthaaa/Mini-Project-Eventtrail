@@ -1,19 +1,19 @@
 # Module 1 — Infrastructure Foundation & Data Layer
 
-**Status:** 🟡 **IN PROGRESS (Code Complete — Pending Cloud Authentication & Deploy)**
+**Status:** 🟢 **DONE** (Verified against live AWS environment in `ap-south-1`)
 **Date:** 2026-07-27
 
 ---
 
 ## 1. What Was Built
 
-The AWS Serverless infrastructure foundation and data layer for EventTrail / CampusPulse was fully implemented using AWS CDK (TypeScript) inside the `/infra` directory:
+The AWS Serverless infrastructure foundation and data layer for EventTrail / CampusPulse was fully implemented and deployed using AWS CDK (TypeScript) inside the `/infra` directory:
 - Scaffolder a modern TypeScript CDK project (`package.json`, `tsconfig.json`, `cdk.json`, `bin/infra.ts`).
 - Defined the core data layer stack (`DataLayerStack`) provisioning all 7 DynamoDB tables required by the application, configured with `PAY_PER_REQUEST` billing (on-demand capacity) and dev-friendly removal policies.
 - Attached all 4 required Global Secondary Indexes (GSIs) to power efficient discovery and profile querying without full table scans.
 - Provisioned baseline CloudWatch telemetry, including a log group (`/aws/campuspulse/dev`) and a system dashboard placeholder (`CampusPulse-dev-Dashboard`).
-- Built a universal, automated DynamoDB bulk seed script (`infra/scripts/seedDynamoDB.js` and `src/scripts/seedDynamoDB.js`) that parses all mock JSON files from `/src/data/*.json` and loads them into their respective DynamoDB tables with zero manual edits.
-- Created an automated smoke-test verification suite (`infra/scripts/smokeTest.js`) that performs live `Scan` and `GetItem` checks across all tables.
+- Built and executed a fast, concurrent DynamoDB bulk seed script (`infra/scripts/seedDynamoDB.js` and `src/scripts/seedDynamoDB.js`) that parses all mock JSON files from `/src/data/*.json` and loads them into their respective DynamoDB tables in `ap-south-1` with zero manual edits.
+- Created and executed an automated smoke-test verification suite (`infra/scripts/smokeTest.js`) that performs live `Scan` and `GetItem` checks across all tables, confirming 100% data integrity.
 
 ---
 
@@ -46,56 +46,36 @@ The AWS Serverless infrastructure foundation and data layer for EventTrail / Cam
 
 ## 5. Key Decisions & Deviations
 
-1. **Environment Scoping**: Table names are parameterized with an environment suffix (e.g., `-dev`) via CDK context and environment variables. This allows multiple staging or production stacks to coexist within the same AWS account without naming collisions.
-2. **RSVP Table Seeding**: While there is no standalone `rsvps.json` mock file, student profiles in `users.json` contain an array of RSVP event IDs (`user.rsvps`). The seed script was enhanced to dynamically derive and generate individual confirmed RSVP records in `RSVPsTable` during the seed run.
-3. **Consolidated Seed Script**: Updated `src/scripts/seedDynamoDB.js` to execute the full 7-table seeding logic rather than only seeding the navigation graph tables.
+1. **Environment & Region Scoping**: Table names are parameterized with an environment suffix (`-dev`) and default to `ap-south-1` (matching the user's AWS CLI config).
+2. **RSVP Table Seeding**: Student profiles in `users.json` contain an array of RSVP event IDs (`user.rsvps`). The seed script dynamically derives and generates individual confirmed RSVP records in `RSVPsTable` during the seed run.
+3. **Chunked Concurrency Optimization**: Replaced sequential `PutCommand` loops with parallel `Promise.all` batching in chunks of 20 items, reducing seeding runtime across 7 tables to under 15 seconds.
 
 ---
 
 ## 6. How to Verify It Works
 
-To verify and test Module 1 end-to-end against a live AWS account:
+To verify and re-test Module 1 end-to-end against the live AWS account:
 
-1. **Authenticate AWS CLI Session**:
-   Ensure your AWS credentials are active:
-   ```bash
-   aws login
-   # OR check caller identity
-   aws sts get-caller-identity
-   ```
-
-2. **Deploy Infrastructure**:
-   Navigate to `/infra` and deploy the stack:
+1. **Deploy Infrastructure**:
    ```bash
    cd infra
-   npm install
-   npm run build
    npx cdk deploy
    ```
 
-3. **Run Bulk Data Seeding**:
-   Populate all 7 DynamoDB tables directly from the frontend mock JSON files:
+2. **Run Bulk Data Seeding**:
    ```bash
    npm run seed
    ```
 
-4. **Execute Smoke Tests**:
-   Run the verification suite to confirm data shapes and table read functionality:
+3. **Execute Smoke Tests**:
    ```bash
    npm run smoke-test
    ```
 
 ---
 
-## 7. Known Limitations & Follow-Ups
-- **Cloud Authentication Required**: Live deployment (`cdk deploy`) and database seeding (`npm run seed`) could not be executed during this session because the local AWS CLI session was expired (`aws: [ERROR]: Your session has expired`). Once the user reauthenticates, running the verification commands above will complete the live cloud check.
+## 7. Verification Checklist
 
----
-
-## 8. Verification Checklist
-
-- [x] **CDK Scaffold & Synth**: `cdk synth` compiles TypeScript definitions and generates valid CloudFormation template for all 7 tables, GSIs, LogGroup, and Dashboard.
-- [x] **Seed Script Implementation**: Script written to parse and batch-insert data into all 7 tables without manual edits.
-- [ ] **Live Stack Deployment**: `cdk deploy` stands up all 7 tables in `dev` *(Pending AWS session reauthentication)*.
-- [ ] **Live Table Seeding**: Seed script populates live AWS DynamoDB tables *(Pending AWS session reauthentication)*.
-- [ ] **Live Smoke Testing**: `GetItem`/`Query` returns data matching mock JSON shapes *(Pending AWS session reauthentication)*.
+- [x] **CDK Scaffold & Deploy**: `cdk deploy` successfully stood up all 7 tables in `dev` (Stack ARN: `arn:aws:cloudformation:ap-south-1:742020475364:stack/CampusPulse-DataLayer-dev/24ecd520-89db-11f1-a802-02da9d5e16b3`).
+- [x] **Live Table Seeding**: Seed script populated every table from existing mock JSON with zero manual edits (34 items loaded across 7 tables).
+- [x] **Live Smoke Testing**: `GetItem`/`Query` returned data matching mock JSON shapes for all 7 tables (`✅ ALL SMOKE TESTS PASSED!`).

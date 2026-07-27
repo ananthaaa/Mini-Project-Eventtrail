@@ -32,7 +32,7 @@ export class DataLayerStack extends cdk.Stack {
     const tableProps: Partial<dynamodb.TableProps> = {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: envName === 'prod' ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
-      pointInTimeRecovery: envName === 'prod',
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: envName === 'prod' },
     };
 
     // 1. Events Table
