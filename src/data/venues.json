@@ -1,0 +1,123 @@
+[
+  {
+    "id": "science-hall-a",
+    "name": "Science Auditorium A",
+    "building": "Science Building Block B",
+    "outdoorCoordinates": [10.1782, 76.4305],
+    "distance": "450m",
+    "timeEstimation": "6 mins",
+    "waypoints": [
+      {
+        "step": 1,
+        "instruction": "Enter the main lobby of Science Building Block B.",
+        "details": "Look for the double glass doors next to the campus cafe.",
+        "x": 80,
+        "y": 280
+      },
+      {
+        "step": 2,
+        "instruction": "Turn left at the reception desk and head down the main hallway.",
+        "details": "Pass the lab notice board on your right.",
+        "x": 80,
+        "y": 140
+      },
+      {
+        "step": 3,
+        "instruction": "Go up the central spiral staircase to the 2nd Floor.",
+        "details": "Alternatively, use the elevator behind the staircase.",
+        "x": 220,
+        "y": 140
+      },
+      {
+        "step": 4,
+        "instruction": "Turn right and walk past the Student Research Gallery.",
+        "details": "You will see a large neon Science sign above.",
+        "x": 220,
+        "y": 60
+      },
+      {
+        "step": 5,
+        "instruction": "Arrive at Science Auditorium A on the left side of the gallery corridor.",
+        "details": "Double oak doors with 'Auditorium A' signage.",
+        "x": 380,
+        "y": 60
+      }
+    ]
+  },
+  {
+    "id": "hub-room-202",
+    "name": "Creative Hub Room 202",
+    "building": "Student Activity Hub",
+    "outdoorCoordinates": [10.1785, 76.4308],
+    "distance": "320m",
+    "timeEstimation": "4 mins",
+    "waypoints": [
+      {
+        "step": 1,
+        "instruction": "Enter the Student Activity Hub via the South Entrance.",
+        "details": "The entrance with the colorful mural.",
+        "x": 80,
+        "y": 280
+      },
+      {
+        "step": 2,
+        "instruction": "Take the main elevator to the 2nd Floor.",
+        "details": "Elevators are directly ahead of the entrance.",
+        "x": 220,
+        "y": 280
+      },
+      {
+        "step": 3,
+        "instruction": "Walk straight out of the elevator and turn left.",
+        "details": "Follow the signs to the creative zone.",
+        "x": 220,
+        "y": 140
+      },
+      {
+        "step": 4,
+        "instruction": "Arrive at Creative Hub Room 202 on your right.",
+        "details": "Yellow door with a glass porthole window.",
+        "x": 380,
+        "y": 140
+      }
+    ]
+  },
+  {
+    "id": "stadium-field-1",
+    "name": "Main Athletics Field",
+    "building": "Campus Stadium",
+    "outdoorCoordinates": [10.1789, 76.4312],
+    "distance": "750m",
+    "timeEstimation": "10 mins",
+    "waypoints": [
+      {
+        "step": 1,
+        "instruction": "Enter the Campus Stadium main gate.",
+        "details": "Present ticket at the security kiosk.",
+        "x": 80,
+        "y": 280
+      },
+      {
+        "step": 2,
+        "instruction": "Walk past the ticketing booths and follow the concrete path.",
+        "details": "Head towards the West Stand.",
+        "x": 220,
+        "y": 280
+      },
+      {
+        "step": 3,
+        "instruction": "Enter through Gate 3 onto the athletics track.",
+        "details": "Watch out for runners on the track.",
+        "x": 220,
+        "y": 140
+      },
+      {
+        "step": 4,
+        "instruction": "Walk onto the Main Athletics Field (Grass pitch).",
+        "details": "The center circle is marked for kick-off.",
+        "x": 380,
+        "y": 140
+      }
+    ]
+  }
+]

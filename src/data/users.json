@@ -1,0 +1,16 @@
+[
+  {
+    "id": "student-1",
+    "name": "Alex Rivera",
+    "avatar": "https://i.pravatar.cc/150?u=alex",
+    "role": "student",
+    "rsvps": ["hackathon-2026", "pixel-craft-2026"]
+  },
+  {
+    "id": "admin-1",
+    "name": "Sarah Chen",
+    "avatar": "https://i.pravatar.cc/150?u=sarah",
+    "role": "admin",
+    "rsvps": []
+  }
+]

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "hackathon-2026",
+    "title": "Campus Hackathon 2026",
+    "coverImage": "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=600&auto=format&fit=crop",
+    "date": "2026-07-10",
+    "time": "09:00 AM - 09:00 PM",
+    "faculty": "Science",
+    "category": "Tech",
+    "organizerId": "devx",
+    "organizerName": "DevX Guild",
+    "seatsTotal": 100,
+    "seatsAvailable": 45,
+    "rsvpCount": 55,
+    "waitlistCount": 0,
+    "venueId": "science-hall-a",
+    "speakerIds": ["alex-rivera", "sarah-chen"],
+    "description": "The biggest code sprint of the semester! Form a team, build a cool software project, and compete for exciting prizes. Mentors will be on site to assist.",
+    "schedule": [
+      { "time": "09:00 AM", "title": "Opening Ceremony", "desc": "Welcome address, rule overview, and API disclosures." },
+      { "time": "10:00 AM", "title": "Hacking Begins", "desc": "Start coding and designing in teams of up to 4." },
+      { "time": "01:00 PM", "title": "Lunch & Mentorship Hours", "desc": "Grab pizza and receive feedback from industry mentors." },
+      { "time": "08:00 PM", "title": "Project Submission", "desc": "Upload links to github and submit devpost projects." },
+      { "time": "09:00 PM", "title": "Presentations & Awards", "desc": "Top 5 teams present and winners are crowned." }
+    ]
+  },
+  {
+    "id": "pixel-craft-2026",
+    "title": "Pixel Craft: UI/UX Workshop",
+    "coverImage": "https://images.unsplash.com/photo-1561070791-26c113006238?q=80&w=600&auto=format&fit=crop",
+    "date": "2026-07-10",
+    "time": "02:00 PM - 04:30 PM",
+    "faculty": "Science",
+    "category": "Tech",
+    "organizerId": "devx",
+    "organizerName": "DevX Guild",
+    "seatsTotal": 30,
+    "seatsAvailable": 0,
+    "rsvpCount": 30,
+    "waitlistCount": 5,
+    "venueId": "hub-room-202",
+    "speakerIds": ["sarah-chen", "marcus-jones"],
+    "description": "Learn the principles of neobrutalist web design, typography, spacing, and micro-interactions in Figma. Perfect for developers who want to design better.",
+    "schedule": [
+      { "time": "02:00 PM", "title": "Introduction to Neobrutalism", "desc": "Key aesthetics and principles of modern high-contrast design." },
+      { "time": "02:30 PM", "title": "Figma Sandbox Session", "desc": "Step-by-step layout of a mobile dashboard wireframe." },
+      { "time": "03:45 PM", "title": "Interactive Feedback", "desc": "Live review of student designs and optimization tips." }
+    ]
+  },
+  {
+    "id": "football-finals-2026",
+    "title": "Inter-Faculty Football Finals",
+    "coverImage": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=600&auto=format&fit=crop",
+    "date": "2026-07-12",
+    "time": "05:00 PM - 07:30 PM",
+    "faculty": "All Faculties",
+    "category": "Sports",
+    "organizerId": "athletics-club",
+    "organizerName": "Athletics Club",
+    "seatsTotal": 200,
+    "seatsAvailable": 12,
+    "rsvpCount": 188,
+    "waitlistCount": 0,
+    "venueId": "stadium-field-1",
+    "speakerIds": ["emily-watson"],
+    "description": "The ultimate showdown between the Faculty of Engineering and Faculty of Business football clubs. Come support your peers under the floodlights!",
+    "schedule": [
+      { "time": "05:00 PM", "title": "Gates Open & Warmups", "desc": "Arrive early to get prime seats on the bleachers." },
+      { "time": "05:30 PM", "title": "Kickoff - First Half", "desc": "45 minutes of intense competitive football." },
+      { "time": "06:15 PM", "title": "Halftime Show", "desc": "Cheerleading routines and field-goal challenge for spectators." },
+      { "time": "06:30 PM", "title": "Second Half", "desc": "The final 45 minutes of play." },
+      { "time": "07:20 PM", "title": "Trophy Presentation", "desc": "Celebrating the championship team and MVP." }
+    ]
+  },
+  {
+    "id": "biotech-symposium-2026",
+    "title": "BioTech Frontiers Symposium",
+    "coverImage": "https://images.unsplash.com/photo-1532187643603-ba119ca4109e?q=80&w=600&auto=format&fit=crop",
+    "date": "2026-07-15",
+    "time": "10:00 AM - 01:00 PM",
+    "faculty": "Medicine",
+    "category": "Academic",
+    "organizerId": "devx",
+    "organizerName": "DevX Guild",
+    "seatsTotal": 80,
+    "seatsAvailable": 75,
+    "rsvpCount": 5,
+    "waitlistCount": 0,
+    "venueId": "science-hall-a",
+    "speakerIds": ["alex-rivera"],
+    "description": "Discover how computational algorithms and CRISPR technologies are redefining patient care and medical discoveries. Keynote lectures and panel discussion.",
+    "schedule": [
+      { "time": "10:00 AM", "title": "Keynote Lecture", "desc": "AI algorithms in protein folding research." },
+      { "time": "11:15 AM", "title": "Panel: Ethical Bioengineering", "desc": "Discussing the ethics of CRISPR and gene modification." },
+      { "time": "12:15 PM", "title": "Research Demos & Networking", "desc": "Meet poster presenters and view prototype biological sensors." }
+    ]
+  }
+]

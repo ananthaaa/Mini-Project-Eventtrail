@@ -1,0 +1,34 @@
+[
+  {
+    "id": "alex-rivera",
+    "name": "Alex Rivera",
+    "role": "Lead Architect",
+    "company": "DevX Guild",
+    "avatarText": "AR",
+    "avatarColor": "#FFDB58"
+  },
+  {
+    "id": "sarah-chen",
+    "name": "Sarah Chen",
+    "role": "UX Lead",
+    "company": "DevX Guild",
+    "avatarText": "SC",
+    "avatarColor": "#DAF5F0"
+  },
+  {
+    "id": "marcus-jones",
+    "name": "Marcus Jones",
+    "role": "Art Director",
+    "company": "Creative Circle",
+    "avatarText": "MJ",
+    "avatarColor": "#F8D6B3"
+  },
+  {
+    "id": "emily-watson",
+    "name": "Emily Watson",
+    "role": "Tournament Coordinator",
+    "company": "Athletics Club",
+    "avatarText": "EW",
+    "avatarColor": "#FDFD96"
+  }
+]

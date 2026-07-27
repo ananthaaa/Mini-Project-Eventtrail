@@ -1,0 +1,29 @@
+[
+  {
+    "id": "devx",
+    "name": "DevX Guild",
+    "logo": "DX",
+    "bgGrad": "from-pastel-mint to-pastel-peach",
+    "description": "The premier developers and designers group on campus. We build open source projects, host hackathons, and run UI/UX workshops for student builders.",
+    "memberIds": ["alex-rivera", "sarah-chen"],
+    "eventIds": ["hackathon-2026", "pixel-craft-2026"]
+  },
+  {
+    "id": "creative-circle",
+    "name": "Creative Circle",
+    "logo": "CC",
+    "bgGrad": "from-pastel-peach to-pastel-yellow",
+    "description": "A hub for visual artists, designers, writers, and musicians. We collaborate on art exhibitions, zines, and creative direction projects.",
+    "memberIds": ["marcus-jones"],
+    "eventIds": []
+  },
+  {
+    "id": "athletics-club",
+    "name": "Athletics Club",
+    "logo": "AC",
+    "bgGrad": "from-pastel-yellow to-pastel-mint",
+    "description": "Bringing sports enthusiasts together. We organize inter-faculty sports tournaments, fitness bootcamps, and outdoor running groups.",
+    "memberIds": ["emily-watson"],
+    "eventIds": ["football-finals-2026"]
+  }
+]

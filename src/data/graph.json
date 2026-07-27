@@ -1,0 +1,94 @@
+{
+  "nodes": {
+    "gate-main": {
+      "lat": 10.1772,
+      "lng": 76.4295,
+      "type": "entrance",
+      "label": "Main Gate"
+    },
+    "junction-library": {
+      "lat": 10.1778,
+      "lng": 76.4300,
+      "type": "junction",
+      "label": "Central Library Junction"
+    },
+    "entrance-science": {
+      "lat": 10.1782,
+      "lng": 76.4305,
+      "type": "building",
+      "label": "Science Building Block B"
+    },
+    "entrance-hub": {
+      "lat": 10.1785,
+      "lng": 76.4308,
+      "type": "building",
+      "label": "Student Activity Hub"
+    },
+    "union-cafe": {
+      "lat": 10.1775,
+      "lng": 76.4308,
+      "type": "building",
+      "label": "Student Union Cafe"
+    },
+    "entrance-stadium": {
+      "lat": 10.1789,
+      "lng": 76.4312,
+      "type": "building",
+      "label": "Campus Stadium"
+    },
+    "entrance-cs-block": {
+      "lat": 10.1788,
+      "lng": 76.4318,
+      "type": "building",
+      "label": "CS Block"
+    },
+    "isolated-node": {
+      "lat": 10.1795,
+      "lng": 76.4325,
+      "type": "building",
+      "label": "North Research Annex (Disconnected)"
+    }
+  },
+  "edges": [
+    {
+      "from": "gate-main",
+      "to": "junction-library",
+      "distance": 85.4
+    },
+    {
+      "from": "junction-library",
+      "to": "entrance-science",
+      "distance": 70.2
+    },
+    {
+      "from": "junction-library",
+      "to": "union-cafe",
+      "distance": 92.6
+    },
+    {
+      "from": "entrance-science",
+      "to": "entrance-hub",
+      "distance": 45.1
+    },
+    {
+      "from": "union-cafe",
+      "to": "entrance-hub",
+      "distance": 111.3
+    },
+    {
+      "from": "entrance-hub",
+      "to": "entrance-stadium",
+      "distance": 62.8
+    },
+    {
+      "from": "entrance-stadium",
+      "to": "entrance-cs-block",
+      "distance": 66.5
+    },
+    {
+      "from": "union-cafe",
+      "to": "entrance-cs-block",
+      "distance": 180.2
+    }
+  ]
+}

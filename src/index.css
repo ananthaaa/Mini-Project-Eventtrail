@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import "mapbox-gl/dist/mapbox-gl.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-neobrutalist: #F9F5F6;
+  --accent-yellow: #FFDB58;
+  --pastel-mint: #DAF5F0;
+  --pastel-peach: #F8D6B3;
+  --pastel-yellow: #FDFD96;
+  --border-black: #000000;
+}
+
+body {
+  background-color: #F9F5F6;
+  color: #000000;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #F9F5F6;
+  border-left: 3px solid #000000;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #FFDB58;
+  border: 3px solid #000000;
+  border-radius: 0px;
+}
+
+/* Dotted grid background overlay pattern */
+.bg-grid-dots {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.15) 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+
+/* Neobrutalist shadows and styling utilities */
+.neo-border {
+  border: 3px solid #000000;
+}
+
+.neo-shadow-sm {
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.neo-shadow {
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.neo-shadow-lg {
+  box-shadow: 6px 6px 0px 0px #000000;
+}
+
+/* Spring-like active click effect */
+.neo-clickable:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px #000000;
+}
+
+/* Custom marquee keyframes */
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee-fast {
+  display: flex;
+  width: max-content;
+  animation: marquee 15s linear infinite;
+}
+
+/* Neo-brutalist Leaflet Popup Overrides */
+.neo-popup .leaflet-popup-content-wrapper {
+  background: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 0;
+  box-shadow: 4px 4px 0px 0px #000000;
+  padding: 0;
+}
+.neo-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 12px;
+  width: auto !important;
+}
+.neo-popup .leaflet-popup-tip-container {
+  display: none;
+}
+.neo-popup a.leaflet-popup-close-button {
+  color: #000000;
+  font-weight: black;
+  padding: 4px 8px;
+  font-size: 18px;
+}
+
+/* Neo-brutalist Mapbox Popup Overrides */
+.neo-mapbox-popup .mapboxgl-popup-content {
+  background: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 0;
+  box-shadow: 4px 4px 0px 0px #000000;
+  padding: 12px;
+}
+.neo-mapbox-popup .mapboxgl-popup-tip {
+  border-top-color: #000000 !important;
+}
+.neo-mapbox-popup .mapboxgl-popup-close-button {
+  color: #000000;
+  font-weight: 900;
+  padding: 4px 8px;
+  font-size: 18px;
+}

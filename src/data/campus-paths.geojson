@@ -1,0 +1,69 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "gate-main",
+        "type": "entrance",
+        "label": "Main Gate"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [76.4305, 10.1782]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "junction-library",
+        "type": "junction",
+        "label": ""
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [76.4308, 10.1785]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "entrance-cs-block",
+        "type": "entrance",
+        "label": "CS Block"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [76.4312, 10.1789]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "from": "gate-main",
+        "to": "junction-library"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [76.4305, 10.1782],
+          [76.4308, 10.1785]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "from": "junction-library",
+        "to": "entrance-cs-block"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [76.4308, 10.1785],
+          [76.4312, 10.1789]
+        ]
+      }
+    }
+  ]
+}
