@@ -1,11 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, PutCommand } = require('@aws-sdk/lib-dynamodb');
 
 const env = process.env.ENV || 'dev';
 const region = process.env.AWS_REGION || 'us-east-1';
@@ -39,7 +35,7 @@ async function seedTable(tableName, items, idKey = 'id') {
 
 async function runSeed() {
   console.log(`Starting bulk DynamoDB seed for environment: '${env}' in region: '${region}'...`);
-  const dataDir = path.resolve(__dirname, '../data');
+  const dataDir = path.resolve(__dirname, '../../src/data');
 
   // 1. Seed Events
   if (fs.existsSync(path.join(dataDir, 'events.json'))) {

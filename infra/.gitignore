@@ -1,0 +1,15 @@
+# CDK output
+cdk.out/
+
+# Dependencies
+node_modules/
+
+# Compiled TypeScript output in bin/ and lib/
+bin/*.js
+bin/*.d.ts
+lib/*.js
+lib/*.d.ts
+
+# Local environment variables
+.env
+.env.local
