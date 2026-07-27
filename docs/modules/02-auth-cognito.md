@@ -123,3 +123,97 @@ This script:
 - [x] **RoleContext uses real Cognito session state**: Role-based navigation works for both student and admin paths; session persists across page refreshes.
 - [x] **Offline demo mode preserved**: Quick Demo Login/Signup buttons work without AWS credentials.
 - [x] **Automated test passes 100%**: `npm run test:auth` exits with code 0 — all 5 steps verified.
+- [x] **Default admin account provisioned**: `npm run create:admin` completed successfully. Admin account active in Cognito and DynamoDB.
+- [x] **Quick Admin Login button works**: Admin tab on Login page includes one-click login using pre-seeded Cognito credentials.
+
+---
+
+## 8. Addendum — Default Admin User Setup
+
+> **Added:** 2026-07-27 | **Commit:** `4a3050e`
+
+### Why a Default Admin?
+
+Student accounts are self-registered through the signup page. Admin accounts, however, must be **pre-provisioned by a developer** — an admin cannot sign themselves up through the public form. This design prevents unauthorized users from obtaining admin-level JWT group claims.
+
+### How It Was Done
+
+A one-time provisioning script (`src/scripts/createAdminUser.js`) was created that:
+
+1. Reads admin credentials from `.env.local` (never committed to git)
+2. Creates the admin user in Cognito with `AdminCreateUser` using a generated plain username (`admin_default_<sanitized_email>`)
+3. Sets a **permanent password** immediately with `AdminSetUserPasswordCommand` (bypasses the `FORCE_CHANGE_PASSWORD` state that would otherwise block sign-in)
+4. Adds the user to the `admin` Cognito group
+5. Upserts the admin profile into `EventTrail-Users-dev` DynamoDB (idempotent — safe to re-run without duplicating the record)
+
+### Admin Account Details
+
+| Field | Value |
+|---|---|
+| **Email** | `admin@eventtrail.dev` |
+| **Cognito Username** | `admin_default_admin_eventtrail_dev` |
+| **Cognito Sub (ID)** | `b173fd5a-8001-7019-d8ff-97114209d985` |
+| **Cognito Group** | `admin` |
+| **DynamoDB Table** | `EventTrail-Users-dev` |
+| **DynamoDB Key** | `id = b173fd5a-8001-7019-d8ff-97114209d985` |
+| **Password stored in** | `.env.local` as `ADMIN_PASSWORD` (not committed to git) |
+
+> [!CAUTION]
+> The admin password is stored **only** in `.env.local` which is gitignored. Never commit `.env.local` to version control. Share admin credentials with team members via a secure password manager.
+
+### Environment Variables Required
+
+Add these to your `.env.local` (see `.env.example` for the full template):
+
+```env
+# Used by: npm run create:admin (server-side, Node.js only)
+ADMIN_EMAIL=admin@eventtrail.dev
+ADMIN_PASSWORD=Admin@EventTrail123!
+ADMIN_NAME=Platform Admin
+
+# Used by: Quick Admin Login button in Login.jsx (browser, dev only)
+VITE_ADMIN_EMAIL=admin@eventtrail.dev
+VITE_ADMIN_PASSWORD=Admin@EventTrail123!
+```
+
+### How to Provision the Admin (First-Time Setup)
+
+```bash
+# 1. Ensure .env.local has ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NAME set
+# 2. Run from the project root:
+npm run create:admin
+```
+
+The script is **idempotent** — if the admin already exists in Cognito it will skip creation and only update the group membership and DynamoDB record.
+
+### How to Log in as Admin
+
+**Option A — Quick Admin Login button (recommended for dev):**
+1. Open `http://localhost:5173/login`
+2. Click the **Admin** tab
+3. Click the green **"Quick Admin Login (Real Cognito)"** button
+4. You are automatically signed in and redirected to `/admin`
+
+**Option B — Manual credentials:**
+1. Open `http://localhost:5173/login`
+2. Click the **Admin** tab
+3. Enter Email: `admin@eventtrail.dev`
+4. Enter Password: *(value of `ADMIN_PASSWORD` in `.env.local`)*
+5. Click **Sign In**
+
+### Frontend Changes
+
+| File | Change |
+|---|---|
+| `src/scripts/createAdminUser.js` | **NEW** — One-time admin provisioning script (`npm run create:admin`) |
+| `src/pages/Login.jsx` | **MODIFIED** — Added `handleQuickAdminLogin()` function and "Quick Admin Login (Real Cognito)" button visible only on Admin tab when `VITE_ADMIN_EMAIL` is set |
+| `package.json` | **MODIFIED** — Added `"create:admin"` script |
+| `.env.local` | **MODIFIED** — Added `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME`, `VITE_ADMIN_EMAIL`, `VITE_ADMIN_PASSWORD` |
+| `.env.example` | **MODIFIED** — Updated template with admin variable documentation |
+
+### Security Notes
+
+- The `ADMIN_PASSWORD` env var is **never prefixed with `VITE_`** in the server-side script — it is only accessible in the Node.js environment and never bundled into the browser build.
+- The `VITE_ADMIN_EMAIL` / `VITE_ADMIN_PASSWORD` variables **are** exposed to the browser bundle, but only for local development convenience. They should be **removed or left blank** before any production deployment.
+- In production, admin login should use only the standard credential form — no env-var shortcuts.
+
