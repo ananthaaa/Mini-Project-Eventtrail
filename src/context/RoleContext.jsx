@@ -14,7 +14,19 @@ export const RoleProvider = ({ children }) => {
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('cp_user');
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    try {
+      const user = JSON.parse(saved);
+      if (user && user.avatar && user.avatar.includes('pravatar.cc')) {
+        const gender = user.gender || 'male';
+        const rand = (user.email ? user.email.length : 1) % 3 + 1;
+        user.avatar = `images/avatars/${gender}${rand}.jpg`;
+        user.avatar = import.meta.env.BASE_URL + user.avatar; 
+      }
+      return user;
+    } catch {
+      return null;
+    }
   });
 
   const [authLoading, setAuthLoading] = useState(true);

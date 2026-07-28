@@ -165,7 +165,13 @@ export const authService = {
       ? 'admin'
       : 'student';
 
-    let avatar = claims.picture || `https://i.pravatar.cc/150?u=${encodeURIComponent(claims.sub || claims.email)}`;
+    let avatar = claims.picture;
+    if (!avatar || avatar.includes('pravatar.cc')) {
+      const userGender = claims.gender || 'male';
+      const rand = (claims.email ? claims.email.length : 1) % 3 + 1;
+      avatar = `images/avatars/${userGender}${rand}.jpg`;
+    }
+
     if (avatar.startsWith('/images/')) {
       avatar = import.meta.env.BASE_URL + avatar.substring(1);
     } else if (avatar.startsWith('images/')) {
