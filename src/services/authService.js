@@ -28,16 +28,21 @@ export const authService = {
   /**
    * Register a new user in Cognito User Pool
    */
-  signUp: async (email, password, name, role = 'student', clubId = null) => {
+  signUp: async (email, password, name, role = 'student', clubId = null, gender = 'male') => {
     return new Promise((resolve, reject) => {
       // Cognito User Pool uses email as an ALIAS — Username must NOT be an email.
       // Generate a plain username; users will sign in via email alias.
       const username = `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
+      const rand = Math.floor(Math.random() * 3) + 1;
+      const avatarPath = `/images/avatars/${gender}${rand}.jpg`;
+
       const attributeList = [
         new CognitoUserAttribute({ Name: 'email', Value: email }),
         new CognitoUserAttribute({ Name: 'name', Value: name }),
         new CognitoUserAttribute({ Name: 'custom:role', Value: role }),
+        new CognitoUserAttribute({ Name: 'gender', Value: gender }),
+        new CognitoUserAttribute({ Name: 'picture', Value: avatarPath }),
       ];
 
       if (clubId) {
@@ -171,7 +176,7 @@ export const authService = {
       groups: Array.isArray(groups) ? groups : [groups],
       role,
       clubId: claims['custom:clubId'] || null,
-      avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(claims.sub || claims.email)}`,
+      avatar: claims.picture || `https://i.pravatar.cc/150?u=${encodeURIComponent(claims.sub || claims.email)}`,
     };
   },
 

@@ -39,7 +39,8 @@ exports.handler = async (event) => {
           role: role,
           clubId: clubId || undefined,
           facultyId: facultyId || undefined,
-          avatar: `https://i.pravatar.cc/150?u=${encodeURIComponent(sub)}`,
+          gender: event.request.userAttributes['gender'] || undefined,
+          avatar: event.request.userAttributes['picture'] || `https://i.pravatar.cc/150?u=${encodeURIComponent(sub)}`,
           rsvps: [],
           createdAt: new Date().toISOString(),
         };

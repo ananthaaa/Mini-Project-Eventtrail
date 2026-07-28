@@ -98,9 +98,9 @@ export const RoleProvider = ({ children }) => {
   /**
    * Real Cognito Sign Up
    */
-  const signup = async ({ name, email, password, role = 'student', studentId, clubId }) => {
+  const signup = async ({ name, email, password, role = 'student', studentId, clubId, gender }) => {
     if (password) {
-      const result = await authService.signUp(email, password, name, role, clubId);
+      const result = await authService.signUp(email, password, name, role, clubId, gender);
       return {
         needsConfirmation: !result.userConfirmed,
         email,

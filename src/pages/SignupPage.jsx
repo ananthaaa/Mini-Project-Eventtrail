@@ -10,7 +10,7 @@ const SignupPage = () => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState('signup'); // 'signup' | 'confirm'
-  const [form, setForm] = useState({ name: '', email: '', password: '', studentId: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', studentId: '', gender: '' });
   const [confirmationCode, setConfirmationCode] = useState('');
   const [cognitoUsername, setCognitoUsername] = useState(''); // generated username from Cognito (not email)
   const [showPassword, setShowPassword] = useState(false);
@@ -30,6 +30,7 @@ const SignupPage = () => {
     if (!form.password) errs.password = 'Required';
     else if (form.password.length < 8) errs.password = 'Min 8 chars';
     if (!form.studentId.trim()) errs.studentId = 'Required';
+    if (!form.gender) errs.gender = 'Required';
     return errs;
   };
 
@@ -45,6 +46,7 @@ const SignupPage = () => {
         email: form.email,
         password: form.password,
         studentId: form.studentId,
+        gender: form.gender,
         role: 'student',
       });
       if (res.needsConfirmation) {
@@ -155,6 +157,38 @@ const SignupPage = () => {
                   </div>
                 </div>
               ))}
+
+              {/* Gender Selection */}
+              <div>
+                <label className="block font-display font-black text-sm uppercase mb-2 flex justify-between">
+                  Gender
+                  {errors.gender && <span className="text-red-500">{errors.gender}</span>}
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex-1 flex items-center gap-2 border-3 border-black p-3 cursor-pointer hover:bg-pastel-yellow transition-colors">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="male"
+                      checked={form.gender === 'male'}
+                      onChange={handleChange('gender')}
+                      className="w-4 h-4 accent-black"
+                    />
+                    <span className="font-bold text-sm uppercase">Male</span>
+                  </label>
+                  <label className="flex-1 flex items-center gap-2 border-3 border-black p-3 cursor-pointer hover:bg-pastel-yellow transition-colors">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="female"
+                      checked={form.gender === 'female'}
+                      onChange={handleChange('gender')}
+                      className="w-4 h-4 accent-black"
+                    />
+                    <span className="font-bold text-sm uppercase">Female</span>
+                  </label>
+                </div>
+              </div>
 
               {/* Password */}
               <div>

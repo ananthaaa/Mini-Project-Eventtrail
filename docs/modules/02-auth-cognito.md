@@ -217,3 +217,44 @@ The script is **idempotent** — if the admin already exists in Cognito it will 
 - The `VITE_ADMIN_EMAIL` / `VITE_ADMIN_PASSWORD` variables **are** exposed to the browser bundle, but only for local development convenience. They should be **removed or left blank** before any production deployment.
 - In production, admin login should use only the standard credential form — no env-var shortcuts.
 
+---
+
+## 9. Email Delivery & AWS SES Sandbox Considerations
+
+> **Added:** 2026-07-28
+
+During testing, we discovered important limitations regarding AWS Simple Email Service (SES) Sandbox mode and email spoofing policies (DMARC).
+
+### The SES DMARC/Spoofing Issue
+Initially, Cognito was configured to use SES to bypass the default 50 emails/day cap. Since the AWS account was in **SES Sandbox mode**, we verified a free webmail address (e.g., `@gmail.com`) to act as the sender. 
+
+However, when Cognito attempted to send OTP verification codes using the verified `@gmail.com` address as the "From" address, **the emails were silently dropped by receiving mail servers (like Gmail's)**. 
+
+This happens because Gmail's strict DMARC policies intercept emails claiming to be from `@gmail.com` but originating from Amazon's IP addresses. The receiving server flags this as spoofing/spam and rejects the delivery.
+
+### The Solution: Reverting to Cognito Default Mailer
+To resolve this for the mini-project without requiring the purchase of a custom domain, the CDK stack was **reverted to use the Cognito Default Mailer** (`COGNITO_DEFAULT`).
+
+**Benefits of the Default Mailer for this project:**
+1. Emails are sent from `no-reply@verificationemail.com` (which is officially owned by Amazon).
+2. Amazon automatically handles SPF/DKIM for this domain, so the emails are trusted by Gmail and other providers.
+3. OTP codes successfully reach the user's inbox (though they may occasionally land in the Spam/Junk folder).
+
+**Limitations to keep in mind:**
+- The Cognito Default Mailer has a hard limit of **50 emails per day** per AWS account. 
+- For a mini-project, this limit is sufficient.
+- If the project ever scales to production, a custom domain (e.g., `eventtrail.dev`) must be purchased, verified in SES, and granted SES Production Access to handle higher volumes safely.
+
+---
+
+## 10. Gender-Based Avatar Assignment
+
+> **Added:** 2026-07-28
+
+The platform now supports assigning avatars dynamically based on a user's gender during sign-up.
+
+### Implementation Details
+1. **Frontend (`SignupPage.jsx`)**: During sign-up, users are prompted to select their gender (Male/Female).
+2. **Auth Service (`authService.js`)**: Based on the selected gender, the frontend randomly selects an avatar image from the `public/images/avatars/` directory (e.g., `male1.jpg`, `female2.jpg`) and attaches it to the Cognito `signUp` request using the standard `picture` attribute. It also saves the `gender` attribute.
+3. **Backend (`PostConfirmationTrigger`)**: When the user confirms their email, the Lambda trigger reads the `picture` and `gender` from `event.request.userAttributes` and persists them into the `EventTrail-Users-dev` DynamoDB table.
+4. **Session Hydration**: Upon login, `authService.js` reads `claims.picture` from the JWT token to set the avatar for the active session, falling back to `pravatar.cc` only if no local avatar is present.
