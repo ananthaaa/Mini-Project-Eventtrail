@@ -35,7 +35,7 @@ export const authService = {
       const username = `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
       const rand = Math.floor(Math.random() * 3) + 1;
-      const avatarPath = `/images/avatars/${gender}${rand}.jpg`;
+      const avatarPath = `images/avatars/${gender}${rand}.jpg`;
 
       const attributeList = [
         new CognitoUserAttribute({ Name: 'email', Value: email }),
@@ -165,6 +165,13 @@ export const authService = {
       ? 'admin'
       : 'student';
 
+    let avatar = claims.picture || `https://i.pravatar.cc/150?u=${encodeURIComponent(claims.sub || claims.email)}`;
+    if (avatar.startsWith('/images/')) {
+      avatar = import.meta.env.BASE_URL + avatar.substring(1);
+    } else if (avatar.startsWith('images/')) {
+      avatar = import.meta.env.BASE_URL + avatar;
+    }
+
     return {
       isValid: session.isValid(),
       idToken,
@@ -176,7 +183,7 @@ export const authService = {
       groups: Array.isArray(groups) ? groups : [groups],
       role,
       clubId: claims['custom:clubId'] || null,
-      avatar: claims.picture || `https://i.pravatar.cc/150?u=${encodeURIComponent(claims.sub || claims.email)}`,
+      avatar,
     };
   },
 
