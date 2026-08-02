@@ -77,19 +77,19 @@ const StudentLayout = () => {
           <div className="flex items-center gap-4">
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">
-                <span className="font-display font-bold uppercase text-sm">
+                <span className="font-display font-bold uppercase text-sm truncate max-w-[100px] lg:max-w-[150px]">
                   {currentUser.name?.split(' ')[0]}
                 </span>
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
-                  className="w-8 h-8 rounded-full border-3 border-black shadow-[2px_2px_0px_0px_#000]"
+                  className="w-8 h-8 rounded-full border-3 border-black shadow-[2px_2px_0px_0px_#000] shrink-0"
                 />
               </div>
             )}
             <button
               onClick={handleLogout}
-              className="hidden sm:flex items-center gap-2 px-3 py-2 bg-pastel-peach border-3 border-black font-bold uppercase text-xs shadow-[2px_2px_0px_0px_#000] hover:translate-y-px hover:shadow-[1px_1px_0px_0px_#000] transition-all"
+              className="hidden sm:flex shrink-0 items-center gap-2 px-3 py-2 bg-pastel-peach border-3 border-black font-bold uppercase text-xs shadow-[2px_2px_0px_0px_#000] hover:translate-y-px hover:shadow-[1px_1px_0px_0px_#000] transition-all"
             >
               <LogOut size={14} strokeWidth={3} />
               Logout
