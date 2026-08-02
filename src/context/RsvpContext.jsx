@@ -1,17 +1,25 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { fetchEvents, fetchVenues } from '../services/apiService';
+import fallbackEvents from '../data/events.json';
+import fallbackVenues from '../data/venues.json';
 
 export const RsvpContext = createContext();
 
 export const RsvpProvider = ({ children }) => {
   const [events, setEvents] = useState(() => {
     const saved = localStorage.getItem('cp_events');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } catch(e) {}
+    }
+    return fallbackEvents;
   });
 
   const [venues, setVenues] = useState(() => {
     const saved = localStorage.getItem('cp_venues');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+      try { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } catch(e) {}
+    }
+    return fallbackVenues;
   });
 
   const [userRsvps, setUserRsvps] = useState(() => {
@@ -33,10 +41,23 @@ export const RsvpProvider = ({ children }) => {
           fetchEvents(),
           fetchVenues()
         ]);
-        setEvents(apiEvents);
-        setVenues(apiVenues);
+        // Only use API data if it returned a non-empty array
+        if (Array.isArray(apiEvents) && apiEvents.length > 0) {
+          setEvents(apiEvents);
+        } else {
+          console.warn('API returned empty events — using fallback data');
+          setEvents(fallbackEvents);
+        }
+        if (Array.isArray(apiVenues) && apiVenues.length > 0) {
+          setVenues(apiVenues);
+        } else {
+          console.warn('API returned empty venues — using fallback data');
+          setVenues(fallbackVenues);
+        }
       } catch (error) {
-        console.error('Failed to fetch data from API:', error);
+        console.warn('API unavailable — loading fallback data:', error.message);
+        setEvents(fallbackEvents);
+        setVenues(fallbackVenues);
       } finally {
         setIsLoading(false);
       }
