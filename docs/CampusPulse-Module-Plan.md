@@ -25,9 +25,9 @@ Companion to `CampusPulse-AWS-Architecture.md`. That doc defines *what* to build
 - Days 9–10: Verify data with AWS CLI / NoSQL Workbench, write a smoke-test script that reads back known items
 
 ### Done means
-- [ ] `cdk deploy` stands up all 7 tables in `dev`
-- [ ] Seed script populates every table from existing mock JSON with zero manual edits
-- [ ] You can `GetItem`/`Query` every table via AWS CLI and get back data matching the mock JSON shape
+- [x] `cdk deploy` stands up all 7 tables in `dev`
+- [x] Seed script populates every table from existing mock JSON with zero manual edits
+- [x] You can `GetItem`/`Query` every table via AWS CLI and get back data matching the mock JSON shape
 
 ---
 
@@ -79,9 +79,9 @@ Companion to `CampusPulse-AWS-Architecture.md`. That doc defines *what* to build
 - Days 9–10: Swap `src/services/*.js` mock resolvers for real `fetch()` calls; regression-test every read-only screen (`Home`, `EventDiscovery`, `EventDetail`, `ClubDirectory`, `ClubProfile`)
 
 ### Done means
-- [ ] Every read-only screen in the app works against real API Gateway + DynamoDB, mock JSON no longer used
-- [ ] Filter bar in `EventDiscovery.jsx` works via real GSI queries, not client-side filtering
-- [ ] Navigation graph (`Navigate.jsx` outdoor phase) loads nodes/edges from the API and A* still runs correctly client-side
+- [x] Every read-only screen in the app works against real API Gateway + DynamoDB, mock JSON no longer used
+- [x] Filter bar in `EventDiscovery.jsx` works via real GSI queries, not client-side filtering
+- [x] Navigation graph (`Navigate.jsx` outdoor phase) loads nodes/edges from the API and A* still runs correctly client-side
 
 ---
 
@@ -104,9 +104,9 @@ Companion to `CampusPulse-AWS-Architecture.md`. That doc defines *what* to build
 - Days 10: End-to-end test as a club-admin account — create an event with a real uploaded image, confirm it appears correctly in `EventDetail.jsx`
 
 ### Done means
-- [ ] Admin can create/edit/delete an event through the real UI, and it persists in DynamoDB
-- [ ] Uploaded images actually appear via CloudFront URLs on event/club/venue pages
-- [ ] An admin from Club A gets a 403 trying to edit Club B's event (authorization scoping verified)
+- [x] Admin can create/edit/delete an event through the real UI, and it persists in DynamoDB
+- [x] Uploaded images actually appear via CloudFront URLs on event/club/venue pages
+- [x] An admin from Club A gets a 403 trying to edit Club B's event (authorization scoping verified)
 
 ---
 

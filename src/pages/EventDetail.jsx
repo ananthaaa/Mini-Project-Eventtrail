@@ -4,8 +4,7 @@ import { motion } from 'framer-motion';
 import PageShell from '../components/layout/PageShell';
 import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
-import mockSpeakers from '../data/speakers.json';
-import mockClubs from '../data/clubs.json';
+import { fetchSpeakers, fetchClubs } from '../services/apiService';
 import SeatMeter from '../components/ui/SeatMeter';
 import { Calendar, Clock, MapPin, ArrowLeft, Ticket, CheckCircle2, ChevronRight, Users } from 'lucide-react';
 
@@ -17,25 +16,54 @@ const EventDetail = () => {
 
   const event = events.find((e) => e.id === id);
 
-  if (!event) {
+  const [speakers, setSpeakers] = React.useState([]);
+  const [clubs, setClubs] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [apiSpeakers, apiClubs] = await Promise.all([
+          fetchSpeakers(),
+          fetchClubs()
+        ]);
+        setSpeakers(apiSpeakers);
+        setClubs(apiClubs);
+      } catch (error) {
+        console.error('Failed to load speakers/clubs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  if (isLoading || !event) {
     return (
       <PageShell>
         <div className="max-w-md mx-auto text-center mt-20">
-          <h3 className="font-display font-bold text-3xl text-text-primary mb-4">Event Not Found</h3>
-          <p className="text-text-secondary mb-8">
-            The event you are looking for does not exist or has been deleted.
-          </p>
-          <Link to="/discover" className="inline-flex items-center gap-2 bg-bg-surface border border-border-subtle px-6 py-3 rounded-full text-text-primary hover:text-accent transition-colors">
-            <ArrowLeft size={16} />
-            Back to Discover
-          </Link>
+          <h3 className="font-display font-bold text-3xl text-text-primary mb-4">
+            {isLoading ? "Loading..." : "Event Not Found"}
+          </h3>
+          {!isLoading && (
+            <>
+              <p className="text-text-secondary mb-8">
+                The event you are looking for does not exist or has been deleted.
+              </p>
+              <Link to="/discover" className="inline-flex items-center gap-2 bg-bg-surface border border-border-subtle px-6 py-3 rounded-full text-text-primary hover:text-accent transition-colors">
+                <ArrowLeft size={16} />
+                Back to Discover
+              </Link>
+            </>
+          )}
         </div>
       </PageShell>
     );
   }
 
-  const speakers = mockSpeakers.filter((spk) => event.speakerIds.includes(spk.id));
-  const club = mockClubs.find((c) => c.id === event.organizerId);
+  const eventSpeakers = speakers.filter((spk) => event.speakerIds.includes(spk.id));
+  const club = clubs.find((c) => c.id === event.organizerId);
   const userRsvp = userRsvps[event.id];
 
   const handleRsvpAction = () => {
@@ -160,11 +188,11 @@ const EventDetail = () => {
             </div>
           )}
 
-          {speakers.length > 0 && (
+          {eventSpeakers.length > 0 && (
             <div className="bg-pastel-yellow border-3 border-black p-6 neo-shadow">
               <h3 className="text-black text-xs font-black uppercase tracking-widest mb-4 border-b-2 border-black pb-2">Featured Speakers</h3>
               <div className="space-y-4">
-                {speakers.map((spk) => (
+                {eventSpeakers.map((spk) => (
                   <div key={spk.id} className="flex items-center gap-4 bg-white border-2 border-black p-3 shadow-[2px_2px_0px_0px_#000]">
                     <div className="w-12 h-12 border-2 border-black flex items-center justify-center font-display font-black text-black bg-pastel-mint shadow-[2px_2px_0px_0px_#000]">
                       {spk.avatarText}

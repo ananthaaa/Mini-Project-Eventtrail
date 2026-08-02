@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import PageShell from '../../components/layout/PageShell';
 import { RsvpContext } from '../../context/RsvpContext';
 import { NavModeContext } from '../../context/NavModeContext';
-import mockVenues from '../../data/venues.json';
 import { useNavigationStore } from '../../store/navigationStore';
 import { useLiveLocation } from '../../hooks/useLiveLocation';
 import { useSnapToPath } from '../../hooks/useSnapToPath';
@@ -26,7 +25,7 @@ const INDOOR_STEPS = [
 export default function NavigateToVenue() {
   const { eventId } = useParams();
   const navigate = useNavigate();
-  const { events } = useContext(RsvpContext) || { events: [] };
+  const { events, venues } = useContext(RsvpContext) || { events: [], venues: [] };
   const { activeEventId } = useContext(NavModeContext) || {};
   const targetId = eventId || activeEventId || '1';
 
@@ -61,7 +60,7 @@ export default function NavigateToVenue() {
 
   const venueInfo = useMemo(() => {
     if (!activeEvent) return null;
-    return mockVenues.find((v) => v.id === activeEvent.venueId) || {
+    return venues?.find((v) => v.id === activeEvent.venueId) || {
       name: 'Main Auditorium',
       building: 'Block B (Library & Media Block)',
       floor: '2nd Floor'

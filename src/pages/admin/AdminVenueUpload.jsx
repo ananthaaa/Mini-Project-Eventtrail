@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
 import { RsvpContext } from '../../context/RsvpContext';
+import { createVenue } from '../../services/apiService';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Plus, Trash2, Save, MapPin, X } from 'lucide-react';
 import { Marker } from 'react-map-gl/mapbox';
@@ -10,6 +11,7 @@ import CampusMap from '../../components/ui/CampusMap';
 
 const AdminVenueUpload = () => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
   const { events } = useContext(RsvpContext);
 
@@ -100,10 +102,33 @@ const AdminVenueUpload = () => {
     );
   };
 
-  const handleSaveConfiguration = (e) => {
+  const handleSaveConfiguration = async (e) => {
     e.preventDefault();
-    alert(`Configuration saved for venue: ${initialVenue?.name || 'Default'}. Waypoints updated in-memory.`);
-    navigate('/admin');
+    if (!building) return alert('Building name is required.');
+
+    const newVenue = {
+      name: building,
+      category: 'Campus',
+      description: 'Automatically created from Admin Setup',
+      floorPlanImage: svgUrl,
+      graphData: {
+        indoorSteps,
+        mapPosition,
+        waypoints
+      }
+    };
+
+    setIsSubmitting(true);
+    try {
+      await createVenue(newVenue);
+      alert(`Configuration saved for venue: ${building}.`);
+      navigate('/admin');
+    } catch (error) {
+      console.error('Error saving venue:', error);
+      alert('Failed to save venue. ' + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -337,8 +362,8 @@ const AdminVenueUpload = () => {
             </div>
 
             <div className="border-t-3 border-black pt-6">
-              <button onClick={handleSaveConfiguration} className="w-full bg-pastel-peach border-3 border-black text-black px-8 py-3 font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all flex items-center justify-center gap-2">
-                <Save size={18} /> Save Setup
+              <button disabled={isSubmitting} onClick={handleSaveConfiguration} className={`w-full bg-pastel-peach border-3 border-black text-black px-8 py-3 font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <Save size={18} /> {isSubmitting ? 'Saving...' : 'Save Setup'}
               </button>
             </div>
           </motion.div>

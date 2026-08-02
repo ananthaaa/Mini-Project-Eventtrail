@@ -2,8 +2,7 @@ import React, { useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import { RsvpContext } from '../context/RsvpContext';
-import mockClubs from '../data/clubs.json';
-import mockSpeakers from '../data/speakers.json';
+import { fetchClubById, fetchSpeakers } from '../services/apiService';
 import { ArrowLeft, Users, Calendar, ArrowRight, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Badge from '../components/ui/Badge';
@@ -13,27 +12,54 @@ const ClubProfile = () => {
   const navigate = useNavigate();
   const { events } = useContext(RsvpContext);
 
-  const club = mockClubs.find((c) => c.id === id);
+  const [club, setClub] = React.useState(null);
+  const [speakers, setSpeakers] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  if (!club) {
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [apiClub, apiSpeakers] = await Promise.all([
+          fetchClubById(id),
+          fetchSpeakers()
+        ]);
+        setClub(apiClub);
+        setSpeakers(apiSpeakers);
+      } catch (error) {
+        console.error('Failed to load club/speakers:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, [id]);
+
+  if (isLoading || !club) {
     return (
       <PageShell>
         <div className="max-w-md mx-auto text-center mt-20 bg-white border-3 border-black p-8 neo-shadow">
-          <h3 className="font-display font-black uppercase text-3xl text-black mb-4">Club Not Found</h3>
-          <p className="text-black/70 font-bold uppercase tracking-wide mb-8">
-            The student organization you are looking for does not exist or has been removed.
-          </p>
-          <Link to="/clubs" className="inline-flex items-center gap-2 bg-accent-yellow border-3 border-black px-6 py-3 text-black font-bold uppercase tracking-wider hover:bg-black hover:text-accent-yellow transition-colors shadow-[4px_4px_0px_0px_#000]">
-            <ArrowLeft size={16} />
-            Back to Directory
-          </Link>
+          <h3 className="font-display font-black uppercase text-3xl text-black mb-4">
+            {isLoading ? "Loading..." : "Club Not Found"}
+          </h3>
+          {!isLoading && (
+            <>
+              <p className="text-black/70 font-bold uppercase tracking-wide mb-8">
+                The student organization you are looking for does not exist or has been removed.
+              </p>
+              <Link to="/clubs" className="inline-flex items-center gap-2 bg-accent-yellow border-3 border-black px-6 py-3 text-black font-bold uppercase tracking-wider hover:bg-black hover:text-accent-yellow transition-colors shadow-[4px_4px_0px_0px_#000]">
+                <ArrowLeft size={16} />
+                Back to Directory
+              </Link>
+            </>
+          )}
         </div>
       </PageShell>
     );
   }
 
   // Load members and hosted events
-  const members = mockSpeakers.filter((spk) => club.memberIds.includes(spk.id));
+  const members = speakers.filter((spk) => club.memberIds?.includes(spk.id));
   const hostedEvents = events.filter((evt) => evt.organizerId === club.id);
 
   return (

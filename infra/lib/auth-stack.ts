@@ -17,6 +17,7 @@ export class AuthStack extends cdk.Stack {
   public readonly userPoolClient: cognito.UserPoolClient;
   public readonly httpApi: apigwv2.CfnApi;
   public readonly apiStage: apigwv2.CfnStage;
+  public readonly jwtAuthorizer: apigwv2.CfnAuthorizer;
 
   constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
@@ -111,7 +112,7 @@ export class AuthStack extends cdk.Stack {
     });
 
     // 6. Cognito JWT Authorizer
-    const jwtAuthorizer = new apigwv2.CfnAuthorizer(this, 'JwtAuthorizer', {
+    this.jwtAuthorizer = new apigwv2.CfnAuthorizer(this, 'JwtAuthorizer', {
       apiId: this.httpApi.ref,
       authorizerType: 'JWT',
       identitySource: ['$request.header.Authorization'],
@@ -147,7 +148,7 @@ export class AuthStack extends cdk.Stack {
       apiId: this.httpApi.ref,
       routeKey: 'GET /whoami',
       authorizationType: 'JWT',
-      authorizerId: jwtAuthorizer.ref,
+      authorizerId: this.jwtAuthorizer.ref,
       target: `integrations/${whoamiIntegration.ref}`,
     });
 

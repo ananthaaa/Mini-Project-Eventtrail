@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
-import { RsvpContext } from '../../context/RsvpContext';
+import { createEvent } from '../../services/apiService';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Save, Plus, X, MapPin } from 'lucide-react';
 import { Marker } from 'react-map-gl/mapbox';
@@ -10,7 +10,7 @@ import CampusMap from '../../components/ui/CampusMap';
 
 const AdminEventForm = () => {
   const navigate = useNavigate();
-  const { addEvent } = useContext(RsvpContext);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('2026-07-10');
@@ -66,7 +66,7 @@ const AdminEventForm = () => {
     );
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !date || !time) return;
 
@@ -77,7 +77,6 @@ const AdminEventForm = () => {
     const finalCover = coverImage || randomCovers[Math.floor(Math.random() * randomCovers.length)];
 
     const newEvent = {
-      id: `evt-${Date.now()}`,
       title,
       coverImage: finalCover,
       date,
@@ -85,8 +84,6 @@ const AdminEventForm = () => {
       category,
       faculty,
       seatsTotal: parseInt(seatsTotal),
-      seatsAvailable: parseInt(seatsTotal),
-      waitlistCount: 0,
       description,
       schedule: scheduleItems,
       locationDetails: {
@@ -96,8 +93,16 @@ const AdminEventForm = () => {
       }
     };
 
-    addEvent(newEvent);
-    navigate('/admin');
+    setIsSubmitting(true);
+    try {
+      await createEvent(newEvent);
+      navigate('/admin');
+    } catch (error) {
+      console.error('Error creating event:', error);
+      alert('Failed to create event. ' + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -350,10 +355,11 @@ const AdminEventForm = () => {
           <div className="border-t border-border-subtle pt-8 flex justify-end">
             <button
               type="submit"
-              className="bg-pastel-peach border-3 border-black text-black px-8 py-3 font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all flex items-center justify-center gap-2 w-full sm:w-auto"
+              disabled={isSubmitting}
+              className={`bg-pastel-peach border-3 border-black text-black px-8 py-3 font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all flex items-center justify-center gap-2 w-full sm:w-auto ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Save size={18} />
-              Publish Event
+              {isSubmitting ? 'Publishing...' : 'Publish Event'}
             </button>
           </div>
         </form>

@@ -1,24 +1,49 @@
 import React, { createContext, useState, useEffect } from 'react';
-import initialEvents from '../data/events.json';
-import initialVenues from '../data/venues.json';
+import { fetchEvents, fetchVenues } from '../services/apiService';
 
 export const RsvpContext = createContext();
 
 export const RsvpProvider = ({ children }) => {
   const [events, setEvents] = useState(() => {
     const saved = localStorage.getItem('cp_events');
-    return saved ? JSON.parse(saved) : initialEvents;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [venues, setVenues] = useState(() => {
     const saved = localStorage.getItem('cp_venues');
-    return saved ? JSON.parse(saved) : initialVenues;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [userRsvps, setUserRsvps] = useState(() => {
     const saved = localStorage.getItem('cp_user_rsvps');
     return saved ? JSON.parse(saved) : {};
   });
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load from API on mount if not in localStorage, or optionally just sync them.
+  // We'll sync from API if they are empty, but since we are moving to backend,
+  // we should always fetch the latest from the backend and override local cache 
+  // (unless we want offline first, but the plan implies hitting the API).
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [apiEvents, apiVenues] = await Promise.all([
+          fetchEvents(),
+          fetchVenues()
+        ]);
+        setEvents(apiEvents);
+        setVenues(apiVenues);
+      } catch (error) {
+        console.error('Failed to fetch data from API:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('cp_events', JSON.stringify(events));
@@ -119,14 +144,14 @@ export const RsvpProvider = ({ children }) => {
     localStorage.removeItem('cp_events');
     localStorage.removeItem('cp_venues');
     localStorage.removeItem('cp_user_rsvps');
-    setEvents(initialEvents);
-    setVenues(initialVenues);
+    setEvents([]);
+    setVenues([]);
     setUserRsvps({});
   };
 
   return (
     <RsvpContext.Provider value={{ 
-      events, venues, userRsvps, 
+      events, venues, userRsvps, isLoading,
       submitRsvp, addEvent, deleteEvent, 
       addVenue, updateVenue, deleteVenue, 
       clearAllLocalData 

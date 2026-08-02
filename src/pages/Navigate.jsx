@@ -5,7 +5,6 @@ import PageShell from '../components/layout/PageShell';
 import { NavModeContext } from '../context/NavModeContext';
 import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
-import mockVenues from '../data/venues.json';
 import StepTracker from '../components/ui/StepTracker';
 import { MapPin, Navigation, CheckCircle2, ChevronRight, ArrowLeft, Info, Compass } from 'lucide-react';
 import { Marker } from 'react-map-gl/mapbox';
@@ -43,7 +42,7 @@ const Navigate = () => {
     resetNavigation,
   } = useContext(NavModeContext);
 
-  const { events } = useContext(RsvpContext);
+  const { events, venues } = useContext(RsvpContext);
   const { addNotification } = useContext(NotificationContext);
 
   const activeEvent = useMemo(() => {
@@ -52,8 +51,8 @@ const Navigate = () => {
 
   const venue = useMemo(() => {
     if (!activeEvent) return null;
-    return mockVenues.find((v) => v.id === activeEvent.venueId);
-  }, [activeEvent]);
+    return venues.find((v) => v.id === activeEvent.venueId);
+  }, [activeEvent, venues]);
 
   const progressRef = useRef(outdoorProgress);
   useEffect(() => {

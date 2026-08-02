@@ -1,13 +1,30 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
-import mockClubs from '../data/clubs.json';
+import { fetchClubs } from '../services/apiService';
 import { Users, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Badge from '../components/ui/Badge';
 
 const ClubDirectory = () => {
   const navigate = useNavigate();
+  const [clubs, setClubs] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchClubs();
+        setClubs(data);
+      } catch (error) {
+        console.error('Failed to fetch clubs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   return (
     <PageShell>
@@ -22,8 +39,11 @@ const ClubDirectory = () => {
       </div>
 
       {/* Grid of Organizations */}
+      {isLoading ? (
+        <div className="text-center py-20 font-display font-black text-2xl uppercase">Loading...</div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {mockClubs.map((club, index) => (
+        {clubs.map((club, index) => (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -63,6 +83,7 @@ const ClubDirectory = () => {
           </motion.div>
         ))}
       </div>
+      )}
     </PageShell>
   );
 };

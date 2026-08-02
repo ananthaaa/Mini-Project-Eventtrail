@@ -11,11 +11,10 @@ import {
   Sparkles, Calendar, MapPin, ArrowRight, Ticket, Users,
   Star, TrendingUp, BookOpen
 } from 'lucide-react';
-import mockVenues from '../../data/venues.json';
 
 const StudentDashboard = () => {
   const { currentUser } = useContext(RoleContext);
-  const { events, userRsvps } = useContext(RsvpContext);
+  const { events, venues, userRsvps } = useContext(RsvpContext);
   const navigate = useNavigate();
   const [selectedMapEvent, setSelectedMapEvent] = useState(null);
 
@@ -99,7 +98,7 @@ const StudentDashboard = () => {
           <div className="h-[500px] w-full relative z-0">
             <CampusMap center={[10.1785, 76.4308]} zoom={16}>
               {events.filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
-                const venue = mockVenues.find(v => v.id === evt.venueId);
+                const venue = venues.find(v => v.id === evt.venueId);
                 if (!venue || !venue.outdoorCoordinates) return null;
                 return (
                   <Marker 

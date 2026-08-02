@@ -1,24 +1,18 @@
-import graphData from '../data/graph.json';
+import { fetchPathNodes as apiFetchPathNodes, fetchPathEdges as apiFetchPathEdges } from './apiService';
 
-// Simulating API calls to fetch from DynamoDB on application load
 export async function fetchPathNodes() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(graphData.nodes);
-    }, 300);
+  const nodesArr = await apiFetchPathNodes();
+  // Ensure the format matches what findPathAStar expects. The mock returned an object where keys are node IDs.
+  // The backend DynamoDB scan returns an array of nodes.
+  const nodesObj = {};
+  nodesArr.forEach(node => {
+    nodesObj[node.nodeId] = { lat: node.lat, lng: node.lng };
   });
+  return nodesObj;
 }
 
 export async function fetchPathEdges() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const mappedEdges = graphData.edges.map((e, idx) => ({
-        edgeId: `e${idx + 1}`,
-        fromNode: e.from,
-        toNode: e.to,
-        distance: e.distance,
-      }));
-      resolve(mappedEdges);
-    }, 300);
-  });
+  const edgesArr = await apiFetchPathEdges();
+  // Ensure we map DynamoDB edges (with fromNode, toNode) correctly.
+  return edgesArr;
 }

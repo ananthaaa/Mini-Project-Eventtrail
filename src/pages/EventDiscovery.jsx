@@ -4,11 +4,14 @@ import PageShell from '../components/layout/PageShell';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import { RsvpContext } from '../context/RsvpContext';
+import { fetchEvents } from '../services/apiService';
 import { Calendar, Search, MapPin, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
 const EventDiscovery = () => {
   const { events } = useContext(RsvpContext);
   const navigate = useNavigate();
+  const [apiEvents, setApiEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,8 +26,27 @@ const EventDiscovery = () => {
   // Current system date for mock filters (2026-07-10)
   const TODAY_STR = '2026-07-10';
 
+  useEffect(() => {
+    const loadFilteredEvents = async () => {
+      setIsLoading(true);
+      try {
+        const params = {};
+        if (selectedFaculty !== 'All') params.faculty = selectedFaculty;
+        if (selectedCategory !== 'All') params.category = selectedCategory;
+        
+        const data = await fetchEvents(params);
+        setApiEvents(data);
+      } catch (error) {
+        console.error('Error fetching filtered events:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadFilteredEvents();
+  }, [selectedFaculty, selectedCategory]);
+
   const filteredEvents = useMemo(() => {
-    return events.filter((evt) => {
+    return apiEvents.filter((evt) => {
       // 1. Search Query
       const matchesSearch =
         evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -50,7 +72,7 @@ const EventDiscovery = () => {
 
       return matchesSearch && matchesDate && matchesCategory && matchesFaculty;
     });
-  }, [events, searchQuery, selectedDateFilter, selectedCategory, selectedFaculty]);
+  }, [apiEvents, searchQuery, selectedDateFilter, selectedCategory, selectedFaculty]);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -165,7 +187,11 @@ const EventDiscovery = () => {
       </div>
 
       {/* Events Results */}
-      {filteredEvents.length > 0 ? (
+      {isLoading ? (
+        <div className="text-center py-12">
+          <p className="font-display font-black text-xl uppercase animate-pulse">Loading Events...</p>
+        </div>
+      ) : filteredEvents.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {filteredEvents.map((evt) => (
             <Card

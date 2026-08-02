@@ -3,6 +3,8 @@ import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { DataLayerStack } from '../lib/data-layer-stack';
 import { AuthStack } from '../lib/auth-stack';
+import { ApiStack } from '../lib/api-stack';
+import { MediaStack } from '../lib/media-stack';
 
 const app = new cdk.App();
 
@@ -19,8 +21,28 @@ const dataLayer = new DataLayerStack(app, `CampusPulse-DataLayer-${envName}`, {
   envName,
 });
 
-new AuthStack(app, `CampusPulse-Auth-${envName}`, {
+const authStack = new AuthStack(app, `CampusPulse-Auth-${envName}`, {
   ...stackProps,
   envName,
   usersTable: dataLayer.usersTable,
+});
+
+const mediaStack = new MediaStack(app, `CampusPulse-Media-${envName}`, {
+  ...stackProps,
+  envName,
+});
+
+new ApiStack(app, `CampusPulse-Api-${envName}`, {
+  ...stackProps,
+  envName,
+  httpApi: authStack.httpApi,
+  jwtAuthorizer: authStack.jwtAuthorizer,
+  mediaBucket: mediaStack.mediaBucket,
+  mediaDomain: mediaStack.mediaDomain,
+  eventsTable: dataLayer.eventsTable,
+  clubsTable: dataLayer.clubsTable,
+  venuesTable: dataLayer.venuesTable,
+  speakersTable: dataLayer.speakersTable,
+  pathNodesTable: dataLayer.pathNodesTable,
+  pathEdgesTable: dataLayer.pathEdgesTable,
 });

@@ -29,14 +29,76 @@ export default function ImageUploadZone({ label, onUpload, previewUrl, onClear }
             e.preventDefault();
             setIsDragging(false);
             if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-              // Mock upload - just create an object URL for preview
               const file = e.dataTransfer.files[0];
+              if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be 5 MB or less.');
+                return;
+              }
+              // Set local preview immediately
               onUpload(URL.createObjectURL(file));
+              
+              // Upload to S3
+              import('../../services/apiService').then(async ({ getUploadUrl }) => {
+                try {
+                  const { uploadUrl, fields, fileUrl } = await getUploadUrl(file.type, 'media');
+                  const formData = new FormData();
+                  Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+                  formData.append('file', file);
+                  
+                  const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    body: formData,
+                  });
+                  
+                  if (response.ok) {
+                    onUpload(fileUrl);
+                  } else {
+                    alert('Upload failed.');
+                  }
+                } catch (error) {
+                  console.error('Upload error', error);
+                  alert('Upload error.');
+                }
+              });
             }
           }}
           onClick={() => {
-            // In a real app, this would trigger a file input click
-            alert('File picker mock clicked. Drag and drop works for preview.');
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+              const file = e.target.files[0];
+              if (file) {
+                if (file.size > 5 * 1024 * 1024) {
+                  alert('File size must be 5 MB or less.');
+                  return;
+                }
+                onUpload(URL.createObjectURL(file));
+                import('../../services/apiService').then(async ({ getUploadUrl }) => {
+                  try {
+                    const { uploadUrl, fields, fileUrl } = await getUploadUrl(file.type, 'media');
+                    const formData = new FormData();
+                    Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+                    formData.append('file', file);
+                    
+                    const response = await fetch(uploadUrl, {
+                      method: 'POST',
+                      body: formData,
+                    });
+                    
+                    if (response.ok) {
+                      onUpload(fileUrl);
+                    } else {
+                      alert('Upload failed.');
+                    }
+                  } catch (error) {
+                    console.error('Upload error', error);
+                    alert('Upload error.');
+                  }
+                });
+              }
+            };
+            input.click();
           }}
         >
           <div className="w-16 h-16 rounded-full bg-bg-surface-alt flex items-center justify-center mb-4 text-text-secondary">
