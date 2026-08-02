@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import { RsvpContext } from '../context/RsvpContext';
 import { fetchClubById, fetchSpeakers } from '../services/apiService';
+import fallbackClubs from '../data/clubs.json';
 import { ArrowLeft, Users, Calendar, ArrowRight, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Badge from '../components/ui/Badge';
@@ -24,10 +25,15 @@ const ClubProfile = () => {
           fetchClubById(id),
           fetchSpeakers()
         ]);
-        setClub(apiClub);
-        setSpeakers(apiSpeakers);
+        if (apiClub) {
+          setClub(apiClub);
+        } else {
+          setClub(fallbackClubs.find(c => c.id === id) || null);
+        }
+        setSpeakers(Array.isArray(apiSpeakers) ? apiSpeakers : []);
       } catch (error) {
-        console.error('Failed to load club/speakers:', error);
+        console.warn('Failed to load club, using fallback:', error.message);
+        setClub(fallbackClubs.find(c => c.id === id) || null);
       } finally {
         setIsLoading(false);
       }

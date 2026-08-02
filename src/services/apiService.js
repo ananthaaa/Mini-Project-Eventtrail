@@ -1,4 +1,4 @@
-import * as authService from './authService';
+import { authService } from './authService';
 
 const API_BASE_URL = import.meta.env.VITE_HTTP_API_URL;
 

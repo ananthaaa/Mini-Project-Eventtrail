@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import Card from '../components/ui/Card';
@@ -35,15 +35,20 @@ const EventDiscovery = () => {
         if (selectedCategory !== 'All') params.category = selectedCategory;
         
         const data = await fetchEvents(params);
-        setApiEvents(data);
+        if (Array.isArray(data) && data.length > 0) {
+          setApiEvents(data);
+        } else {
+          setApiEvents(events); // Fallback to context events (includes local JSON)
+        }
       } catch (error) {
-        console.error('Error fetching filtered events:', error);
+        console.warn('API fetch failed, falling back to context events:', error.message);
+        setApiEvents(events); // Fallback to context events (includes local JSON)
       } finally {
         setIsLoading(false);
       }
     };
     loadFilteredEvents();
-  }, [selectedFaculty, selectedCategory]);
+  }, [selectedFaculty, selectedCategory, events]);
 
   const filteredEvents = useMemo(() => {
     return apiEvents.filter((evt) => {
