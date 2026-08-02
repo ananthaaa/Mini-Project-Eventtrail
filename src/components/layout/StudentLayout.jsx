@@ -19,7 +19,7 @@ import Badge from '../ui/Badge';
 const navLinks = [
   { to: '/student', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/student/events', label: 'Events', icon: Calendar },
-  { to: '/student/campus-map', label: 'Campus Map', icon: MapIcon },
+  { to: '/student/campus-map', label: 'Map', icon: MapIcon },
   { to: '/student/navigate', label: 'Navigate', icon: Compass },
   { to: '/student/clubs', label: 'Clubs', icon: Users },
   { to: '/student/profile', label: 'Profile', icon: User },
