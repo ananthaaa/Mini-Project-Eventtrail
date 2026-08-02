@@ -12,10 +12,12 @@ const StudentProfile = () => {
   const [jwtStatus, setJwtStatus] = useState('');
 
   // Find actual event details for user's RSVPs
-  const myTickets = Object.entries(userRsvps).map(([eventId, rsvpInfo]) => {
-    const event = events.find(e => e.id === eventId);
-    return { event, ...rsvpInfo };
-  });
+  const myTickets = Object.entries(userRsvps)
+    .map(([eventId, rsvpInfo]) => {
+      const event = events.find(e => e.id === eventId);
+      return { event, ...rsvpInfo };
+    })
+    .filter(ticket => ticket.event); // Safely filter out undefined events
 
   return (
     <PageShell useGridPattern={false}>
