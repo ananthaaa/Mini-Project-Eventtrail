@@ -96,10 +96,14 @@ const AdminEventForm = () => {
     setIsSubmitting(true);
     try {
       await createEvent(newEvent);
+      alert('Event created successfully!');
       navigate('/admin');
     } catch (error) {
       console.error('Error creating event:', error);
-      alert('Failed to create event. ' + error.message);
+      const msg = error.message?.includes('authentication') || error.message?.includes('token')
+        ? 'Authentication failed. Please log in with a real Admin Cognito account to create events via the API.'
+        : 'Failed to create event: ' + error.message;
+      alert(msg);
     } finally {
       setIsSubmitting(false);
     }
