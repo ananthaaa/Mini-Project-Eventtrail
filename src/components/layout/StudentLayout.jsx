@@ -40,18 +40,20 @@ const StudentLayout = () => {
       {/* Top Navigation */}
       <header className="bg-white border-b-3 border-black sticky top-0 z-50 neo-shadow-sm">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-accent-yellow border-3 border-black flex items-center justify-center shadow-[2px_2px_0px_0px_#000]">
-              <Zap size={16} strokeWidth={3} className="text-black" />
+          {/* Left Side: Logo & Desktop Nav */}
+          <div className="flex items-center gap-8">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-accent-yellow border-3 border-black flex items-center justify-center shadow-[2px_2px_0px_0px_#000]">
+                <Zap size={16} strokeWidth={3} className="text-black" />
+              </div>
+              <span className="font-display font-black text-xl uppercase tracking-tight text-black hidden sm:block">
+                Event<span className="text-accent-yellow drop-shadow-[1px_1px_0px_#000]">Trail</span>
+              </span>
             </div>
-            <span className="font-display font-black text-xl uppercase tracking-tight text-black hidden sm:block">
-              Event<span className="text-accent-yellow drop-shadow-[1px_1px_0px_#000]">Trail</span>
-            </span>
-          </div>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-2">
+            {/* Desktop Nav */}
+            <nav className="hidden xl:flex items-center gap-1">
             {navLinks.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
@@ -68,7 +70,8 @@ const StudentLayout = () => {
                 {label}
               </NavLink>
             ))}
-          </nav>
+            </nav>
+          </div>
 
           {/* Right side */}
           <div className="flex items-center gap-4">
@@ -95,7 +98,7 @@ const StudentLayout = () => {
             {/* Mobile menu toggle */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 border-3 border-black bg-white shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-yellow"
+              className="xl:hidden p-2 border-3 border-black bg-white shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-yellow"
             >
               {mobileOpen ? <X size={20} strokeWidth={3} /> : <Menu size={20} strokeWidth={3} />}
             </button>
@@ -104,7 +107,7 @@ const StudentLayout = () => {
 
         {/* Mobile Nav Drawer */}
         {mobileOpen && (
-          <div className="md:hidden bg-white border-t-3 border-black p-4 flex flex-col gap-2">
+          <div className="xl:hidden bg-white border-t-3 border-black p-4 flex flex-col gap-2">
             {navLinks.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
