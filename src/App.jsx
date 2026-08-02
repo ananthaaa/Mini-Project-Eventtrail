@@ -64,7 +64,6 @@ function App() {
                   <Route path="rsvp-confirmation/:id" element={<RsvpConfirmation />} />
                   <Route path="navigate" element={<NavigatePage />} />
                   <Route path="campus-map" element={<FullCampusMap />} />
-                  <Route path="event-map" element={<StudentEventMap />} />
                   <Route path="clubs" element={<ClubDirectory />} />
                   <Route path="clubs/:id" element={<ClubProfile />} />
                   <Route path="profile" element={<StudentProfile />} />
@@ -86,7 +85,6 @@ function App() {
                 <Route path="/profile" element={<Navigate to="/student/profile" replace />} />
                 <Route path="/navigate" element={<Navigate to="/student/navigate" replace />} />
                 <Route path="/campus-map" element={<Navigate to="/student/campus-map" replace />} />
-                <Route path="/event-map" element={<Navigate to="/student/event-map" replace />} />
                 <Route path="/event/:id" element={<Navigate to="/student/events" replace />} />
 
               </Routes>
