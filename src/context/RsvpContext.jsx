@@ -1,7 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { fetchEvents, fetchVenues } from '../services/apiService';
-import fallbackEvents from '../data/events.json';
-import fallbackVenues from '../data/venues.json';
 
 export const RsvpContext = createContext();
 
@@ -11,7 +9,7 @@ export const RsvpProvider = ({ children }) => {
     if (saved) {
       try { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } catch(e) {}
     }
-    return fallbackEvents;
+    return [];
   });
 
   const [venues, setVenues] = useState(() => {
@@ -19,7 +17,7 @@ export const RsvpProvider = ({ children }) => {
     if (saved) {
       try { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } catch(e) {}
     }
-    return fallbackVenues;
+    return [];
   });
 
   const [userRsvps, setUserRsvps] = useState(() => {
@@ -41,23 +39,17 @@ export const RsvpProvider = ({ children }) => {
           fetchEvents(),
           fetchVenues()
         ]);
-        // Only use API data if it returned a non-empty array
-        if (Array.isArray(apiEvents) && apiEvents.length > 0) {
+        // Only use API data if it returned a non-empty array, else set empty
+        if (Array.isArray(apiEvents)) {
           setEvents(apiEvents);
-        } else {
-          console.warn('API returned empty events — using fallback data');
-          setEvents(fallbackEvents);
         }
-        if (Array.isArray(apiVenues) && apiVenues.length > 0) {
+        if (Array.isArray(apiVenues)) {
           setVenues(apiVenues);
-        } else {
-          console.warn('API returned empty venues — using fallback data');
-          setVenues(fallbackVenues);
         }
       } catch (error) {
-        console.warn('API unavailable — loading fallback data:', error.message);
-        setEvents(fallbackEvents);
-        setVenues(fallbackVenues);
+        console.error('API unavailable — failed to load events/venues:', error.message);
+        setEvents([]);
+        setVenues([]);
       } finally {
         setIsLoading(false);
       }

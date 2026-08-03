@@ -2,14 +2,13 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import { fetchClubs } from '../services/apiService';
-import fallbackClubs from '../data/clubs.json';
 import { Users, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Badge from '../components/ui/Badge';
 
 const ClubDirectory = () => {
   const navigate = useNavigate();
-  const [clubs, setClubs] = React.useState(fallbackClubs);
+  const [clubs, setClubs] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -17,14 +16,14 @@ const ClubDirectory = () => {
       setIsLoading(true);
       try {
         const data = await fetchClubs();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setClubs(data);
         } else {
-          setClubs(fallbackClubs);
+          setClubs([]);
         }
       } catch (error) {
-        console.warn('Failed to fetch clubs, using fallback:', error.message);
-        setClubs(fallbackClubs);
+        console.error('Failed to fetch clubs:', error.message);
+        setClubs([]);
       } finally {
         setIsLoading(false);
       }

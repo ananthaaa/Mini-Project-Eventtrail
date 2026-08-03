@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
 import { RsvpContext } from '../../context/RsvpContext';
 import { createVenue } from '../../services/apiService';
-import fallbackVenues from '../../data/venues.json';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Plus, Trash2, Save, MapPin, X } from 'lucide-react';
 import { Marker } from 'react-map-gl/mapbox';
@@ -15,7 +14,7 @@ const AdminVenueUpload = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
   const { events, venues } = useContext(RsvpContext);
-  const mockVenues = venues.length > 0 ? venues : fallbackVenues;
+  const mockVenues = venues;
 
   const eventId = searchParams.get('eventId') || (events[0]?.id || '');
   const [selectedEventId, setSelectedEventId] = useState(eventId);

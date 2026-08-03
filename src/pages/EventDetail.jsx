@@ -5,8 +5,6 @@ import PageShell from '../components/layout/PageShell';
 import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
 import { fetchSpeakers, fetchClubs } from '../services/apiService';
-import fallbackSpeakers from '../data/speakers.json';
-import fallbackClubs from '../data/clubs.json';
 import SeatMeter from '../components/ui/SeatMeter';
 import { Calendar, Clock, MapPin, ArrowLeft, Ticket, CheckCircle2, ChevronRight, Users } from 'lucide-react';
 
@@ -30,12 +28,12 @@ const EventDetail = () => {
           fetchSpeakers(),
           fetchClubs()
         ]);
-        setSpeakers(Array.isArray(apiSpeakers) && apiSpeakers.length > 0 ? apiSpeakers : fallbackSpeakers);
-        setClubs(Array.isArray(apiClubs) && apiClubs.length > 0 ? apiClubs : fallbackClubs);
+        setSpeakers(Array.isArray(apiSpeakers) ? apiSpeakers : []);
+        setClubs(Array.isArray(apiClubs) ? apiClubs : []);
       } catch (error) {
-        console.warn('Failed to load speakers/clubs, using fallback:', error.message);
-        setSpeakers(fallbackSpeakers);
-        setClubs(fallbackClubs);
+        console.error('Failed to load speakers/clubs:', error.message);
+        setSpeakers([]);
+        setClubs([]);
       } finally {
         setIsLoading(false);
       }
