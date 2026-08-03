@@ -2,11 +2,11 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleContext } from '../context/RoleContext';
-import { Zap, User, Mail, Lock, Hash, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { User, Mail, Lock, Hash, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 
 const SignupPage = () => {
-  const { signup, confirmSignup, login } = useContext(RoleContext);
+  const { signup, confirmSignup } = useContext(RoleContext);
   const navigate = useNavigate();
 
   const [step, setStep] = useState('signup'); // 'signup' | 'confirm'
@@ -87,16 +87,7 @@ const SignupPage = () => {
     }
   };
 
-  const handleQuickDemo = () => {
-    const userData = {
-      id: form.email || 'student-demo-1',
-      email: form.email || 'alex@campus.edu',
-      name: form.name || 'Alex Rivera (Demo)',
-      avatar: 'https://i.pravatar.cc/150?u=alex',
-    };
-    login('student', userData);
-    navigate('/student', { replace: true });
-  };
+
 
   const inputClass = (field) => 
     `w-full border-3 ${errors[field] ? 'border-red-500 bg-red-50' : 'border-black'} p-3 font-bold text-sm outline-none focus:bg-pastel-yellow transition-colors placeholder:text-black/40`;
@@ -237,16 +228,7 @@ const SignupPage = () => {
                 )}
               </Button>
 
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleQuickDemo}
-                  className="w-full border-3 border-black bg-pastel-yellow hover:bg-pastel-peach p-3 font-bold text-xs uppercase transition-colors neo-shadow-sm flex items-center justify-center gap-2"
-                >
-                  <Zap size={14} strokeWidth={3} />
-                  Quick Demo Signup (Offline/No-Auth)
-                </button>
-              </div>
+
             </form>
           </>
         ) : (

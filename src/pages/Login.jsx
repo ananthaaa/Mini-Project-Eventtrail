@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RoleContext } from '../context/RoleContext';
-import { Zap, Mail, Lock, ArrowRight, Eye, EyeOff, GraduationCap, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Eye, EyeOff, GraduationCap, ShieldCheck } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 
@@ -34,7 +34,7 @@ const LoginPage = () => {
       } else if (err.code === 'NotAuthorizedException' || err.name === 'NotAuthorizedException') {
         setError('Incorrect email or password.');
       } else if (err.code === 'UserNotFoundException' || err.name === 'UserNotFoundException') {
-        setError('User does not exist in Cognito. Try signing up or use Quick Demo Login below!');
+        setError('No account found with this email. Please sign up first.');
       } else {
         setError(err.message || 'Failed to sign in.');
       }
@@ -43,16 +43,7 @@ const LoginPage = () => {
     }
   };
 
-  const handleQuickDemo = () => {
-    const userData = {
-      id: email || (role === 'student' ? 'student-1' : 'admin-1'),
-      email: email || (role === 'student' ? 'alex@campus.edu' : 'admin@campus.edu'),
-      name: role === 'student' ? 'Alex Rivera (Demo)' : 'Sarah Chen (Demo)',
-      avatar: 'https://i.pravatar.cc/150?u=' + (role === 'student' ? 'alex' : 'sarah'),
-    };
-    login(role, userData);
-    navigate(role === 'admin' ? '/admin' : '/student', { replace: true });
-  };
+
 
   // Quick admin login — auto-fills pre-seeded admin credentials from .env.local (dev only)
   const handleQuickAdminLogin = async () => {
@@ -201,18 +192,9 @@ const LoginPage = () => {
             )}
           </Button>
 
-          <div className="pt-2 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleQuickDemo}
-              className="w-full border-3 border-black bg-pastel-yellow hover:bg-pastel-mint p-3 font-bold text-xs uppercase transition-colors neo-shadow-sm flex items-center justify-center gap-2"
-            >
-              <Zap size={14} strokeWidth={3} />
-              Quick Demo Login as {role === 'student' ? 'Student' : 'Admin'} (Offline/No-Auth)
-            </button>
-
-            {/* Quick Admin Login — only shown on Admin tab, uses pre-seeded Cognito credentials */}
-            {role === 'admin' && import.meta.env.VITE_ADMIN_EMAIL && (
+          {/* Quick Admin Login — only shown on Admin tab, uses pre-seeded Cognito credentials */}
+          {role === 'admin' && import.meta.env.VITE_ADMIN_EMAIL && (
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={handleQuickAdminLogin}
@@ -222,8 +204,8 @@ const LoginPage = () => {
                 <ShieldCheck size={14} strokeWidth={3} />
                 Quick Admin Login (Real Cognito)
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </form>
 
         {/* Signup link — only for student */}
