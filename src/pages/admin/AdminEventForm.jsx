@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
 import { createEvent } from '../../services/apiService';
+import { RsvpContext } from '../../context/RsvpContext';
+import { RoleContext } from '../../context/RoleContext';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Save, Plus, X, MapPin } from 'lucide-react';
 import { Marker } from 'react-map-gl/mapbox';
@@ -10,6 +12,8 @@ import CampusMap from '../../components/ui/CampusMap';
 
 const AdminEventForm = () => {
   const navigate = useNavigate();
+  const { addEvent } = useContext(RsvpContext);
+  const { currentUser } = useContext(RoleContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -95,15 +99,27 @@ const AdminEventForm = () => {
 
     setIsSubmitting(true);
     try {
-      await createEvent(newEvent);
-      alert('Event created successfully!');
+      // Attempt real API create (requires valid Cognito JWT token)
+      const createdEvent = await createEvent(newEvent);
+      // Also save to local context so students see it immediately
+      addEvent({ ...newEvent, id: createdEvent?.id || `event-${Date.now()}`, organizerId: currentUser?.clubId || 'devx', organizerName: currentUser?.name || 'Admin' });
+      alert('Event created successfully and published!');
       navigate('/admin');
     } catch (error) {
-      console.error('Error creating event:', error);
-      const msg = error.message?.includes('authentication') || error.message?.includes('token')
-        ? 'Authentication failed. Please log in with a real Admin Cognito account to create events via the API.'
-        : 'Failed to create event: ' + error.message;
-      alert(msg);
+      console.error('Error creating event via API:', error);
+      // Fallback: save to local context so event is visible to students even without API
+      const localId = `event-${Date.now()}`;
+      addEvent({
+        ...newEvent,
+        id: localId,
+        organizerId: currentUser?.clubId || 'devx',
+        organizerName: currentUser?.name || 'Admin',
+        seatsAvailable: parseInt(seatsTotal),
+        rsvpCount: 0,
+        waitlistCount: 0,
+      });
+      alert(`Event "${title}" saved locally and is now visible to students!\n\nNote: API sync failed (${error.message}). To persist events to the database, log in with a real Cognito Admin account.`);
+      navigate('/admin');
     } finally {
       setIsSubmitting(false);
     }

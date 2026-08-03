@@ -25,7 +25,7 @@ const fetchWithAuth = async (endpoint, options = {}) => {
 
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+    'Authorization': token,  // AWS JWT Authorizer expects raw token (no 'Bearer ' prefix)
     ...(options.headers || {})
   };
 
