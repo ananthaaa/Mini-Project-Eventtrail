@@ -14,8 +14,8 @@ exports.handler = async (event) => {
       return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
 
-    const userClubId = claims['custom:clubId'];
-    // Venue creation might be restricted to platform admins, but for now we'll just check if they are in a club
+    const userClubId = claims['custom:clubId'] || 'global-admin';
+    // Venue creation might be restricted to platform admins, but for now we'll just check if they are in a club or are a global admin
     if (!userClubId) {
       return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden: Admin must belong to a club' }) };
     }

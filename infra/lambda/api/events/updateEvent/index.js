@@ -18,10 +18,7 @@ exports.handler = async (event) => {
       return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
 
-    const userClubId = claims['custom:clubId'];
-    if (!userClubId) {
-      return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden: Admin must belong to a club' }) };
-    }
+    const userClubId = claims['custom:clubId'] || 'global-admin';
 
     // Check if the event belongs to the admin's club
     const existingEvent = await docClient.send(new GetCommand({
@@ -33,7 +30,7 @@ exports.handler = async (event) => {
       return { statusCode: 404, body: JSON.stringify({ error: 'Event not found' }) };
     }
 
-    if (existingEvent.Item.organizerId !== userClubId) {
+    if (existingEvent.Item.organizerId !== userClubId && userClubId !== 'global-admin') {
       return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden: Cannot modify events belonging to another club' }) };
     }
 

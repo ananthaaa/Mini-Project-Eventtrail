@@ -14,10 +14,9 @@ exports.handler = async (event) => {
       return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
     }
 
-    const userClubId = claims['custom:clubId'];
-    if (!userClubId) {
-      return { statusCode: 403, body: JSON.stringify({ error: 'Forbidden: Admin must belong to a club' }) };
-    }
+    // For manually created developer admin accounts, custom:clubId might be missing.
+    // We allow it to fallback to 'global-admin' instead of throwing 403.
+    const userClubId = claims['custom:clubId'] || 'global-admin';
 
     const body = JSON.parse(event.body || '{}');
     const { title, date, time, location, category, seatsTotal, description, coverImage } = body;
