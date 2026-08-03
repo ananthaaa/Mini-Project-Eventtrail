@@ -34,6 +34,14 @@ const AdminDashboard = () => {
             Reset Database
           </button>
           <Button
+            onClick={() => navigate('/admin/clubs/new')}
+            variant="secondary"
+            className="py-2.5 px-5 bg-white border-2 border-black"
+          >
+            <Users size={16} />
+            Create Club
+          </Button>
+          <Button
             onClick={() => navigate('/admin/event-form')}
             variant="primary"
             className="py-2.5 px-5"

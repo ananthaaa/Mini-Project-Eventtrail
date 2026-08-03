@@ -1,8 +1,8 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
-import { createEvent } from '../../services/apiService';
+import { createEvent, fetchClubs } from '../../services/apiService';
 import { RoleContext } from '../../context/RoleContext';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Save, Plus, X, MapPin } from 'lucide-react';
@@ -22,6 +22,22 @@ const AdminEventForm = () => {
   const [seatsTotal, setSeatsTotal] = useState(50);
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [organizerId, setOrganizerId] = useState('');
+  const [clubs, setClubs] = useState([]);
+
+  useEffect(() => {
+    const loadClubs = async () => {
+      try {
+        const data = await fetchClubs();
+        if (Array.isArray(data)) {
+          setClubs(data);
+        }
+      } catch (err) {
+        console.error('Failed to load clubs for dropdown:', err);
+      }
+    };
+    loadClubs();
+  }, []);
   
   const [scheduleItems, setScheduleItems] = useState([
     { time: '10:00 AM', title: 'Opening Remarks', desc: 'Introductions and startup briefing.' },
@@ -81,6 +97,7 @@ const AdminEventForm = () => {
     const newEvent = {
       title,
       coverImage: finalCover,
+      organizerId,
       date,
       time,
       category,
@@ -149,6 +166,19 @@ const AdminEventForm = () => {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Host Club (Organizer)</label>
+            <select
+              value={organizerId}
+              onChange={(e) => setOrganizerId(e.target.value)}
+              className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
+            >
+              <option value="">None (University Event)</option>
+              {clubs.map(club => (
+                <option key={club.id} value={club.id}>{club.name}</option>
+              ))}
+            </select>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Date</label>

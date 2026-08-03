@@ -10,11 +10,13 @@ import {
   Menu,
   X,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Users
 } from 'lucide-react';
 
 const navLinks = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { to: '/admin/clubs', label: 'Clubs', icon: Users },
   { to: '/admin/event-form', label: 'Create Event', icon: CalendarPlus },
   { to: '/admin/venues', label: 'Venues', icon: Building2 },
   { to: '/admin/venue-upload', label: 'Venue Upload', icon: Upload },

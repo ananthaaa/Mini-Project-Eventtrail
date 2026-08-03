@@ -22,6 +22,8 @@ export class DataLayerStack extends cdk.Stack {
   public readonly pathEdgesTable: dynamodb.Table;
   public readonly logGroup: logs.LogGroup;
   public readonly dashboard: cloudwatch.Dashboard;
+  public readonly membershipsTable: dynamodb.Table;
+  public readonly notificationsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: DataLayerStackProps) {
     super(scope, id, props);
@@ -40,6 +42,7 @@ export class DataLayerStack extends cdk.Stack {
       ...tableProps,
       tableName: `EventTrail-Events-${envName}`,
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      stream: dynamodb.StreamViewType.NEW_IMAGE, // Enables fan-out trigger
     });
 
     this.eventsTable.addGlobalSecondaryIndex({
@@ -102,6 +105,29 @@ export class DataLayerStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    // 7. Memberships Table
+    this.membershipsTable = new dynamodb.Table(this, 'MembershipsTable', {
+      ...tableProps,
+      tableName: `EventTrail-Memberships-${envName}`,
+      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING }, // userId
+      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING }, // clubId
+    });
+
+    this.membershipsTable.addGlobalSecondaryIndex({
+      indexName: 'ClubMembersIndex',
+      partitionKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    // 8. Notifications Table
+    this.notificationsTable = new dynamodb.Table(this, 'NotificationsTable', {
+      ...tableProps,
+      tableName: `EventTrail-Notifications-${envName}`,
+      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING }, // userId
+      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING }, // timestamp#notificationId
+    });
+
     // 7a. PathNodes Table (Walkway Graph Nodes)
     this.pathNodesTable = new dynamodb.Table(this, 'PathNodesTable', {
       ...tableProps,
@@ -143,6 +169,8 @@ export class DataLayerStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'SpeakersTableName', { value: this.speakersTable.tableName });
     new cdk.CfnOutput(this, 'UsersTableName', { value: this.usersTable.tableName });
     new cdk.CfnOutput(this, 'RSVPsTableName', { value: this.rsvpsTable.tableName });
+    new cdk.CfnOutput(this, 'MembershipsTableName', { value: this.membershipsTable.tableName });
+    new cdk.CfnOutput(this, 'NotificationsTableName', { value: this.notificationsTable.tableName });
     new cdk.CfnOutput(this, 'PathNodesTableName', { value: this.pathNodesTable.tableName });
     new cdk.CfnOutput(this, 'PathEdgesTableName', { value: this.pathEdgesTable.tableName });
     new cdk.CfnOutput(this, 'LogGroupName', { value: this.logGroup.logGroupName });

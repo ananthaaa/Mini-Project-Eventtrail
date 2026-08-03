@@ -15,6 +15,7 @@ import {
   MapPin
 } from 'lucide-react';
 import Badge from '../ui/Badge';
+import { NotificationBell } from '../ui/NotificationBell';
 
 const navLinks = [
   { to: '/student', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -75,6 +76,7 @@ const StudentLayout = () => {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
+            <NotificationBell />
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">
                 <span className="font-display font-bold uppercase text-sm truncate max-w-[100px] lg:max-w-[150px]">

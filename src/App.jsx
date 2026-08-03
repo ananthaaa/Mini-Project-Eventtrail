@@ -36,6 +36,8 @@ import StudentProfile from './pages/StudentProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminEventForm from './pages/admin/AdminEventForm';
 import AdminVenueUpload from './pages/admin/AdminVenueUpload';
+import AdminClubList from './pages/admin/AdminClubList';
+import AdminClubUpload from './pages/admin/AdminClubUpload';
 import AdminRoster from './pages/admin/AdminRoster';
 import AdminVenueList from './pages/admin/AdminVenueList';
 
@@ -73,9 +75,12 @@ function App() {
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
                   <Route path="event-form" element={<AdminEventForm />} />
+                  <Route path="event-form/:id" element={<AdminEventForm />} />
                   <Route path="event/:id/roster" element={<AdminRoster />} />
                   <Route path="venues" element={<AdminVenueList />} />
                   <Route path="venue-upload" element={<AdminVenueUpload />} />
+                  <Route path="clubs" element={<AdminClubList />} />
+                  <Route path="clubs/new" element={<AdminClubUpload />} />
                 </Route>
 
                 {/* ─── LEGACY REDIRECTS ─── */}

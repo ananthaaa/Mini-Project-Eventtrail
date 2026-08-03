@@ -59,8 +59,8 @@ const ClubDirectory = () => {
           >
             {/* Visual Header Grid Panel */}
             <div className={`h-40 bg-pastel-yellow border-b-3 border-black flex items-center justify-center relative bg-grid-dots`}>
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center font-display font-black text-3xl text-black z-10 border-3 border-black shadow-[4px_4px_0px_0px_#000] group-hover:scale-110 transition-transform">
-                {club.logo}
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center font-display font-black text-3xl text-black z-10 border-3 border-black shadow-[4px_4px_0px_0px_#000] group-hover:scale-110 transition-transform overflow-hidden">
+                {club.logoUrl ? <img src={club.logoUrl} alt={club.name} className="w-full h-full object-cover" /> : club.name?.substring(0, 2).toUpperCase()}
               </div>
             </div>
 
@@ -77,7 +77,7 @@ const ClubDirectory = () => {
 
               <div className="border-t-3 border-black border-dashed pt-4 flex items-center justify-between mt-auto">
                 <Badge variant="mint" className="shadow-[2px_2px_0px_0px_#000]">
-                  <Users size={14} className="mr-1 inline" /> {club.memberIds.length}
+                  <Users size={14} className="mr-1 inline" /> {(club.memberIds || []).length}
                 </Badge>
                 
                 <div className="w-10 h-10 bg-accent-yellow border-2 border-black flex items-center justify-center group-hover:bg-black group-hover:text-accent-yellow transition-colors shadow-[2px_2px_0px_0px_#000]">

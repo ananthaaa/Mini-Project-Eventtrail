@@ -18,6 +18,8 @@ export interface ApiStackProps extends cdk.StackProps {
   readonly speakersTable: dynamodb.Table;
   readonly pathNodesTable: dynamodb.Table;
   readonly pathEdgesTable: dynamodb.Table;
+  readonly membershipsTable: dynamodb.Table;
+  readonly notificationsTable: dynamodb.Table;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -72,9 +74,112 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(5),
       environment: {
         CLUBS_TABLE_NAME: props.clubsTable.tableName,
+        MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
       },
     });
     props.clubsTable.grantReadData(getClubLambda);
+    props.membershipsTable.grantReadData(getClubLambda);
+
+
+
+    const getNotificationsLambda = new lambda.Function(this, 'GetNotificationsFunction', {
+      functionName: `EventTrail-GetNotifications-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/users/getNotifications')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(5),
+      environment: {
+        NOTIFICATIONS_TABLE_NAME: props.notificationsTable.tableName,
+      },
+    });
+    props.notificationsTable.grantReadData(getNotificationsLambda);
+
+    const markNotificationReadLambda = new lambda.Function(this, 'MarkNotificationReadFunction', {
+      functionName: `EventTrail-MarkNotificationRead-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/users/markNotificationRead')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(5),
+      environment: {
+        NOTIFICATIONS_TABLE_NAME: props.notificationsTable.tableName,
+      },
+    });
+    props.notificationsTable.grantReadWriteData(markNotificationReadLambda);
+
+    const onEventPublishLambda = new lambda.Function(this, 'OnEventPublishFunction', {
+      functionName: `EventTrail-OnEventPublish-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/events/onEventPublish')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
+        NOTIFICATIONS_TABLE_NAME: props.notificationsTable.tableName,
+      },
+    });
+    props.membershipsTable.grantReadData(onEventPublishLambda);
+    props.notificationsTable.grantReadWriteData(onEventPublishLambda);
+    props.eventsTable.grantStreamRead(onEventPublishLambda);
+
+    onEventPublishLambda.addEventSourceMapping('EventStream', {
+      eventSourceArn: props.eventsTable.tableStreamArn!,
+      startingPosition: lambda.StartingPosition.TRIM_HORIZON,
+      batchSize: 10,
+    });
+
+    const createClubLambda = new lambda.Function(this, 'CreateClubFunction', {
+      functionName: `EventTrail-CreateClub-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/clubs/createClub')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        CLUBS_TABLE_NAME: props.clubsTable.tableName,
+        MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
+      },
+    });
+    props.clubsTable.grantReadWriteData(createClubLambda);
+    props.membershipsTable.grantReadWriteData(createClubLambda);
+
+    const joinClubLambda = new lambda.Function(this, 'JoinClubFunction', {
+      functionName: `EventTrail-JoinClub-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/clubs/joinClub')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(5),
+      environment: {
+        MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
+      },
+    });
+    props.membershipsTable.grantReadWriteData(joinClubLambda);
+
+    const leaveClubLambda = new lambda.Function(this, 'LeaveClubFunction', {
+      functionName: `EventTrail-LeaveClub-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/clubs/leaveClub')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(5),
+      environment: {
+        MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
+      },
+    });
+    props.membershipsTable.grantReadWriteData(leaveClubLambda);
+
+    const deleteClubLambda = new lambda.Function(this, 'DeleteClubFunction', {
+      functionName: `EventTrail-DeleteClub-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/clubs/deleteClub')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(15),
+      environment: {
+        CLUBS_TABLE_NAME: props.clubsTable.tableName,
+        MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
+        EVENTS_TABLE_NAME: props.eventsTable.tableName,
+      },
+    });
+    props.clubsTable.grantReadWriteData(deleteClubLambda);
+    props.membershipsTable.grantReadWriteData(deleteClubLambda);
+    props.eventsTable.grantReadWriteData(deleteClubLambda);
 
     const listVenuesLambda = new lambda.Function(this, 'ListVenuesFunction', {
       functionName: `EventTrail-ListVenues-${envName}`,
@@ -261,5 +366,17 @@ export class ApiStack extends cdk.Stack {
     addAuthRoute('DELETE /events/{id}', deleteEventLambda);
     addAuthRoute('POST /venues', createVenueLambda);
     addAuthRoute('GET /upload-url', getUploadUrlLambda);
+    
+    // Clubs
+    addAuthRoute('POST /clubs', createClubLambda);
+    addAuthRoute('POST /clubs/{id}/join', joinClubLambda);
+    addAuthRoute('DELETE /clubs/{id}/leave', leaveClubLambda);
+    addAuthRoute('DELETE /clubs/{id}', deleteClubLambda);
+
+
+    // Users / Notifications
+    addAuthRoute('GET /users/{id}/notifications', getNotificationsLambda);
+    addAuthRoute('PATCH /notifications/{id}/read', markNotificationReadLambda);
+
   }
 }

@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { RoleContext } from '../../context/RoleContext';
 import { NavModeContext } from '../../context/NavModeContext';
+import { NotificationBell } from '../ui/NotificationBell';
 import { Shield, User, Compass, MapPin, Grid, Layers, LogIn } from 'lucide-react';
 
 const NavBar = () => {
@@ -80,6 +81,8 @@ const NavBar = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {isLoggedIn && <NotificationBell />}
+            
             {isStudent && isLoggedIn && (
               <Link to="/profile" className="flex items-center justify-center w-10 h-10 rounded-full bg-bg-surface border border-border-subtle text-text-secondary hover:text-accent hover:border-accent transition-colors">
                 <User size={18} />

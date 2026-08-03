@@ -42,12 +42,39 @@ export const fetchEventById = async (id) => {
   return fetchFromApi(`/events/${id}`);
 };
 
+// --- Clubs ---
+
 export const fetchClubs = async () => {
-  return fetchFromApi('/clubs');
+  return fetchWithAuth(`/clubs`);
 };
 
 export const fetchClubById = async (id) => {
-  return fetchFromApi(`/clubs/${id}`);
+  return fetchWithAuth(`/clubs/${id}`);
+};
+
+export const createClub = async (clubData) => {
+  return fetchWithAuth(`/clubs`, {
+    method: 'POST',
+    body: JSON.stringify(clubData)
+  });
+};
+
+export const joinClub = async (id) => {
+  return fetchWithAuth(`/clubs/${id}/join`, {
+    method: 'POST'
+  });
+};
+
+export const leaveClub = async (id) => {
+  return fetchWithAuth(`/clubs/${id}/leave`, {
+    method: 'DELETE'
+  });
+};
+
+export const deleteClub = async (id) => {
+  return fetchWithAuth(`/clubs/${id}`, {
+    method: 'DELETE'
+  });
 };
 
 export const fetchVenues = async () => {
@@ -96,6 +123,26 @@ export const updateEvent = async (id, eventData) => {
 export const deleteEvent = async (id) => {
   return fetchWithAuth(`/events/${id}`, {
     method: 'DELETE'
+  });
+};
+
+export const getPresignedUrl = async (fileName, fileType) => {
+  return fetchWithAuth(`${API_BASE_URL}/media/presigned-url`, {
+    method: 'POST',
+    body: JSON.stringify({ fileName, fileType })
+  });
+};
+
+// --- Notifications ---
+
+export const getNotifications = async (userId) => {
+  return fetchWithAuth(`/users/${userId}/notifications`);
+};
+
+export const markNotificationRead = async (notificationId) => {
+  return fetchWithAuth(`/notifications/${notificationId}/read`, {
+    method: 'PATCH',
+    body: JSON.stringify({ notificationId })
   });
 };
 
