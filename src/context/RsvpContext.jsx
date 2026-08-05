@@ -1,24 +1,13 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { fetchEvents, fetchVenues } from '../services/apiService';
 
 export const RsvpContext = createContext();
 
 export const RsvpProvider = ({ children }) => {
-  const [events, setEvents] = useState(() => {
-    const saved = localStorage.getItem('cp_events');
-    if (saved) {
-      try { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } catch(e) {}
-    }
-    return [];
-  });
-
-  const [venues, setVenues] = useState(() => {
-    const saved = localStorage.getItem('cp_venues');
-    if (saved) {
-      try { const parsed = JSON.parse(saved); if (Array.isArray(parsed) && parsed.length > 0) return parsed; } catch(e) {}
-    }
-    return [];
-  });
+  // Events and venues are NEVER seeded from localStorage — always fetched fresh from the API.
+  // This ensures deleted/created events by admin are always reflected correctly.
+  const [events, setEvents] = useState([]);
+  const [venues, setVenues] = useState([]);
 
   const [userRsvps, setUserRsvps] = useState(() => {
     const saved = localStorage.getItem('cp_user_rsvps');
@@ -27,45 +16,38 @@ export const RsvpProvider = ({ children }) => {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load from API on mount if not in localStorage, or optionally just sync them.
-  // We'll sync from API if they are empty, but since we are moving to backend,
-  // we should always fetch the latest from the backend and override local cache 
-  // (unless we want offline first, but the plan implies hitting the API).
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const [apiEvents, apiVenues] = await Promise.all([
-          fetchEvents(),
-          fetchVenues()
-        ]);
-        // Only use API data if it returned a non-empty array, else set empty
-        if (Array.isArray(apiEvents)) {
-          setEvents(apiEvents);
-        }
-        if (Array.isArray(apiVenues)) {
-          setVenues(apiVenues);
-        }
-      } catch (error) {
-        console.error('API unavailable — failed to load events/venues:', error.message);
-        setEvents([]);
-        setVenues([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadData();
+  /**
+   * Fetches the latest events and venues from the real API backend.
+   * Returns an empty array if the API returns empty — this is the correct
+   * state when no events have been created yet (not a fallback to demo data).
+   */
+  const refreshEvents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [apiEvents, apiVenues] = await Promise.all([
+        fetchEvents(),
+        fetchVenues()
+      ]);
+      // Always set whatever the API returns — even an empty array means
+      // "no events created yet" and is the correct state to display.
+      setEvents(Array.isArray(apiEvents) ? apiEvents : []);
+      setVenues(Array.isArray(apiVenues) ? apiVenues : []);
+    } catch (error) {
+      console.error('Failed to load events/venues from API:', error.message);
+      // On API error, show empty — do NOT fall back to demo/cached data.
+      setEvents([]);
+      setVenues([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
+  // Fetch fresh data from the API on every mount — no localStorage seed.
   useEffect(() => {
-    localStorage.setItem('cp_events', JSON.stringify(events));
-  }, [events]);
+    refreshEvents();
+  }, [refreshEvents]);
 
-  useEffect(() => {
-    localStorage.setItem('cp_venues', JSON.stringify(venues));
-  }, [venues]);
-
+  // Only persist RSVP state locally (user-specific, not admin-managed data).
   useEffect(() => {
     localStorage.setItem('cp_user_rsvps', JSON.stringify(userRsvps));
   }, [userRsvps]);
@@ -86,13 +68,13 @@ export const RsvpProvider = ({ children }) => {
             return {
               ...evt,
               seatsAvailable: evt.seatsAvailable - 1,
-              rsvpCount: evt.rsvpCount + 1,
+              rsvpCount: (evt.rsvpCount || 0) + 1,
             };
           } else {
             status = 'Waitlisted';
             return {
               ...evt,
-              waitlistCount: evt.waitlistCount + 1,
+              waitlistCount: (evt.waitlistCount || 0) + 1,
             };
           }
         }
@@ -113,34 +95,6 @@ export const RsvpProvider = ({ children }) => {
     return { rsvpStatus: status, ticketNumber };
   };
 
-  const addEvent = (newEvent) => {
-    const eventWithDefaults = {
-      id: newEvent.id || `event-${Date.now()}`,
-      title: newEvent.title,
-      coverImage: newEvent.coverImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop',
-      date: newEvent.date,
-      time: newEvent.time,
-      faculty: newEvent.faculty || 'General',
-      category: newEvent.category || 'Academic',
-      organizerId: newEvent.organizerId || 'devx',
-      organizerName: newEvent.organizerName || 'DevX Guild',
-      seatsTotal: parseInt(newEvent.seatsTotal) || 50,
-      seatsAvailable: parseInt(newEvent.seatsTotal) || 50,
-      rsvpCount: 0,
-      waitlistCount: 0,
-      venueId: newEvent.venueId || 'science-hall-a',
-      speakerIds: newEvent.speakerIds || [],
-      description: newEvent.description || '',
-      schedule: newEvent.schedule || [{ time: '10:00 AM', title: 'Session Begins', desc: 'Introductions and startup' }]
-    };
-
-    setEvents((prev) => [eventWithDefaults, ...prev]);
-  };
-
-  const deleteEvent = (eventId) => {
-    setEvents((prev) => prev.filter(e => e.id !== eventId));
-  };
-
   const addVenue = (newVenue) => {
     setVenues((prev) => [newVenue, ...prev]);
   };
@@ -154,20 +108,19 @@ export const RsvpProvider = ({ children }) => {
   };
 
   const clearAllLocalData = () => {
-    localStorage.removeItem('cp_events');
-    localStorage.removeItem('cp_venues');
     localStorage.removeItem('cp_user_rsvps');
-    setEvents([]);
-    setVenues([]);
     setUserRsvps({});
+    // Re-fetch from API to get the true current state
+    refreshEvents();
   };
 
   return (
     <RsvpContext.Provider value={{ 
       events, venues, userRsvps, isLoading,
-      submitRsvp, addEvent, deleteEvent, 
-      addVenue, updateVenue, deleteVenue, 
-      clearAllLocalData 
+      submitRsvp,
+      addVenue, updateVenue, deleteVenue,
+      clearAllLocalData,
+      refreshEvents,
     }}>
       {children}
     </RsvpContext.Provider>

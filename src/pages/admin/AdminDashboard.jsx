@@ -1,15 +1,17 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PageShell from '../../components/layout/PageShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { RsvpContext } from '../../context/RsvpContext';
-import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2 } from 'lucide-react';
+import { deleteEvent as apiDeleteEvent } from '../../services/apiService';
+import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Loader2 } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { events, deleteEvent, clearAllLocalData } = useContext(RsvpContext);
+  const { events, clearAllLocalData, refreshEvents } = useContext(RsvpContext);
   const navigate = useNavigate();
+  const [deletingId, setDeletingId] = useState(null);
 
   // Compute metrics
   const totalEvents = events.length;
@@ -151,16 +153,25 @@ const AdminDashboard = () => {
                       Waypoints
                     </button>
                     <button
-                      onClick={() => {
-                        if(window.confirm('Are you sure you want to delete this event?')) {
-                          deleteEvent(evt.id);
+                      disabled={deletingId === evt.id}
+                      onClick={async () => {
+                        if (!window.confirm('Are you sure you want to permanently delete this event from the database?')) return;
+                        setDeletingId(evt.id);
+                        try {
+                          await apiDeleteEvent(evt.id);
+                          await refreshEvents();
+                        } catch (err) {
+                          console.error('Failed to delete event:', err);
+                          alert('Delete failed: ' + err.message);
+                        } finally {
+                          setDeletingId(null);
                         }
                       }}
-                      className="p-2 border-2 border-black bg-red-100 hover:bg-red-500 hover:text-white transition-all neo-shadow-sm active:translate-y-[1px] active:neo-shadow-sm inline-flex items-center gap-1"
+                      className="p-2 border-2 border-black bg-red-100 hover:bg-red-500 hover:text-white transition-all neo-shadow-sm active:translate-y-[1px] active:neo-shadow-sm inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Delete Event"
                     >
-                      <Trash2 size={12} />
-                      Delete
+                      {deletingId === evt.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                      {deletingId === evt.id ? 'Deleting...' : 'Delete'}
                     </button>
                   </td>
                 </tr>

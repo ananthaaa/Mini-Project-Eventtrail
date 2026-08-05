@@ -126,6 +126,10 @@ export const RoleProvider = ({ children }) => {
     } catch (err) {
       console.warn('Cognito signOut error:', err);
     }
+    // Clear stale event/venue cache so no demo data leaks back in before the
+    // next API fetch on fresh login.
+    localStorage.removeItem('cp_events');
+    localStorage.removeItem('cp_venues');
     setIsLoggedIn(false);
     setCurrentUser(null);
     setCurrentRole('student');

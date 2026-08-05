@@ -1,14 +1,12 @@
-import React, { useContext, useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import { RsvpContext } from '../context/RsvpContext';
 import { fetchEvents } from '../services/apiService';
 import { Calendar, Search, MapPin, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
 const EventDiscovery = () => {
-  const { events } = useContext(RsvpContext);
   const navigate = useNavigate();
   const [apiEvents, setApiEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,20 +33,19 @@ const EventDiscovery = () => {
         if (selectedCategory !== 'All') params.category = selectedCategory;
         
         const data = await fetchEvents(params);
-        if (Array.isArray(data) && data.length > 0) {
-          setApiEvents(data);
-        } else {
-          setApiEvents(events); // Fallback to context events (includes local JSON)
-        }
+        // Always display what the API returns — including empty array.
+        // Do NOT fall back to demo/local data.
+        setApiEvents(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.warn('API fetch failed, falling back to context events:', error.message);
-        setApiEvents(events); // Fallback to context events (includes local JSON)
+        console.warn('API fetch failed:', error.message);
+        // On error, show empty rather than injecting demo data.
+        setApiEvents([]);
       } finally {
         setIsLoading(false);
       }
     };
     loadFilteredEvents();
-  }, [selectedFaculty, selectedCategory, events]);
+  }, [selectedFaculty, selectedCategory]);
 
   const filteredEvents = useMemo(() => {
     return apiEvents.filter((evt) => {

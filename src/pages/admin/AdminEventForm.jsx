@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
 import { createEvent, fetchClubs } from '../../services/apiService';
 import { RoleContext } from '../../context/RoleContext';
+import { RsvpContext } from '../../context/RsvpContext';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Save, Plus, X, MapPin } from 'lucide-react';
 import { Marker } from 'react-map-gl/mapbox';
@@ -12,6 +13,7 @@ import CampusMap from '../../components/ui/CampusMap';
 const AdminEventForm = () => {
   const navigate = useNavigate();
   const { currentUser } = useContext(RoleContext);
+  const { refreshEvents } = useContext(RsvpContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -115,6 +117,8 @@ const AdminEventForm = () => {
     setIsSubmitting(true);
     try {
       await createEvent(newEvent);
+      // Sync RsvpContext so the student home/discovery pages show the new event immediately
+      await refreshEvents();
       alert('Event created successfully and published to live backend!');
       navigate('/admin');
     } catch (error) {
