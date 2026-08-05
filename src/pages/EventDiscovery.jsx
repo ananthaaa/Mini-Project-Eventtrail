@@ -51,9 +51,9 @@ const EventDiscovery = () => {
     return apiEvents.filter((evt) => {
       // 1. Search Query
       const matchesSearch =
-        evt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        evt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        evt.organizerName.toLowerCase().includes(searchQuery.toLowerCase());
+        (evt.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (evt.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (evt.organizerName || '').toLowerCase().includes(searchQuery.toLowerCase());
 
       // 2. Date Filter
       let matchesDate = true;
