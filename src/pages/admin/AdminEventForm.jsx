@@ -89,8 +89,8 @@ const AdminEventForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !date || !time || !location) {
-      alert('Please fill out all required fields including Location.');
+    if (!title || !date || !time) {
+      alert('Please fill out all required fields (Title, Date, Time).');
       return;
     }
 
@@ -106,7 +106,7 @@ const AdminEventForm = () => {
       organizerId,
       date,
       time,
-      location,
+      location: location || 'TBD',
       category,
       faculty,
       seatsTotal: parseInt(seatsTotal),
@@ -246,9 +246,8 @@ const AdminEventForm = () => {
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Science Hall A"
+                placeholder="e.g. Science Hall A (Optional)"
                 className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-                required
               />
             </div>
 

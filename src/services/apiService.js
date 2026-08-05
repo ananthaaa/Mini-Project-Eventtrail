@@ -7,7 +7,12 @@ const fetchFromApi = async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
     const response = await fetch(url, options);
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      let errorMsg = response.statusText;
+      try {
+        const errBody = await response.json();
+        if (errBody.error) errorMsg = errBody.error;
+      } catch (e) {}
+      throw new Error(`API error ${response.status}: ${errorMsg}`);
     }
     return await response.json();
   } catch (error) {
