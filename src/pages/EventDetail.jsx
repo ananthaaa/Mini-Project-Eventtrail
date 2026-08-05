@@ -64,7 +64,7 @@ const EventDetail = () => {
     );
   }
 
-  const eventSpeakers = speakers.filter((spk) => event.speakerIds.includes(spk.id));
+  const eventSpeakers = speakers.filter((spk) => (event.speakerIds || []).includes(spk.id));
   const club = clubs.find((c) => c.id === event.organizerId);
   const userRsvp = userRsvps[event.id];
 
@@ -137,7 +137,7 @@ const EventDetail = () => {
             <div className="bg-white border-3 border-black p-8 neo-shadow h-full">
               <h2 className="font-display font-black text-2xl text-black uppercase mb-6">Schedule Timeline</h2>
               <div className="space-y-6 border-l-4 border-black ml-3 pl-6 relative">
-                {event.schedule.map((item, idx) => (
+                {(event.schedule || []).map((item, idx) => (
                   <div key={idx} className="relative">
                     <span className="absolute -left-[35px] top-1 w-4 h-4 bg-pastel-yellow border-3 border-black rounded-none" />
                     <span className="bg-black text-white px-2 py-0.5 text-xs font-black tracking-widest uppercase inline-block mb-2">{item.time}</span>
