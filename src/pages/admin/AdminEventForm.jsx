@@ -21,7 +21,6 @@ const AdminEventForm = () => {
   const [time, setTime] = useState('10:00 AM - 01:00 PM');
   const [category, setCategory] = useState('Tech');
   const [faculty, setFaculty] = useState('Science');
-  const [location, setLocation] = useState('');
   const [seatsTotal, setSeatsTotal] = useState(50);
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState('');
@@ -106,17 +105,11 @@ const AdminEventForm = () => {
       organizerId,
       date,
       time,
-      location: location || 'TBD',
       category,
       faculty,
       seatsTotal: parseInt(seatsTotal),
       description,
-      schedule: scheduleItems,
-      locationDetails: {
-        entranceLat: mapPosition.lat,
-        entranceLng: mapPosition.lng,
-        indoorSteps
-      }
+      schedule: scheduleItems
     };
 
     setIsSubmitting(true);
@@ -241,17 +234,6 @@ const AdminEventForm = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Location Name</label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Science Hall A (Optional)"
-                className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Total Seat Capacity</label>
               <input
                 type="number"
@@ -334,76 +316,6 @@ const AdminEventForm = () => {
                       className="w-full bg-white border-3 border-black px-3 py-2 text-black/70 font-bold focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
                     />
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t border-border-subtle pt-8">
-            <h2 className="font-display font-bold text-2xl text-text-primary mb-4">Location Settings</h2>
-            
-            <div className="bg-bg-primary border border-border-subtle rounded-xl overflow-hidden mb-6">
-              <div className="p-4 border-b border-border-subtle flex justify-between items-center bg-bg-surface">
-                <span className="font-medium text-text-primary flex items-center gap-2">
-                  <MapPin size={18} className="text-accent" />
-                  Building Entrance Pin
-                </span>
-                <span className="text-sm text-text-secondary font-mono">
-                  {mapPosition.lat.toFixed(6)}, {mapPosition.lng.toFixed(6)}
-                </span>
-              </div>
-              <div className="h-80 w-full relative z-0">
-                <CampusMap onLocationSelect={setMapPosition}>
-                  {mapPosition && (
-                    <Marker 
-                      longitude={mapPosition.lng} 
-                      latitude={mapPosition.lat} 
-                      draggable={true} 
-                      onDragEnd={(e) => setMapPosition({ lat: e.lngLat.lat, lng: e.lngLat.lng })}
-                    >
-                      <div className="w-6 h-6 bg-[#FFDB58] border-3 border-black rounded-full shadow-[2px_2px_0px_0px_#000] cursor-move flex items-center justify-center font-black text-[10px] text-black">
-                        ★
-                      </div>
-                    </Marker>
-                  )}
-                </CampusMap>
-              </div>
-              <div className="p-4 text-sm text-text-secondary">
-                Click anywhere on the map to set the entrance marker. Drag the marker to fine-tune its position.
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-black text-black uppercase tracking-wider">Indoor Directions</label>
-                <button
-                  type="button"
-                  onClick={handleAddIndoorStep}
-                  className="flex items-center gap-2 text-sm font-black bg-pastel-mint border-3 border-black hover:-translate-y-1 text-black px-4 py-2 uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] transition-all"
-                >
-                  <Plus size={14} /> Add Step
-                </button>
-              </div>
-
-              {indoorSteps.map((step, idx) => (
-                <div key={idx} className="flex gap-4 items-center bg-bg-primary border border-border-subtle p-3 rounded-xl">
-                  <span className="font-bold text-text-tertiary w-6 text-right">{idx + 1}.</span>
-                  <input
-                    type="text"
-                    value={step}
-                    onChange={(e) => handleIndoorStepChange(idx, e.target.value)}
-                    placeholder="Describe the step..."
-                    className="grow bg-transparent border-none text-sm text-text-primary focus:outline-none"
-                  />
-                  {indoorSteps.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveIndoorStep(idx)}
-                      className="text-text-tertiary hover:text-red-500 transition-colors p-1"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
                 </div>
               ))}
             </div>

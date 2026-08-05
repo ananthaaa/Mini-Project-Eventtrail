@@ -21,7 +21,7 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || '{}');
     const { title, date, time, location, category, seatsTotal, description, coverImage } = body;
 
-    if (!title || !date || !time || !location || !category || seatsTotal === undefined) {
+    if (!title || !date || !time || !category || seatsTotal === undefined) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
     }
 
