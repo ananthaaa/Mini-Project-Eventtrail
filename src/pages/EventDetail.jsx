@@ -4,34 +4,41 @@ import { motion } from 'framer-motion';
 import PageShell from '../components/layout/PageShell';
 import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
-import { fetchSpeakers, fetchClubs } from '../services/apiService';
+import { fetchSpeakers, fetchClubs, fetchEventById } from '../services/apiService';
 import SeatMeter from '../components/ui/SeatMeter';
 import { Calendar, Clock, MapPin, ArrowLeft, Ticket, CheckCircle2, ChevronRight, Users } from 'lucide-react';
 
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { events, userRsvps, submitRsvp } = useContext(RsvpContext);
+  const { userRsvps, submitRsvp } = useContext(RsvpContext);
   const { addNotification } = useContext(NotificationContext);
 
-  const event = events.find((e) => e.id === id);
-
+  const [event, setEvent] = React.useState(null);
   const [speakers, setSpeakers] = React.useState([]);
   const [clubs, setClubs] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [fetchError, setFetchError] = React.useState(false);
 
   React.useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
+      setFetchError(false);
       try {
-        const [apiSpeakers, apiClubs] = await Promise.all([
+        // We now fetch the specific event by ID along with reference data
+        const [apiEvent, apiSpeakers, apiClubs] = await Promise.all([
+          fetchEventById(id),
           fetchSpeakers(),
           fetchClubs()
         ]);
+        
+        setEvent(apiEvent);
         setSpeakers(Array.isArray(apiSpeakers) ? apiSpeakers : []);
         setClubs(Array.isArray(apiClubs) ? apiClubs : []);
       } catch (error) {
-        console.error('Failed to load speakers/clubs:', error.message);
+        console.error('Failed to load event details:', error.message);
+        setFetchError(true);
+        setEvent(null);
         setSpeakers([]);
         setClubs([]);
       } finally {
@@ -39,14 +46,14 @@ const EventDetail = () => {
       }
     };
     loadData();
-  }, []);
+  }, [id]);
 
-  if (isLoading || !event) {
+  if (isLoading || fetchError || !event) {
     return (
       <PageShell>
         <div className="max-w-md mx-auto text-center mt-20">
           <h3 className="font-display font-bold text-3xl text-text-primary mb-4">
-            {isLoading ? "Loading..." : "Event Not Found"}
+            {isLoading ? "Loading Event Details..." : "Event Not Found"}
           </h3>
           {!isLoading && (
             <>
@@ -66,7 +73,7 @@ const EventDetail = () => {
 
   const eventSpeakers = speakers.filter((spk) => (event.speakerIds || []).includes(spk.id));
   const club = clubs.find((c) => c.id === event.organizerId);
-  const userRsvp = userRsvps[event.id];
+  const userRsvp = (userRsvps || {})[event.id];
 
   const handleRsvpAction = () => {
     if (userRsvp) {
