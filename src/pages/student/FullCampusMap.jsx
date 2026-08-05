@@ -114,7 +114,7 @@ const FullCampusMap = () => {
                 >
                   {nodeList.map((n) => (
                     <option key={n.id} value={n.id}>
-                      {n.label || n.id} ({n.type.toUpperCase()})
+                      {n.label || n.id} ({(n.type || 'node').toUpperCase()})
                     </option>
                   ))}
                 </select>
@@ -137,7 +137,7 @@ const FullCampusMap = () => {
                 >
                   {nodeList.map((n) => (
                     <option key={n.id} value={n.id}>
-                      {n.label || n.id} ({n.type.toUpperCase()})
+                      {n.label || n.id} ({(n.type || 'node').toUpperCase()})
                     </option>
                   ))}
                 </select>

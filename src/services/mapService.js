@@ -5,10 +5,10 @@ export async function fetchPathNodes() {
   try {
     const nodesArr = await apiFetchPathNodes();
     if (Array.isArray(nodesArr) && nodesArr.length > 0) {
-      // Convert DynamoDB array to { nodeId: { lat, lng } } object
       const nodesObj = {};
       nodesArr.forEach(node => {
-        nodesObj[node.nodeId] = { lat: node.lat, lng: node.lng };
+        // Copy all properties (including type, label) from the API response
+        nodesObj[node.nodeId] = { ...node };
       });
       return nodesObj;
     }
