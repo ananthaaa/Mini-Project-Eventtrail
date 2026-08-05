@@ -79,9 +79,6 @@ const StudentLayout = () => {
             <NotificationBell />
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">
-                <span className="font-display font-bold uppercase text-sm truncate max-w-[100px] lg:max-w-[150px]">
-                  {currentUser.name?.split(' ')[0]}
-                </span>
                 <img
                   src={currentUser.avatar}
                   alt={currentUser.name}
