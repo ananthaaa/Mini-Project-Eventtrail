@@ -21,6 +21,7 @@ const AdminEventForm = () => {
   const [time, setTime] = useState('10:00 AM - 01:00 PM');
   const [category, setCategory] = useState('Tech');
   const [faculty, setFaculty] = useState('Science');
+  const [location, setLocation] = useState('');
   const [seatsTotal, setSeatsTotal] = useState(50);
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState('');
@@ -88,7 +89,10 @@ const AdminEventForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !date || !time) return;
+    if (!title || !date || !time || !location) {
+      alert('Please fill out all required fields including Location.');
+      return;
+    }
 
     const randomCovers = [
       "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop",
@@ -102,6 +106,7 @@ const AdminEventForm = () => {
       organizerId,
       date,
       time,
+      location,
       category,
       faculty,
       seatsTotal: parseInt(seatsTotal),
@@ -233,6 +238,18 @@ const AdminEventForm = () => {
                   <option key={fac} value={fac}>{fac}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Location Name</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Science Hall A"
+                className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
+                required
+              />
             </div>
 
             <div>
