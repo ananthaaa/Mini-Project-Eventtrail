@@ -24,19 +24,19 @@ const StudentDashboard = () => {
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   // Events the user has RSVP'd for
-  const rsvpEventIds = Object.keys(userRsvps);
-  const upcomingRsvps = events.filter(e => rsvpEventIds.includes(e.id)).slice(0, 4);
+  const rsvpEventIds = Object.keys(userRsvps || {});
+  const upcomingRsvps = (events || []).filter(e => rsvpEventIds.includes(e.id)).slice(0, 4);
 
   // Recommended: events not yet RSVP'd, with available seats
-  const recommended = events
+  const recommended = (events || [])
     .filter(e => !rsvpEventIds.includes(e.id))
     .slice(0, 4);
 
   const quickStats = [
     { label: 'My RSVPs', value: rsvpEventIds.length, icon: Ticket, bg: 'mint' },
-    { label: 'Events Live', value: events.filter(e => e.seatsAvailable > 0).length, icon: TrendingUp, bg: 'peach' },
+    { label: 'Events Live', value: (events || []).filter(e => e.seatsAvailable > 0).length, icon: TrendingUp, bg: 'peach' },
     { label: 'Active Clubs', value: '50+', icon: Users, bg: 'yellow' },
-    { label: 'This Week', value: events.slice(0, 3).length, icon: Calendar, bg: 'white' },
+    { label: 'This Week', value: (events || []).slice(0, 3).length, icon: Calendar, bg: 'white' },
   ];
 
   return (
@@ -97,8 +97,8 @@ const StudentDashboard = () => {
           </div>
           <div className="h-[500px] w-full relative z-0">
             <CampusMap center={[10.1785, 76.4308]} zoom={16}>
-              {events.filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
-                const venue = venues.find(v => v.id === evt.venueId);
+              {(events || []).filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
+                const venue = (venues || []).find(v => v.id === evt.venueId);
                 if (!venue || !venue.outdoorCoordinates) return null;
                 return (
                   <Marker 

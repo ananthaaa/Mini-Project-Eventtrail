@@ -10,4 +10,19 @@ export default defineConfig({
     // Fix amazon-cognito-identity-js using Node.js `global` in browser
     global: 'globalThis',
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/mapbox-gl') || id.includes('node_modules/maplibre-gl')) {
+            return 'map-vendor';
+          }
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+        }
+      }
+    }
+  }
 })
