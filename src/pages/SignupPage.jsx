@@ -107,10 +107,14 @@ const SignupPage = () => {
         className="w-full max-w-md bg-white border-3 border-black p-8 neo-shadow-lg relative"
       >
         {/* Logo */}
-        <div className="flex items-center gap-2 justify-center mb-6">
-          <div className="bg-accent-yellow border-2 border-black w-10 h-10 flex items-center justify-center font-display font-black text-xl shadow-[2px_2px_0px_0px_#000]">
-            ET
-          </div>
+        <div className="flex items-center justify-center mb-6">
+          <Link to="/" className="inline-flex items-center group py-1" title="EventTrail Home">
+            <img
+              src="/logo.png"
+              alt="EventTrail"
+              className="h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-105 select-none"
+            />
+          </Link>
         </div>
 
         {step === 'signup' ? (

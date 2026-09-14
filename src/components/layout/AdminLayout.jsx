@@ -45,17 +45,21 @@ const AdminLayout = () => {
         {/* Sidebar Header */}
         <div className={`p-4 border-b-3 border-black flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!sidebarCollapsed && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-black flex items-center justify-center shadow-[2px_2px_0px_0px_#FFDB58]">
-                <ShieldCheck size={18} strokeWidth={2.5} className="text-white" />
+            <NavLink to="/admin" className="flex items-center gap-2 group min-w-0" title="EventTrail Admin">
+              <div className="bg-white px-2.5 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000] inline-flex items-center">
+                <img
+                  src="/logo.png"
+                  alt="EventTrail"
+                  className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
+                />
               </div>
-              <span className="font-display font-black text-lg uppercase tracking-tight text-black">
+              <span className="font-display font-black text-[10px] uppercase tracking-wider px-1.5 py-1 bg-black text-accent-yellow border border-black shadow-[1px_1px_0px_0px_#000] shrink-0">
                 Admin
               </span>
-            </div>
+            </NavLink>
           )}
           {sidebarCollapsed && (
-            <div className="w-8 h-8 bg-black flex items-center justify-center shadow-[2px_2px_0px_0px_#FFDB58]">
+            <div className="w-8 h-8 bg-black flex items-center justify-center shadow-[2px_2px_0px_0px_#FFDB58]" title="EventTrail Admin">
               <ShieldCheck size={18} strokeWidth={2.5} className="text-white" />
             </div>
           )}
@@ -134,14 +138,18 @@ const AdminLayout = () => {
         }`}
       >
         <div className="p-4 border-b-3 border-black flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-black flex items-center justify-center shadow-[2px_2px_0px_0px_#FFDB58]">
-              <ShieldCheck size={18} strokeWidth={2.5} className="text-white" />
+          <NavLink to="/admin" className="flex items-center gap-2 group" onClick={() => setMobileOpen(false)}>
+            <div className="bg-white px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000] inline-flex items-center">
+              <img
+                src="/logo.png"
+                alt="EventTrail"
+                className="h-8 w-auto object-contain"
+              />
             </div>
-            <span className="font-display font-black text-lg uppercase tracking-tight text-black">
+            <span className="font-display font-black text-[10px] uppercase tracking-wider px-1.5 py-0.5 bg-black text-accent-yellow border border-black">
               Admin
             </span>
-          </div>
+          </NavLink>
           <button
             onClick={() => setMobileOpen(false)}
             className="p-1 border-2 border-transparent hover:border-black hover:bg-white transition-colors"
@@ -189,9 +197,16 @@ const AdminLayout = () => {
           >
             <Menu size={20} strokeWidth={3} className="text-black" />
           </button>
-          <span className="ml-4 font-display font-black text-lg uppercase tracking-tight text-black">
-            Admin Panel
-          </span>
+          <NavLink to="/admin" className="ml-4 flex items-center gap-2">
+            <img
+              src="/logo.png"
+              alt="EventTrail"
+              className="h-9 w-auto object-contain"
+            />
+            <span className="font-display font-black text-[10px] uppercase tracking-wider px-1.5 py-0.5 bg-black text-accent-yellow border border-black">
+              Admin
+            </span>
+          </NavLink>
         </header>
 
         <main className="flex-1 bg-neobrutalist bg-grid-dots overflow-y-auto">

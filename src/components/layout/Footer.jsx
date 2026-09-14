@@ -87,11 +87,18 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Giant Wordmark */}
-      <div className="max-w-6xl mx-auto px-4 md:px-8 overflow-hidden select-none pointer-events-none opacity-5 border-t border-white/10 pt-4">
-        <h1 className="font-display font-black text-center text-[7vw] tracking-tighter uppercase whitespace-nowrap leading-none">
-          EVENTTRAIL
-        </h1>
+      {/* Brand Logo & Tagline */}
+      <div className="max-w-6xl mx-auto px-4 md:px-8 border-t border-white/10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-white px-4 py-2 border-2 border-black shadow-[3px_3px_0px_0px_#FFDB58] inline-flex items-center">
+          <img
+            src="/logo.png"
+            alt="EventTrail"
+            className="h-9 md:h-10 w-auto object-contain"
+          />
+        </div>
+        <p className="text-xs font-bold text-white/60 tracking-wider uppercase">
+          Campus Events &middot; Indoor Navigation &middot; Club Discovery
+        </p>
       </div>
 
       {/* Copyright */}

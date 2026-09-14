@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import PageShell from '../components/layout/PageShell';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -39,14 +39,13 @@ const LandingPage = () => {
     <PageShell>
       {/* Header/Nav equivalent for Landing Page */}
       <div className="flex justify-between items-center mb-8 bg-white border-3 border-black p-4 shadow-[4px_4px_0px_0px_#000]">
-        <div className="flex items-center gap-3">
-          <div className="bg-accent-yellow border-2 border-black w-10 h-10 flex items-center justify-center font-display font-black text-xl shadow-[2px_2px_0px_0px_#000]">
-            ET
-          </div>
-          <span className="font-display font-black text-2xl tracking-tight uppercase">
-            Event<span className="text-accent-yellow drop-shadow-[1px_1px_0px_#000]">Trail</span>
-          </span>
-        </div>
+        <Link to="/" className="flex items-center group">
+          <img
+            src="/logo.png"
+            alt="EventTrail"
+            className="h-10 sm:h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-105 group-hover:-rotate-1 select-none"
+          />
+        </Link>
         <div className="flex gap-4">
           <Button onClick={() => navigate('/login')} variant="outline" className="px-6">
             Log In

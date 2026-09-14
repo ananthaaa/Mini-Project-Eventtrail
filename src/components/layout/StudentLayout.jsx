@@ -44,14 +44,13 @@ const StudentLayout = () => {
           {/* Left Side: Logo & Desktop Nav */}
           <div className="flex items-center gap-8">
             {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-accent-yellow border-3 border-black flex items-center justify-center shadow-[2px_2px_0px_0px_#000]">
-                <Zap size={16} strokeWidth={3} className="text-black" />
-              </div>
-              <span className="font-display font-black text-xl uppercase tracking-tight text-black hidden sm:block">
-                Event<span className="text-accent-yellow drop-shadow-[1px_1px_0px_#000]">Trail</span>
-              </span>
-            </div>
+            <NavLink to="/student" className="flex items-center group py-1" title="EventTrail Student Portal">
+              <img
+                src="/logo.png"
+                alt="EventTrail"
+                className="h-10 sm:h-11 w-auto object-contain transition-transform duration-200 group-hover:scale-105 group-hover:-rotate-1 select-none"
+              />
+            </NavLink>
 
             {/* Desktop Nav */}
             <nav className="hidden xl:flex items-center gap-1">
