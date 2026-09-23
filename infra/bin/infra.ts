@@ -47,4 +47,5 @@ new ApiStack(app, `CampusPulse-Api-${envName}`, {
   pathEdgesTable: dataLayer.pathEdgesTable,
   membershipsTable: dataLayer.membershipsTable,
   notificationsTable: dataLayer.notificationsTable,
+  rsvpsTable: dataLayer.rsvpsTable,
 });

@@ -75,17 +75,21 @@ const EventDetail = () => {
   const club = clubs.find((c) => c.id === event.organizerId);
   const userRsvp = (userRsvps || {})[event.id];
 
-  const handleRsvpAction = () => {
+  const handleRsvpAction = async () => {
     if (userRsvp) {
       navigate(`/student/rsvp-confirmation/${event.id}`);
     } else {
-      const res = submitRsvp(event.id);
-      if (res.rsvpStatus === "RSVP'd") {
-        addNotification("Successfully registered for event!", "success");
-      } else {
-        addNotification("Added to waitlist.", "info");
+      try {
+        const res = await submitRsvp(event.id);
+        if (res.rsvpStatus === "RSVP'd") {
+          addNotification("Successfully registered for event!", "success");
+        } else {
+          addNotification("Added to waitlist.", "info");
+        }
+        navigate(`/student/rsvp-confirmation/${event.id}`);
+      } catch (err) {
+        addNotification(err.message || "Failed to RSVP", "error");
       }
-      navigate(`/student/rsvp-confirmation/${event.id}`);
     }
   };
 

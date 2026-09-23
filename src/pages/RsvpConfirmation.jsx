@@ -10,7 +10,7 @@ import { MapPin, ArrowLeft } from 'lucide-react';
 const RsvpConfirmation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { events, userRsvps } = useContext(RsvpContext);
+  const { events, userRsvps, cancelUserRsvp } = useContext(RsvpContext);
   const { startNavigation } = useContext(NavModeContext);
 
   const event = events.find((e) => e.id === id);
@@ -38,6 +38,17 @@ const RsvpConfirmation = () => {
   const handleLaunchNavigation = () => {
     startNavigation(event.id);
     navigate('/student/navigate');
+  };
+
+  const handleCancel = async () => {
+    if (window.confirm("Are you sure you want to cancel your RSVP?")) {
+      try {
+        await cancelUserRsvp(event.id);
+        navigate(`/student/events/${event.id}`);
+      } catch (err) {
+        alert("Failed to cancel RSVP");
+      }
+    }
   };
 
   return (
@@ -86,7 +97,7 @@ const RsvpConfirmation = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-bg-surface border border-border-subtle rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6"
+            className="bg-bg-surface border border-border-subtle rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 mb-8"
           >
             <div>
               <h3 className="font-display font-bold text-2xl text-text-primary mb-2">Ready to head out?</h3>
@@ -101,6 +112,15 @@ const RsvpConfirmation = () => {
             </button>
           </motion.div>
         )}
+
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={handleCancel}
+            className="text-red-500 hover:text-red-700 underline font-medium transition-colors"
+          >
+            Cancel {isWaitlisted ? 'Waitlist' : 'RSVP'}
+          </button>
+        </div>
       </div>
     </PageShell>
   );

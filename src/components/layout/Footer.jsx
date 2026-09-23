@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Marquee from '../ui/Marquee';
 import Button from '../ui/Button';
+import logoImg from '../../assets/logo.png';
 
 const Footer = () => {
   const [email, setEmail] = useState('');
@@ -91,7 +92,7 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto px-4 md:px-8 border-t border-white/10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="bg-white px-4 py-2 border-2 border-black shadow-[3px_3px_0px_0px_#FFDB58] inline-flex items-center">
           <img
-            src="/logo.png"
+            src={logoImg}
             alt="EventTrail"
             className="h-9 md:h-10 w-auto object-contain"
           />

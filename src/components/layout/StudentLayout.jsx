@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Badge from '../ui/Badge';
 import { NotificationBell } from '../ui/NotificationBell';
+import logoImg from '../../assets/logo.png';
 
 const navLinks = [
   { to: '/student', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -46,7 +47,7 @@ const StudentLayout = () => {
             {/* Logo */}
             <NavLink to="/student" className="flex items-center group py-1" title="EventTrail Student Portal">
               <img
-                src="/logo.png"
+                src={logoImg}
                 alt="EventTrail"
                 className="h-10 sm:h-11 w-auto object-contain transition-transform duration-200 group-hover:scale-105 group-hover:-rotate-1 select-none"
               />

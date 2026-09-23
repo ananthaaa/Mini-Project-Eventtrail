@@ -6,6 +6,7 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import { RsvpContext } from '../context/RsvpContext';
 import { Calendar, MapPin, Compass, ArrowRight, ShieldCheck, Star, Users } from 'lucide-react';
+import logoImg from '../assets/logo.png';
 
 const LandingPage = () => {
   const { events } = useContext(RsvpContext);
@@ -41,7 +42,7 @@ const LandingPage = () => {
       <div className="flex justify-between items-center mb-8 bg-white border-3 border-black p-4 shadow-[4px_4px_0px_0px_#000]">
         <Link to="/" className="flex items-center group">
           <img
-            src="/logo.png"
+            src={logoImg}
             alt="EventTrail"
             className="h-10 sm:h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-105 group-hover:-rotate-1 select-none"
           />

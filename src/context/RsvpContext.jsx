@@ -1,18 +1,17 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { fetchEvents, fetchVenues } from '../services/apiService';
+import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
+import { fetchEvents, fetchVenues, createRsvp, cancelRsvp, fetchMyRsvps } from '../services/apiService';
+import { RoleContext } from './RoleContext';
 
 export const RsvpContext = createContext();
 
 export const RsvpProvider = ({ children }) => {
   // Events and venues are NEVER seeded from localStorage — always fetched fresh from the API.
   // This ensures deleted/created events by admin are always reflected correctly.
+  const { currentUser, isLoggedIn } = useContext(RoleContext);
+
   const [events, setEvents] = useState([]);
   const [venues, setVenues] = useState([]);
-
-  const [userRsvps, setUserRsvps] = useState(() => {
-    const saved = localStorage.getItem('cp_user_rsvps');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [userRsvps, setUserRsvps] = useState({});
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -47,52 +46,67 @@ export const RsvpProvider = ({ children }) => {
     refreshEvents();
   }, [refreshEvents]);
 
-  // Only persist RSVP state locally (user-specific, not admin-managed data).
+  // Fetch user RSVPs from backend
   useEffect(() => {
-    localStorage.setItem('cp_user_rsvps', JSON.stringify(userRsvps));
-  }, [userRsvps]);
+    if (isLoggedIn && currentUser?.id) {
+      fetchMyRsvps(currentUser.id)
+        .then(rsvps => {
+           const rsvpMap = {};
+           rsvps.forEach(r => {
+              rsvpMap[r.eventId] = {
+                 rsvpStatus: r.status === 'confirmed' ? "RSVP'd" : "Waitlisted",
+                 ticketNumber: `CP-${r.eventId.substring(0, 4).toUpperCase()}-001`,
+                 timestamp: r.createdAt
+              };
+           });
+           setUserRsvps(rsvpMap);
+        })
+        .catch(err => console.error("Failed to load user RSVPs", err));
+    } else {
+      setUserRsvps({});
+    }
+  }, [isLoggedIn, currentUser]);
 
-  const submitRsvp = (eventId) => {
+  const submitRsvp = async (eventId) => {
     if (userRsvps[eventId]) return userRsvps[eventId];
 
-    let status = null;
-    let ticketNumber = null;
+    try {
+      const result = await createRsvp(eventId);
+      const isWaitlisted = result.status === 'waitlisted';
+      const statusStr = isWaitlisted ? 'Waitlisted' : "RSVP'd";
+      
+      setUserRsvps((prev) => ({
+        ...prev,
+        [eventId]: {
+          rsvpStatus: statusStr,
+          ticketNumber: `CP-${eventId.substring(0, 4).toUpperCase()}-001`,
+          timestamp: new Date().toISOString(),
+        },
+      }));
+      
+      // Refresh events to reflect updated seat counts
+      refreshEvents();
+      return { rsvpStatus: statusStr };
+    } catch (error) {
+      console.error('Failed to submit RSVP:', error);
+      throw error;
+    }
+  };
 
-    setEvents((prevEvents) =>
-      prevEvents.map((evt) => {
-        if (evt.id === eventId) {
-          if (evt.seatsAvailable > 0) {
-            status = "RSVP'd";
-            const seatNum = evt.seatsTotal - evt.seatsAvailable + 1;
-            ticketNumber = `CP-${evt.id.substring(0, 4).toUpperCase()}-${String(seatNum).padStart(3, '0')}`;
-            return {
-              ...evt,
-              seatsAvailable: evt.seatsAvailable - 1,
-              rsvpCount: (evt.rsvpCount || 0) + 1,
-            };
-          } else {
-            status = 'Waitlisted';
-            return {
-              ...evt,
-              waitlistCount: (evt.waitlistCount || 0) + 1,
-            };
-          }
-        }
-        return evt;
-      })
-    );
-
-    setUserRsvps((prev) => ({
-      ...prev,
-      [eventId]: {
-        rsvpStatus: status,
-        ticketNumber: ticketNumber,
-        seatNumber: ticketNumber ? ticketNumber.split('-').pop() : null,
-        timestamp: new Date().toISOString(),
-      },
-    }));
-
-    return { rsvpStatus: status, ticketNumber };
+  const cancelUserRsvp = async (eventId) => {
+    try {
+      await cancelRsvp(eventId);
+      setUserRsvps((prev) => {
+        const copy = { ...prev };
+        delete copy[eventId];
+        return copy;
+      });
+      // Refresh events to reflect available seats
+      refreshEvents();
+    } catch (error) {
+      console.error('Failed to cancel RSVP:', error);
+      throw error;
+    }
   };
 
   const addVenue = (newVenue) => {
@@ -108,7 +122,6 @@ export const RsvpProvider = ({ children }) => {
   };
 
   const clearAllLocalData = () => {
-    localStorage.removeItem('cp_user_rsvps');
     setUserRsvps({});
     // Re-fetch from API to get the true current state
     refreshEvents();
@@ -117,7 +130,7 @@ export const RsvpProvider = ({ children }) => {
   return (
     <RsvpContext.Provider value={{ 
       events, venues, userRsvps, isLoading,
-      submitRsvp,
+      submitRsvp, cancelUserRsvp,
       addVenue, updateVenue, deleteVenue,
       clearAllLocalData,
       refreshEvents,

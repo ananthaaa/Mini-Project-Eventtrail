@@ -20,6 +20,7 @@ export interface ApiStackProps extends cdk.StackProps {
   readonly pathEdgesTable: dynamodb.Table;
   readonly membershipsTable: dynamodb.Table;
   readonly notificationsTable: dynamodb.Table;
+  readonly rsvpsTable: dynamodb.Table;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -241,6 +242,69 @@ export class ApiStack extends cdk.Stack {
     });
     props.pathEdgesTable.grantReadData(getPathEdgesLambda);
 
+    // Module 5: RSVP & Waitlist Lambdas
+    
+    const createRsvpLambda = new lambda.Function(this, 'CreateRsvpFunction', {
+      functionName: `EventTrail-CreateRsvp-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/rsvps/createRsvp')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        EVENTS_TABLE_NAME: props.eventsTable.tableName,
+        RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+      },
+    });
+    props.eventsTable.grantReadWriteData(createRsvpLambda);
+    props.rsvpsTable.grantReadWriteData(createRsvpLambda);
+
+    const cancelRsvpLambda = new lambda.Function(this, 'CancelRsvpFunction', {
+      functionName: `EventTrail-CancelRsvp-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/rsvps/cancelRsvp')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        EVENTS_TABLE_NAME: props.eventsTable.tableName,
+        RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+      },
+    });
+    props.eventsTable.grantReadWriteData(cancelRsvpLambda);
+    props.rsvpsTable.grantReadWriteData(cancelRsvpLambda);
+
+    const listMyRsvpsLambda = new lambda.Function(this, 'ListMyRsvpsFunction', {
+      functionName: `EventTrail-ListMyRsvps-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/rsvps/listMyRsvps')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+      },
+    });
+    props.rsvpsTable.grantReadData(listMyRsvpsLambda);
+
+    const promoteWaitlistLambda = new lambda.Function(this, 'PromoteWaitlistFunction', {
+      functionName: `EventTrail-PromoteWaitlist-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/rsvps/promoteWaitlist')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        EVENTS_TABLE_NAME: props.eventsTable.tableName,
+        RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+      },
+    });
+    props.eventsTable.grantReadWriteData(promoteWaitlistLambda);
+    props.rsvpsTable.grantReadWriteData(promoteWaitlistLambda);
+    props.rsvpsTable.grantStreamRead(promoteWaitlistLambda);
+    
+    promoteWaitlistLambda.addEventSourceMapping('RsvpsStream', {
+      eventSourceArn: props.rsvpsTable.tableStreamArn!,
+      startingPosition: lambda.StartingPosition.TRIM_HORIZON,
+      batchSize: 10,
+    });
+
     // Module 4: Admin CRUD & Media Upload Lambdas
     
     const getUploadUrlLambda = new lambda.Function(this, 'GetUploadUrlFunction', {
@@ -367,6 +431,11 @@ export class ApiStack extends cdk.Stack {
     addAuthRoute('POST /venues', createVenueLambda);
     addAuthRoute('GET /upload-url', getUploadUrlLambda);
     
+    // RSVPs
+    addAuthRoute('POST /events/{id}/rsvp', createRsvpLambda);
+    addAuthRoute('DELETE /events/{id}/rsvp', cancelRsvpLambda);
+    addAuthRoute('GET /users/{id}/rsvps', listMyRsvpsLambda);
+
     // Clubs
     addAuthRoute('POST /clubs', createClubLambda);
     addAuthRoute('POST /clubs/{id}/join', joinClubLambda);

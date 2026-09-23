@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { RoleContext } from '../../context/RoleContext';
+import logoImg from '../../assets/logo.png';
 import {
   LayoutDashboard,
   CalendarPlus,
@@ -48,7 +49,7 @@ const AdminLayout = () => {
             <NavLink to="/admin" className="flex items-center gap-2 group min-w-0" title="EventTrail Admin">
               <div className="bg-white px-2.5 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000] inline-flex items-center">
                 <img
-                  src="/logo.png"
+                  src={logoImg}
                   alt="EventTrail"
                   className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
                 />
@@ -141,7 +142,7 @@ const AdminLayout = () => {
           <NavLink to="/admin" className="flex items-center gap-2 group" onClick={() => setMobileOpen(false)}>
             <div className="bg-white px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_#000] inline-flex items-center">
               <img
-                src="/logo.png"
+                src={logoImg}
                 alt="EventTrail"
                 className="h-8 w-auto object-contain"
               />
@@ -199,7 +200,7 @@ const AdminLayout = () => {
           </button>
           <NavLink to="/admin" className="ml-4 flex items-center gap-2">
             <img
-              src="/logo.png"
+              src={logoImg}
               alt="EventTrail"
               className="h-9 w-auto object-contain"
             />

@@ -97,6 +97,7 @@ export class DataLayerStack extends cdk.Stack {
       tableName: `EventTrail-RSVPs-${envName}`,
       partitionKey: { name: 'eventId', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
     });
 
     this.rsvpsTable.addGlobalSecondaryIndex({

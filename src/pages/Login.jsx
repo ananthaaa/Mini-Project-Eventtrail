@@ -5,6 +5,7 @@ import { RoleContext } from '../context/RoleContext';
 import { Mail, Lock, ArrowRight, Eye, EyeOff, GraduationCap, ShieldCheck } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
+import logoImg from '../assets/logo.png';
 
 const LoginPage = () => {
   const { login } = useContext(RoleContext);
@@ -83,7 +84,7 @@ const LoginPage = () => {
         <div className="flex items-center justify-center mb-6">
           <Link to="/" className="inline-flex items-center group py-1" title="EventTrail Home">
             <img
-              src="/logo.png"
+              src={logoImg}
               alt="EventTrail"
               className="h-12 w-auto object-contain transition-transform duration-200 group-hover:scale-105 select-none"
             />

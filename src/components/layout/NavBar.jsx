@@ -4,6 +4,7 @@ import { RoleContext } from '../../context/RoleContext';
 import { NavModeContext } from '../../context/NavModeContext';
 import { NotificationBell } from '../ui/NotificationBell';
 import { Shield, User, Compass, MapPin, Grid, Layers, LogIn } from 'lucide-react';
+import logoImg from '../../assets/logo.png';
 
 const NavBar = () => {
   const { currentRole, isLoggedIn, logout } = useContext(RoleContext);
@@ -31,7 +32,7 @@ const NavBar = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center group py-1" title="EventTrail Home">
           <img
-            src="/logo.png"
+            src={logoImg}
             alt="EventTrail"
             className="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-105 select-none"
           />

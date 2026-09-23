@@ -138,6 +138,24 @@ export const getPresignedUrl = async (fileName, fileType) => {
   });
 };
 
+// --- RSVPs ---
+
+export const createRsvp = async (eventId) => {
+  return fetchWithAuth(`/events/${eventId}/rsvp`, {
+    method: 'POST'
+  });
+};
+
+export const cancelRsvp = async (eventId) => {
+  return fetchWithAuth(`/events/${eventId}/rsvp`, {
+    method: 'DELETE'
+  });
+};
+
+export const fetchMyRsvps = async (userId) => {
+  return fetchWithAuth(`/users/${userId}/rsvps`);
+};
+
 // --- Notifications ---
 
 export const getNotifications = async (userId) => {

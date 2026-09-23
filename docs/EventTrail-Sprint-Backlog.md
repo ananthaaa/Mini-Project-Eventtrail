@@ -13,7 +13,7 @@ Based on the work already completed in the project, Sprints 1, 2, 3, and 5 are f
 | **Sprint 1** | Authentication and login | ✅ **Completed** |
 | **Sprint 2** | Event discovery | ✅ **Completed** |
 | **Sprint 3** | Admin event management | ✅ **Completed** |
-| **Sprint 4** | RSVP and waitlist | ⏳ **Pending (Next Up)** |
+| **Sprint 4** | RSVP and waitlist | ✅ **Completed** |
 | **Sprint 5** | Navigation and indoor guidance | ⏳ **Pending (Rebuild)** |
 | **Sprint 6** | Notifications and attendance | ⏳ **Pending** |
 
@@ -64,8 +64,8 @@ Based on the work already completed in the project, Sprints 1, 2, 3, and 5 are f
 - Authenticated Lambdas deployed for `POST/PUT/DELETE /events` with strict JWT `custom:clubId` verification to ensure multi-tenant security.
 - Frontend `AdminEventForm` integrated with live API and S3 Presigned URLs.
 
-### ⏳ Sprint 4: RSVP and Waitlist
-**Status:** Pending (Next Up)
+### ✅ Sprint 4: RSVP and Waitlist
+**Status:** Completed
 
 | Task ID | Task Description | User Story | Est. Hours |
 |---|---|---|---|
