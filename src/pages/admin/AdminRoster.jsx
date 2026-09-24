@@ -19,6 +19,7 @@ const AdminRoster = () => {
     if (userRsvps[id]) {
       list.push({
         name: 'Local Student',
+        studentId: 'STU-LOCAL',
         email: 'student@campus.edu',
         status: userRsvps[id].rsvpStatus === "RSVP'd" ? 'attending' : 'waitlisted',
         ticket: userRsvps[id].ticketNumber || 'N/A'
@@ -30,6 +31,7 @@ const AdminRoster = () => {
       for (let i = 0; i < event.rsvpCount - (userRsvps[id]?.rsvpStatus === "RSVP'd" ? 1 : 0); i++) {
         list.push({
           name: `Student ${i + 1}`,
+          studentId: `STU-2024-${String(i + 1).padStart(4, '0')}`,
           email: `student${i + 1}@campus.edu`,
           status: 'attending',
           ticket: `ET-${id.substring(0,4).toUpperCase()}-F${i}`
@@ -38,6 +40,7 @@ const AdminRoster = () => {
       for (let i = 0; i < event.waitlistCount - (userRsvps[id]?.rsvpStatus === 'Waitlisted' ? 1 : 0); i++) {
         list.push({
           name: `Waitlist ${i + 1}`,
+          studentId: `STU-2024-W${String(i + 1).padStart(3, '0')}`,
           email: `waitlist${i + 1}@campus.edu`,
           status: 'waitlisted',
           ticket: 'N/A'
@@ -62,7 +65,15 @@ const AdminRoster = () => {
 
       <div className="mb-10 text-left border-b-3 border-black pb-6">
         <Badge variant="peach" className="mb-3">Roster Management</Badge>
-        <h1 className="font-display font-black text-4xl uppercase tracking-tight">{event.title}</h1>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <h1 className="font-display font-black text-4xl uppercase tracking-tight">{event.title}</h1>
+          <Link
+            to={`/admin/event-form/${id}`}
+            className="px-5 py-2.5 bg-pastel-yellow border-3 border-black font-bold uppercase tracking-wider hover:bg-accent-yellow transition-colors neo-shadow-sm active:translate-y-[1px] active:neo-shadow-none"
+          >
+            Edit Event
+          </Link>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -78,7 +89,7 @@ const AdminRoster = () => {
               <div key={idx} className="border-3 border-black p-4 bg-white neo-shadow-sm flex justify-between items-center">
                 <div>
                   <p className="font-black text-lg">{user.name}</p>
-                  <p className="text-sm font-bold text-gray-500">{user.email}</p>
+                  <p className="text-sm font-bold text-gray-500">{user.studentId} &bull; {user.email}</p>
                 </div>
                 <div className="text-right">
                   <Badge variant="dark">{user.ticket}</Badge>
@@ -101,7 +112,7 @@ const AdminRoster = () => {
               <div key={idx} className="border-3 border-black p-4 bg-yellow-50 neo-shadow-sm flex justify-between items-center">
                 <div>
                   <p className="font-black text-lg">{user.name}</p>
-                  <p className="text-sm font-bold text-gray-500">{user.email}</p>
+                  <p className="text-sm font-bold text-gray-500">{user.studentId} &bull; {user.email}</p>
                 </div>
                 <div className="text-right">
                   <button className="px-3 py-1 bg-black text-white text-xs font-bold uppercase hover:bg-accent-red transition-colors">

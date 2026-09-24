@@ -129,20 +129,12 @@ const AdminDashboard = () => {
                   <td className="py-4 px-6 text-center font-mono text-red-500 font-black">{evt.waitlistCount}</td>
                   <td className="py-4 px-6 text-right space-x-2">
                     <button
-                      onClick={() => navigate(`/student/events/${evt.id}`)}
+                      onClick={() => navigate(`/admin/event/${evt.id}/roster`)}
                       className="p-2 border-2 border-black hover:bg-pastel-mint transition-all neo-shadow-sm active:translate-y-[1px] active:neo-shadow-sm inline-flex items-center gap-1"
-                      title="View Public Screen"
+                      title="View Details & Roster"
                     >
                       <Eye size={12} />
-                      View
-                    </button>
-                    <button
-                      onClick={() => navigate(`/admin/event/${evt.id}/roster`)}
-                      className="p-2 border-2 border-black bg-pastel-blue hover:bg-accent-blue hover:text-white transition-all neo-shadow-sm active:translate-y-[1px] active:neo-shadow-sm inline-flex items-center gap-1"
-                      title="Manage Roster"
-                    >
-                      <Users size={12} />
-                      Roster
+                      View Details
                     </button>
                     <button
                       onClick={() => navigate(`/admin/venue-upload?eventId=${evt.id}`)}
