@@ -7,7 +7,7 @@ import Button from '../components/ui/Button';
 import logoImg from '../assets/logo.png';
 
 const SignupPage = () => {
-  const { signup, confirmSignup } = useContext(RoleContext);
+  const { signup, confirmSignup, login } = useContext(RoleContext);
   const navigate = useNavigate();
 
   const [step, setStep] = useState('signup'); // 'signup' | 'confirm'
