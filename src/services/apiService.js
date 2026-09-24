@@ -156,6 +156,10 @@ export const fetchMyRsvps = async (userId) => {
   return fetchWithAuth(`/users/${userId}/rsvps`);
 };
 
+export const fetchEventRsvps = async (eventId) => {
+  return fetchWithAuth(`/events/${eventId}/rsvps`);
+};
+
 // --- Notifications ---
 
 export const getNotifications = async (userId) => {

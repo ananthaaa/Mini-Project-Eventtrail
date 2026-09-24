@@ -1,9 +1,10 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { RsvpContext } from '../../context/RsvpContext';
+import { fetchEventRsvps } from '../../services/apiService';
 import PageShell from '../../components/layout/PageShell';
 import Badge from '../../components/ui/Badge';
-import { ArrowLeft, UserCheck, Clock } from 'lucide-react';
+import { ArrowLeft, UserCheck, Clock, Loader2 } from 'lucide-react';
 
 const AdminRoster = () => {
   const { id } = useParams();
@@ -11,44 +12,32 @@ const AdminRoster = () => {
 
   const event = events.find(e => e.id === id);
 
-  // Mocking roster data by generating fake users plus any local user RSVPs
-  const rosterData = useMemo(() => {
-    const list = [];
-    
-    // Add real local rsvp if it exists for this event
-    if (userRsvps[id]) {
-      list.push({
-        name: 'Local Student',
-        studentId: 'STU-LOCAL',
-        email: 'student@campus.edu',
-        status: userRsvps[id].rsvpStatus === "RSVP'd" ? 'attending' : 'waitlisted',
-        ticket: userRsvps[id].ticketNumber || 'N/A'
-      });
-    }
+  const [rosterData, setRosterData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    // Generate fakes based on counts
+  useEffect(() => {
+    const loadRoster = async () => {
+      try {
+        const data = await fetchEventRsvps(id);
+        // Map the backend data to match the UI expectations
+        const mapped = data.map(rsvp => ({
+          name: rsvp.name || 'Unknown Student',
+          studentId: rsvp.studentId || 'STU-UNKNOWN',
+          email: rsvp.email || 'No email provided',
+          status: rsvp.status === 'confirmed' ? 'attending' : 'waitlisted',
+          ticket: rsvp.status === 'confirmed' ? `ET-${id.substring(0,4).toUpperCase()}-${rsvp.userId.substring(0,4).toUpperCase()}` : 'N/A'
+        }));
+        setRosterData(mapped);
+      } catch (err) {
+        console.error('Failed to load roster data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
     if (event) {
-      for (let i = 0; i < event.rsvpCount - (userRsvps[id]?.rsvpStatus === "RSVP'd" ? 1 : 0); i++) {
-        list.push({
-          name: `Student ${i + 1}`,
-          studentId: `STU-2024-${String(i + 1).padStart(4, '0')}`,
-          email: `student${i + 1}@campus.edu`,
-          status: 'attending',
-          ticket: `ET-${id.substring(0,4).toUpperCase()}-F${i}`
-        });
-      }
-      for (let i = 0; i < event.waitlistCount - (userRsvps[id]?.rsvpStatus === 'Waitlisted' ? 1 : 0); i++) {
-        list.push({
-          name: `Waitlist ${i + 1}`,
-          studentId: `STU-2024-W${String(i + 1).padStart(3, '0')}`,
-          email: `waitlist${i + 1}@campus.edu`,
-          status: 'waitlisted',
-          ticket: 'N/A'
-        });
-      }
+      loadRoster();
     }
-    return list;
-  }, [event, userRsvps, id]);
+  }, [id, event]);
 
   if (!event) return <div className="p-10 text-center">Event not found</div>;
 
@@ -77,7 +66,13 @@ const AdminRoster = () => {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Attendees List */}
+        {loading ? (
+          <div className="col-span-2 flex justify-center py-12">
+            <Loader2 className="animate-spin text-black" size={32} />
+          </div>
+        ) : (
+          <>
+            {/* Attendees List */}
         <div>
           <h2 className="font-display font-black text-2xl uppercase border-b-4 border-black pb-2 mb-4 flex items-center justify-between">
             <span>Attending</span>
@@ -124,6 +119,8 @@ const AdminRoster = () => {
             ))}
           </div>
         </div>
+        </>
+        )}
       </div>
     </PageShell>
   );

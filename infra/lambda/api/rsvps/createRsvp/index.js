@@ -15,6 +15,10 @@ exports.handler = async (event) => {
     }
 
     const userId = claims.sub; // Cognito User ID
+    const name = claims.name || claims.email || 'Unknown Student';
+    const email = claims.email || 'Unknown Email';
+    const studentId = `STU-${userId.substring(0,6).toUpperCase()}`;
+
     const eventId = event.pathParameters?.id;
 
     if (!eventId) {
@@ -45,6 +49,9 @@ exports.handler = async (event) => {
               Item: {
                 eventId,
                 userId,
+                name,
+                email,
+                studentId,
                 status: 'confirmed',
                 createdAt: now,
               },
@@ -84,6 +91,9 @@ exports.handler = async (event) => {
               Item: {
                 eventId,
                 userId,
+                name,
+                email,
+                studentId,
                 status: 'waitlisted',
                 waitlistPosition,
                 createdAt: now,

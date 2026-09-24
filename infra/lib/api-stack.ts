@@ -284,6 +284,18 @@ export class ApiStack extends cdk.Stack {
     });
     props.rsvpsTable.grantReadData(listMyRsvpsLambda);
 
+    const listEventRsvpsLambda = new lambda.Function(this, 'ListEventRsvpsFunction', {
+      functionName: `EventTrail-ListEventRsvps-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/rsvps/listEventRsvps')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+      },
+    });
+    props.rsvpsTable.grantReadData(listEventRsvpsLambda);
+
     const promoteWaitlistLambda = new lambda.Function(this, 'PromoteWaitlistFunction', {
       functionName: `EventTrail-PromoteWaitlist-${envName}`,
       runtime: lambda.Runtime.NODEJS_22_X,
@@ -435,6 +447,7 @@ export class ApiStack extends cdk.Stack {
     addAuthRoute('POST /events/{id}/rsvp', createRsvpLambda);
     addAuthRoute('DELETE /events/{id}/rsvp', cancelRsvpLambda);
     addAuthRoute('GET /users/{id}/rsvps', listMyRsvpsLambda);
+    addAuthRoute('GET /events/{id}/rsvps', listEventRsvpsLambda);
 
     // Clubs
     addAuthRoute('POST /clubs', createClubLambda);
