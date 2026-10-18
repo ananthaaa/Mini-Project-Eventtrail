@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import PageShell from '../../components/layout/PageShell';
 import Badge from '../../components/ui/Badge';
 import { RsvpContext } from '../../context/RsvpContext';
@@ -55,28 +55,20 @@ const AdminVenueList = () => {
             </div>
             
             <div className="pt-4 border-t-2 border-black/10 flex flex-col gap-2">
-              <Link
-                to={`/student/campus-map?dest=${venue.nodeId || venue.id}`}
-                className="w-full py-2 px-3 border-2 border-black bg-pastel-mint text-black font-black uppercase text-xs tracking-wider text-center shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 transition-all"
-              >
-                View on Student Map →
-              </Link>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => {
-                    if (window.confirm(`Are you sure you want to delete building "${venue.name || venue.building}"?`)) {
-                      try {
-                        deleteVenue(venue.id);
-                      } catch (err) {
-                        alert(err.message || 'Cannot delete venue.');
-                      }
+              <button 
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete building "${venue.name || venue.building}"?`)) {
+                    try {
+                      deleteVenue(venue.id);
+                    } catch (err) {
+                      alert(err.message || 'Cannot delete venue.');
                     }
-                  }}
-                  className="w-full py-2 px-4 border-2 border-black bg-red-100 text-red-600 font-bold uppercase text-xs hover:bg-red-500 hover:text-white transition-colors flex justify-center items-center gap-1.5 shadow-[2px_2px_0px_0px_#000]"
-                >
-                  <Trash2 size={14} /> Remove Building
-                </button>
-              </div>
+                  }
+                }}
+                className="w-full py-2 px-4 border-2 border-black bg-red-100 text-red-600 font-bold uppercase text-xs hover:bg-red-500 hover:text-white transition-colors flex justify-center items-center gap-1.5 shadow-[2px_2px_0px_0px_#000]"
+              >
+                <Trash2 size={14} /> Remove Building
+              </button>
             </div>
           </div>
         ))}
