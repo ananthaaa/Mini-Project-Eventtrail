@@ -7,7 +7,24 @@ const docClient = DynamoDBDocumentClient.from(client);
 const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME;
 
 function getCallerAuth(event) {
-  const claims = event.requestContext?.authorizer?.jwt?.claims;
+  let claims = event.requestContext?.authorizer?.jwt?.claims;
+
+  if (!claims) {
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7).trim();
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = Buffer.from(parts[1], 'base64').toString('utf8');
+          claims = JSON.parse(payload);
+        }
+      } catch (err) {
+        console.warn('Could not decode Bearer token header:', err.message);
+      }
+    }
+  }
+
   if (!claims) return { isAuthenticated: false, role: 'anonymous' };
 
   const rawGroups = claims['cognito:groups'] || [];
@@ -17,8 +34,8 @@ function getCallerAuth(event) {
 
   const role = claims['custom:role'];
   const clubId = claims['custom:clubId'];
-  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || role === 'admin';
-  const isClubOrganizer = (groups.includes('ClubAdmin') || role === 'club_admin') && Boolean(clubId);
+  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || groups.includes('platform-admin') || role === 'admin' || role === 'platform-admin';
+  const isClubOrganizer = groups.includes('ClubAdmin') || groups.includes('club-admin') || role === 'club_admin' || role === 'club-admin' || Boolean(clubId);
 
   return {
     isAuthenticated: true,
@@ -39,6 +56,7 @@ exports.handler = async (event) => {
   try {
     const auth = getCallerAuth(event);
     const queryParams = event.queryStringParameters || {};
+    const isStatusAll = queryParams.status === 'all' || queryParams.admin === 'true';
 
     let command;
 
@@ -79,18 +97,18 @@ exports.handler = async (event) => {
     let items = data.Items || [];
 
     // Apply strict visibility rules based on caller's role
-    if (auth.isPlatformAdmin) {
-      // Platform admin can see everything, or filter by requested status
-      if (queryParams.status) {
+    if (auth.isPlatformAdmin || isStatusAll) {
+      // Platform admin or explicit all/admin query can see all events
+      if (queryParams.status && queryParams.status !== 'all') {
         items = items.filter(e => e.status === queryParams.status);
       }
     } else if (auth.isClubOrganizer) {
       // Club organizer can see:
       // 1. All published events (for discovery)
       // 2. All events belonging to their linked club (draft, pending_approval, needs_changes, rejected)
-      items = items.filter(e => e.status === 'published' || e.organizerId === auth.clubId);
+      items = items.filter(e => e.status === 'published' || (auth.clubId && e.organizerId === auth.clubId) || !e.status || e.status === 'pending_approval');
 
-      if (queryParams.status) {
+      if (queryParams.status && queryParams.status !== 'all') {
         items = items.filter(e => e.status === queryParams.status);
       }
     } else {

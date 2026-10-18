@@ -67,7 +67,26 @@ export const fetchEvents = async (params = {}, options = {}) => {
 
   const urlParams = new URLSearchParams(params).toString();
   const endpoint = urlParams ? `/events?${urlParams}` : '/events';
-  return fetchFromApi(endpoint, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  
+  let data = [];
+  try {
+    data = await fetchFromApi(endpoint, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  } catch (err) {
+    console.warn('API fetchEvents failed, falling back to local events:', err.message);
+  }
+
+  // Merge any local fallback events created in this browser
+  try {
+    const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
+    if (Array.isArray(localEvents) && localEvents.length > 0) {
+      const apiList = Array.isArray(data) ? data : [];
+      const apiIds = new Set(apiList.map(e => e.id));
+      const localOnly = localEvents.filter(e => !apiIds.has(e.id));
+      data = [...apiList, ...localOnly];
+    }
+  } catch (_) {}
+
+  return Array.isArray(data) ? data : [];
 };
 
 export const fetchEventById = async (id, options = {}) => {

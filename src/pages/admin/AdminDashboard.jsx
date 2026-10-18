@@ -5,8 +5,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { RsvpContext } from '../../context/RsvpContext';
-import { deleteEvent as apiDeleteEvent } from '../../services/apiService';
-import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Edit2, RefreshCw, Loader2, Ban } from 'lucide-react';
+import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Edit2, RefreshCw, Loader2, Ban, Clock, CheckCircle } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { events, refreshEvents } = useContext(RsvpContext);
@@ -16,6 +15,7 @@ const AdminDashboard = () => {
 
   // Authoritative metrics computation — handles newly created records cleanly without NaN
   const totalEvents = events.length;
+  const pendingEventsCount = events.filter(e => e.status === 'pending_approval' || e.status === 'pending_review').length;
   const totalRsvps = events.reduce((acc, curr) => {
     if (typeof curr.rsvpCount === 'number') return acc + curr.rsvpCount;
     if (typeof curr.seatsTotal === 'number' && typeof curr.seatsAvailable === 'number') {
@@ -75,6 +75,19 @@ const AdminDashboard = () => {
             <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
             {isRefreshing ? 'Refreshing...' : 'Refresh Live Data'}
           </button>
+          <Button
+            onClick={() => navigate('/admin/review-queue')}
+            variant={pendingEventsCount > 0 ? "primary" : "secondary"}
+            className="py-2.5 px-5 bg-pastel-yellow hover:bg-amber-300 border-2 border-black flex items-center gap-2"
+          >
+            <Clock size={16} />
+            Approval Queue
+            {pendingEventsCount > 0 && (
+              <span className="bg-red-600 text-white text-[11px] font-black px-2 py-0.5 rounded-full border border-black shadow-[1px_1px_0px_0px_#000]">
+                {pendingEventsCount}
+              </span>
+            )}
+          </Button>
           <Button
             onClick={() => navigate('/admin/clubs/new')}
             variant="secondary"
@@ -172,15 +185,29 @@ const AdminDashboard = () => {
                     </td>
                     <td className="py-4 px-6 text-center">
                       <span className={`px-2 py-0.5 border border-black text-[10px] font-black uppercase ${
-                        isCancelled ? 'bg-red-200 text-red-800' : 'bg-pastel-mint text-black'
+                        isCancelled 
+                          ? 'bg-red-200 text-red-800' 
+                          : (evt.status === 'pending_approval' || evt.status === 'pending_review' 
+                            ? 'bg-pastel-yellow text-black animate-pulse' 
+                            : 'bg-pastel-mint text-black')
                       }`}>
-                        {evt.status || 'published'}
+                        {evt.status === 'pending_approval' ? 'Pending Review' : (evt.status || 'published')}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center font-mono">{evt.seatsTotal}</td>
                     <td className="py-4 px-6 text-center font-mono text-green-700 font-black">{bookedCount}</td>
                     <td className="py-4 px-6 text-center font-mono text-amber-600 font-black">{waitCount}</td>
                     <td className="py-4 px-6 text-right space-x-1.5 whitespace-nowrap">
+                      {(evt.status === 'pending_approval' || evt.status === 'pending_review') && (
+                        <button
+                          onClick={() => navigate('/admin/review-queue')}
+                          className="p-2 border-2 border-black bg-pastel-yellow hover:bg-amber-300 font-black transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1"
+                          title="Review Event"
+                        >
+                          <Clock size={12} />
+                          Review
+                        </button>
+                      )}
                       <button
                         onClick={() => navigate(`/admin/event-form/${evt.id}`)}
                         className="p-2 border-2 border-black bg-pastel-mint hover:bg-emerald-300 transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1"

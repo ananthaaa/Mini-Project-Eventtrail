@@ -31,7 +31,7 @@ const AdminReviewQueue = () => {
   const loadQueue = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await fetchEvents({ status: 'all' });
+      const data = await fetchEvents({ status: 'all', admin: 'true' });
       if (Array.isArray(data)) {
         setEvents(data);
       } else {
@@ -49,7 +49,7 @@ const AdminReviewQueue = () => {
     loadQueue();
   }, [loadQueue]);
 
-  const pendingEvents = events.filter(e => e.status === 'pending_approval');
+  const pendingEvents = events.filter(e => e.status === 'pending_approval' || e.status === 'pending_review' || (!e.status && e.status !== 'published'));
   const displayedEvents = filterMode === 'pending' ? pendingEvents : events;
 
   const handleOpenReviewModal = (evt, action) => {
@@ -78,6 +78,13 @@ const AdminReviewQueue = () => {
           ? `Event "${selectedEvent.title}" approved and published to students!`
           : `Event "${selectedEvent.title}" updated and feedback sent to club organizer.`
       );
+
+      // Update local storage fallback if present
+      try {
+        const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
+        const updated = localEvents.map(e => e.id === selectedEvent.id ? { ...e, status: reviewAction === 'approve' ? 'published' : (reviewAction === 'reject' ? 'rejected' : 'needs_changes') } : e);
+        localStorage.setItem('cp_events', JSON.stringify(updated));
+      } catch (_) {}
 
       setSelectedEvent(null);
       setReviewAction(null);

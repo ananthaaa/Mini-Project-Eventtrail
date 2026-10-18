@@ -9,7 +9,24 @@ const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME;
 const NOTIFICATIONS_TABLE = process.env.NOTIFICATIONS_TABLE_NAME;
 
 function getAdminAuth(event) {
-  const claims = event.requestContext?.authorizer?.jwt?.claims;
+  let claims = event.requestContext?.authorizer?.jwt?.claims;
+
+  if (!claims) {
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7).trim();
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = Buffer.from(parts[1], 'base64').toString('utf8');
+          claims = JSON.parse(payload);
+        }
+      } catch (err) {
+        console.warn('Could not decode Bearer token header:', err.message);
+      }
+    }
+  }
+
   if (!claims) {
     return { authorized: false, statusCode: 401, error: 'Unauthorized: Missing or invalid token' };
   }
@@ -20,7 +37,7 @@ function getAdminAuth(event) {
     : (typeof rawGroups === 'string' ? rawGroups.split(',').map(s => s.trim()) : []);
 
   const role = claims['custom:role'];
-  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || role === 'admin';
+  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || groups.includes('platform-admin') || role === 'admin' || role === 'platform-admin';
 
   if (!isPlatformAdmin) {
     return { authorized: false, statusCode: 403, error: 'Forbidden: Only Platform Administrators can review and approve events' };

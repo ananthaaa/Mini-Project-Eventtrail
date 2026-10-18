@@ -73,8 +73,11 @@ export const RsvpProvider = ({ children }) => {
   const refreshEvents = useCallback(async () => {
     setIsLoading(true);
     try {
+      const fetchParams = (activeUser?.role === 'admin' || activeUser?.role === 'club_admin' || activeUser?.role === 'organizer')
+        ? { status: 'all', admin: 'true' }
+        : {};
       const [apiEventsRes, apiVenuesRes] = await Promise.allSettled([
-        fetchEvents(),
+        fetchEvents(fetchParams),
         fetchVenues()
       ]);
 
@@ -98,7 +101,7 @@ export const RsvpProvider = ({ children }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeUser]);
 
   useEffect(() => {
     refreshEvents();
