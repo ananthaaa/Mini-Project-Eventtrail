@@ -89,6 +89,8 @@ function App() {
                     <Route path="rsvp-confirmation/:id" element={<RsvpConfirmation />} />
                     <Route path="navigate" element={<NavigatePage />} />
                     <Route path="campus-map" element={<FullCampusMap />} />
+                    <Route path="map" element={<StudentEventMap />} />
+                    <Route path="event-map" element={<StudentEventMap />} />
                     <Route path="clubs" element={<ClubDirectory />} />
                     <Route path="clubs/:id" element={<ClubProfile />} />
                     <Route path="profile" element={<StudentProfile />} />

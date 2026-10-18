@@ -546,23 +546,56 @@ const OrganizerEventForm = () => {
               />
             </div>
 
-            {/* Map Preview */}
+            {/* Map Preview & Interactive Location Pin */}
             <div className="border-2 border-black overflow-hidden relative">
-              <div className="bg-black text-white px-3 py-1 font-black text-[10px] uppercase tracking-wider flex items-center justify-between">
-                <span>Campus Location Preview</span>
-                <span className="font-mono">{mapPosition.lat.toFixed(4)}, {mapPosition.lng.toFixed(4)}</span>
+              <div className="bg-black text-white px-3 py-1.5 font-black text-[10px] uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-pastel-mint animate-pulse" />
+                  Campus Location Marker (Click map or drag pin)
+                </span>
+                <span className="font-mono bg-neutral-800 px-2 py-0.5 rounded text-[11px]">
+                  {mapPosition.lat.toFixed(4)}, {mapPosition.lng.toFixed(4)}
+                </span>
               </div>
-              <div className="h-48 w-full">
+              <div className="h-64 w-full relative">
                 <CampusMap
                   center={[mapPosition.lat, mapPosition.lng]}
-                  zoom={17}
+                  zoom={17.5}
                   className="w-full h-full"
+                  style={{ minHeight: '100%' }}
+                  onLocationSelect={(coords) => {
+                    setMapPosition({ lat: coords.lat, lng: coords.lng });
+                  }}
                 >
                   <Marker
                     position={[mapPosition.lat, mapPosition.lng]}
-                    title={locationName || 'Event Location'}
-                  />
+                    title={locationName || 'Marked Venue'}
+                    draggable={true}
+                    anchor="bottom"
+                    onDragEnd={(coords) => {
+                      setMapPosition({ lat: coords.lat, lng: coords.lng });
+                    }}
+                  >
+                    <div className="flex flex-col items-center cursor-grab active:cursor-grabbing group">
+                      <div className="bg-black text-pastel-yellow text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_#000] mb-1">
+                        {locationName || 'Marked Venue'} (Drag to move)
+                      </div>
+                      <div className="w-8 h-8 bg-[#FF5A1F] border-2 border-black rounded-full flex items-center justify-center text-white font-black text-sm shadow-[3px_3px_0px_0px_#000]">
+                        📍
+                      </div>
+                    </div>
+                  </Marker>
                 </CampusMap>
+              </div>
+              <div className="bg-pastel-yellow border-t-2 border-black px-3 py-1 text-[11px] font-bold text-black flex items-center justify-between">
+                <span>💡 Click anywhere on the map or drag the pin to mark the event location.</span>
+                <button
+                  type="button"
+                  onClick={() => setMapPosition({ lat: 10.1780, lng: 76.4302 })}
+                  className="underline hover:text-red-700 font-black cursor-pointer uppercase text-[10px]"
+                >
+                  Reset
+                </button>
               </div>
             </div>
 

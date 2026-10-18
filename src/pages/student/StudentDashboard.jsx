@@ -238,20 +238,24 @@ const StudentDashboard = () => {
 
               {/* Interactive Live Event Pins */}
               {(events || []).filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
-                const venue = (venues || []).find(v => v.id === evt.venueId);
-                if (!venue || !venue.outdoorCoordinates) return null;
+                const venue = (venues || []).find(v => v.id === evt.venueId) || {};
+                const lat = Number(evt.locationDetails?.entranceLat || evt.lat || (venue.outdoorCoordinates ? venue.outdoorCoordinates[0] : venue.lat));
+                const lng = Number(evt.locationDetails?.entranceLng || evt.lng || (venue.outdoorCoordinates ? venue.outdoorCoordinates[1] : venue.lng));
+
+                if (!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
+
                 return (
                   <Marker 
                     key={evt.id} 
-                    longitude={venue.outdoorCoordinates[1]} 
-                    latitude={venue.outdoorCoordinates[0]} 
+                    longitude={lng} 
+                    latitude={lat} 
                     anchor="bottom"
                     onClick={(e) => {
                       e.originalEvent.stopPropagation();
-                      setSelectedMapEvent({ evt, venue });
+                      setSelectedMapEvent({ evt, venue, lat, lng });
                     }}
                   >
-                    <div className="w-8 h-8 bg-accent-yellow border-2 border-black rounded-full flex items-center justify-center shadow-[2px_2px_0px_0px_#000] cursor-pointer hover:scale-110 transition-transform font-black text-xs text-black ring-2 ring-black">
+                    <div className="w-8 h-8 bg-accent-yellow border-2 border-black rounded-full flex items-center justify-center shadow-[2px_2px_0px_0px_#000] cursor-pointer hover:scale-110 transition-transform font-black text-xs text-black ring-2 ring-black" title={evt.title}>
                       ★
                     </div>
                   </Marker>
@@ -260,8 +264,8 @@ const StudentDashboard = () => {
 
               {selectedMapEvent && (
                 <Popup
-                  longitude={selectedMapEvent.venue.outdoorCoordinates[1]}
-                  latitude={selectedMapEvent.venue.outdoorCoordinates[0]}
+                  longitude={selectedMapEvent.lng}
+                  latitude={selectedMapEvent.lat}
                   anchor="top"
                   offset={15}
                   onClose={() => setSelectedMapEvent(null)}
@@ -269,9 +273,13 @@ const StudentDashboard = () => {
                   closeOnClick={false}
                 >
                   <div className="p-1 w-[220px]">
-                    <img src={selectedMapEvent.evt.coverImage} alt={selectedMapEvent.evt.title} className="w-full h-24 object-cover border-2 border-black mb-2" />
+                    {selectedMapEvent.evt.coverImage && (
+                      <img src={selectedMapEvent.evt.coverImage} alt={selectedMapEvent.evt.title} className="w-full h-24 object-cover border-2 border-black mb-2" />
+                    )}
                     <h4 className="font-display font-black uppercase text-sm mb-1 text-black">{selectedMapEvent.evt.title}</h4>
-                    <p className="text-xs font-bold text-black/70 uppercase mb-2">{selectedMapEvent.evt.time} • {selectedMapEvent.venue.name}</p>
+                    <p className="text-xs font-bold text-black/70 uppercase mb-2">
+                      {selectedMapEvent.evt.time || 'All Day'} • {selectedMapEvent.evt.location || selectedMapEvent.venue?.name || 'Campus Venue'}
+                    </p>
                     
                     <div className="flex justify-between items-center mt-2 border-t-2 border-black border-dashed pt-2">
                       <span className="text-xs font-bold uppercase text-black">

@@ -235,12 +235,21 @@ const AdminReviewQueue = () => {
 
                   {/* Right Col: Map & Review Actions */}
                   <div className="flex flex-col justify-between space-y-4">
-                    <div className="border-2 border-black overflow-hidden h-44 relative bg-neutral-100">
+                    <div className="border-2 border-black overflow-hidden h-52 relative bg-neutral-100">
                       <div className="bg-black text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 absolute top-0 left-0 z-10">
                         Venue Coordinates: {lat.toFixed(4)}, {lng.toFixed(4)}
                       </div>
-                      <CampusMap center={[lat, lng]} zoom={17} className="w-full h-full">
-                        <Marker position={[lat, lng]} title={evt.location} />
+                      <CampusMap center={[lat, lng]} zoom={17.5} className="w-full h-full" style={{ minHeight: '100%' }}>
+                        <Marker position={[lat, lng]} title={evt.location} anchor="bottom">
+                          <div className="flex flex-col items-center">
+                            <div className="bg-black text-white text-[9px] font-black uppercase px-1.5 py-0.5 border border-black shadow-[2px_2px_0px_0px_#000] mb-0.5 whitespace-nowrap max-w-[150px] truncate">
+                              {evt.location || 'Venue'}
+                            </div>
+                            <div className="w-7 h-7 bg-[#FF5A1F] border-2 border-black rounded-full flex items-center justify-center text-white text-xs font-black shadow-[2px_2px_0px_0px_#000]">
+                              📍
+                            </div>
+                          </div>
+                        </Marker>
                       </CampusMap>
                     </div>
 

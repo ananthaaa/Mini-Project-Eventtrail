@@ -9,8 +9,8 @@ export const ASIET_CAMPUS_CENTER = [76.4302, 10.1780];
 
 // Strictly bounded to the ASIET Campus compound — restricts panning outside campus
 export const ASIET_CAMPUS_BOUNDS = [
-  [76.4270, 10.1750], // Southwest [lng, lat]
-  [76.4335, 10.1808], // Northeast [lng, lat]
+  [76.4250, 10.1730], // Southwest [lng, lat]
+  [76.4355, 10.1830], // Northeast [lng, lat]
 ];
 
 /**
@@ -152,17 +152,22 @@ export const useMap = () => useContext(MapContext);
 export const LngLatBounds = maplibregl.LngLatBounds;
 
 // Normalize center coordinate to [lng, lat]
-const toLngLat = (coords) => {
+export const toLngLat = (coords) => {
   if (!coords) return ASIET_CAMPUS_CENTER;
   if (Array.isArray(coords)) {
+    const c0 = Number(coords[0]);
+    const c1 = Number(coords[1]);
+    if (isNaN(c0) || isNaN(c1)) return ASIET_CAMPUS_CENTER;
     // If [lat, lng] format (lat ~10, lng ~76)
-    if (coords[0] < coords[1]) {
-      return [coords[1], coords[0]];
+    if (c0 < c1) {
+      return [c1, c0];
     }
-    return [coords[0], coords[1]];
+    return [c0, c1];
   }
   if (coords.lng != null && coords.lat != null) {
-    return [coords.lng, coords.lat];
+    const lng = Number(coords.lng);
+    const lat = Number(coords.lat);
+    if (!isNaN(lng) && !isNaN(lat)) return [lng, lat];
   }
   return ASIET_CAMPUS_CENTER;
 };
@@ -219,6 +224,7 @@ export const CampusMap = ({
     mapInstance.on('load', () => {
       mapInstanceRef.current = mapInstance;
       setMap(mapInstance);
+      mapInstance.resize();
     });
 
     if (onLocationSelect) {
@@ -245,17 +251,33 @@ export const CampusMap = ({
     map.easeTo({
       center: targetLngLat,
       zoom: zoom || map.getZoom(),
-      duration: 1000,
+      duration: 800,
     });
   }, [map, JSON.stringify(center), zoom]);
 
-  // Handle Resize
+  // Handle Resize with ResizeObserver & debounce fallback
   useEffect(() => {
-    if (!map) return;
+    if (!map || !containerRef.current) return;
+
+    map.resize();
     const timer = setTimeout(() => {
       map.resize();
     }, 250);
-    return () => clearTimeout(timer);
+
+    let observer;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => {
+        try {
+          map.resize();
+        } catch (_) {}
+      });
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (observer) observer.disconnect();
+    };
   }, [map]);
 
   // Toggle 2D / 3D camera
@@ -285,7 +307,10 @@ export const CampusMap = ({
   return (
     <div
       className={`relative w-full h-full neo-border overflow-hidden bg-[#e8ddd5] ${className}`}
-      style={{ minHeight: '400px', ...style }}
+      style={{
+        minHeight: style.minHeight || (className.includes('h-') ? '100%' : '380px'),
+        ...style
+      }}
     >
       <div ref={containerRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
 
@@ -320,6 +345,7 @@ export const CampusMap = ({
 
 /**
  * Marker — MapLibre GL Marker with React Portal for custom JSX elements
+ * Renders a guaranteed visible Neo-brutalist pin if children is not provided.
  */
 export const Marker = ({
   longitude,
@@ -332,20 +358,28 @@ export const Marker = ({
   draggable = false,
   onDragEnd,
   anchor = 'center',
+  title,
 }) => {
   const { map } = useMap();
   const markerRef = useRef(null);
   const containerRef = useRef(document.createElement('div'));
   const [mounted, setMounted] = useState(false);
 
-  const targetLng = longitude != null ? longitude : (lng != null ? lng : (position ? position[1] : null));
-  const targetLat = latitude != null ? latitude : (lat != null ? lat : (position ? position[0] : null));
+  // Normalize target longitude and latitude
+  let targetLng = longitude != null ? Number(longitude) : (lng != null ? Number(lng) : null);
+  let targetLat = latitude != null ? Number(latitude) : (lat != null ? Number(lat) : null);
+
+  if ((targetLng == null || targetLat == null) && position) {
+    const [normLng, normLat] = toLngLat(position);
+    targetLng = normLng;
+    targetLat = normLat;
+  }
 
   const onClickRef = useRef(onClick);
   onClickRef.current = onClick;
 
   useEffect(() => {
-    if (!map || targetLng == null || targetLat == null) return;
+    if (!map || targetLng == null || targetLat == null || isNaN(targetLng) || isNaN(targetLat)) return;
 
     let marker;
     try {
@@ -367,7 +401,7 @@ export const Marker = ({
           onClickRef.current(e);
         }
       };
-      containerRef.current.style.cursor = 'pointer';
+      containerRef.current.style.cursor = draggable ? 'grab' : 'pointer';
       containerRef.current.addEventListener('click', handleClick);
       marker._handleClick = handleClick;
 
@@ -401,12 +435,26 @@ export const Marker = ({
   }, [map, draggable, anchor, targetLng, targetLat]);
 
   useEffect(() => {
-    if (markerRef.current && targetLng != null && targetLat != null) {
+    if (markerRef.current && targetLng != null && targetLat != null && !isNaN(targetLng) && !isNaN(targetLat)) {
       markerRef.current.setLngLat([targetLng, targetLat]);
     }
   }, [targetLng, targetLat]);
 
-  return mounted && children ? createPortal(children, containerRef.current) : null;
+  // Guaranteed default pin if no custom children JSX is provided
+  const defaultPin = (
+    <div className="flex flex-col items-center group cursor-pointer" title={title || 'Location Pin'}>
+      {title && (
+        <div className="bg-black text-white text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_#000] mb-1 whitespace-nowrap max-w-[160px] truncate">
+          {title}
+        </div>
+      )}
+      <div className="w-7 h-7 bg-[#FF5A1F] border-2 border-black shadow-[2px_2px_0px_0px_#000] flex items-center justify-center text-white text-xs font-black">
+        📍
+      </div>
+    </div>
+  );
+
+  return mounted ? createPortal(children || defaultPin, containerRef.current) : null;
 };
 
 /**

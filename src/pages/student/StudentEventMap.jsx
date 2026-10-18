@@ -50,14 +50,20 @@ const StudentEventMap = () => {
       let isAdminCustom = false;
 
       if (event.locationDetails && event.locationDetails.entranceLat && event.locationDetails.entranceLng) {
-        lat = event.locationDetails.entranceLat;
-        lng = event.locationDetails.entranceLng;
+        lat = Number(event.locationDetails.entranceLat);
+        lng = Number(event.locationDetails.entranceLng);
         isAdminCustom = true;
+      } else if (event.lat != null && event.lng != null) {
+        lat = Number(event.lat);
+        lng = Number(event.lng);
       } else if (event.venueId) {
         const venueObj = venues.find((v) => v.id === event.venueId);
         if (venueObj && venueObj.outdoorCoordinates) {
-          lat = venueObj.outdoorCoordinates[0];
-          lng = venueObj.outdoorCoordinates[1];
+          lat = Number(venueObj.outdoorCoordinates[0]);
+          lng = Number(venueObj.outdoorCoordinates[1]);
+        } else if (venueObj && venueObj.lat != null && venueObj.lng != null) {
+          lat = Number(venueObj.lat);
+          lng = Number(venueObj.lng);
         }
       }
 
@@ -67,7 +73,7 @@ const StudentEventMap = () => {
         lng,
         isAdminCustom
       };
-    }).filter(e => e.lat !== null && e.lng !== null);
+    }).filter(e => e.lat !== null && e.lng !== null && !isNaN(e.lat) && !isNaN(e.lng));
   }, [events, venues]);
 
   const filteredEvents = useMemo(() => {

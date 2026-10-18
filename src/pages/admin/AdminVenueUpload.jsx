@@ -218,7 +218,11 @@ const AdminVenueUpload = () => {
                 </span>
               </div>
               <div className="h-80 w-full relative z-0">
-                <CampusMap onLocationSelect={setMapPosition}>
+                <CampusMap
+                  center={[mapPosition.lat, mapPosition.lng]}
+                  onLocationSelect={setMapPosition}
+                  style={{ minHeight: '100%' }}
+                >
                   {mapPosition && (
                     <Marker 
                       longitude={mapPosition.lng} 
