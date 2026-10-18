@@ -259,7 +259,7 @@ const LoginPage = () => {
             <div className="flex mb-2 border-3 border-black bg-bg-neobrutalist p-1 shadow-[2px_2px_0px_0px_#000]">
               {[
                 { value: 'student', label: 'Student', icon: GraduationCap },
-                { value: 'club_organizer', label: 'Club Organizer', icon: Users },
+                { value: 'club_organizer', label: 'Organizer', icon: Users },
                 { value: 'admin', label: 'Admin', icon: ShieldCheck },
               ].map(({ value, label, icon: Icon }) => (
                 <button
@@ -345,7 +345,7 @@ const LoginPage = () => {
           <form onSubmit={handleLogin} className="space-y-4" noValidate>
             <div>
               <label htmlFor="login-email" className="block text-xs font-black uppercase tracking-wider mb-1.5">
-                Campus Email
+                Email
               </label>
               <div className="relative flex items-center">
                 <input
@@ -353,7 +353,11 @@ const LoginPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@campus.edu"
+                  placeholder={
+                    role === 'admin'
+                      ? 'admin@campus.edu'
+                      : (role === 'club_organizer' ? 'organizer@campus.edu' : 'student@campus.edu')
+                  }
                   autoComplete="email"
                   className={inputClass}
                   required
@@ -653,7 +657,7 @@ const LoginPage = () => {
           ) : (
             <div className="p-3 bg-neutral-100 border-2 border-black text-xs font-bold text-black/70">
               <span className="font-black uppercase text-black block mb-1">
-                {role === 'club_organizer' ? 'Club Organizer Notice' : 'Platform Administrator Notice'}
+                {role === 'club_organizer' ? 'Organizer Notice' : 'Platform Administrator Notice'}
               </span>
               Organizer and administrator accounts are provisioned exclusively by Campus Administration. Check your invitation email or contact IT Administration.
             </div>
