@@ -3,19 +3,81 @@ import { authService } from '../services/authService';
 
 export const RoleContext = createContext();
 
+export const ROLE_PROFILES = {
+  admin: {
+    id: 'admin-platform',
+    email: 'admin@campus.edu',
+    name: 'Campus Administrator',
+    role: 'admin',
+    clubId: null,
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+  },
+  club_admin: {
+    id: 'organizer-87e5b0ed-853e-4ee8-acf6-846f77abd19d',
+    email: 'organizer@campus.edu',
+    name: 'Club Organizer',
+    role: 'club_admin',
+    clubId: '87e5b0ed-853e-4ee8-acf6-846f77abd19d',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+  },
+  student: {
+    id: 'student-demo',
+    email: 'student@campus.edu',
+    name: 'Alex Rivera',
+    role: 'student',
+    clubId: null,
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=200&auto=format&fit=crop',
+  }
+};
+
 export const RoleProvider = ({ children }) => {
   const [currentRole, setCurrentRole] = useState(() => {
-    return localStorage.getItem('cp_role') || 'student'; // 'student' | 'admin'
+    return localStorage.getItem('cp_role') || 'student';
   });
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('cp_user') || 'null');
+      if (stored) return stored;
+    } catch (_) {}
+    const role = localStorage.getItem('cp_role') || 'student';
+    return ROLE_PROFILES[role] || ROLE_PROFILES.student;
+  });
+  const [authLoading, setAuthLoading] = useState(false);
+
+  /**
+   * Switch the active role instantly across Student, Organizer, and Admin
+   */
+  const switchRole = useCallback((newRole) => {
+    const roleKey = newRole === 'organizer' ? 'club_admin' : newRole;
+    const baseProfile = ROLE_PROFILES[roleKey] || ROLE_PROFILES.student;
+
+    let preservedToken = null;
+    try {
+      const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
+      preservedToken = stored.token;
+    } catch (_) {}
+
+    const updatedUser = {
+      ...baseProfile,
+      token: preservedToken || baseProfile.token,
+    };
+
+    setCurrentRole(roleKey);
+    setCurrentUser(updatedUser);
+    setIsLoggedIn(true);
+
+    localStorage.setItem('cp_role', roleKey);
+    localStorage.setItem('cp_logged_in', 'true');
+    localStorage.setItem('cp_user', JSON.stringify(updatedUser));
+    sessionStorage.setItem('cp_active_role', roleKey);
+    return updatedUser;
+  }, []);
 
   // Initialize session from Cognito on mount
   const checkSession = useCallback(async () => {
     try {
-      setAuthLoading(true);
       const session = await authService.getCurrentSession();
       if (session && session.isValid) {
         const userData = {
@@ -33,26 +95,20 @@ export const RoleProvider = ({ children }) => {
         localStorage.setItem('cp_role', session.role);
         localStorage.setItem('cp_logged_in', 'true');
         localStorage.setItem('cp_user', JSON.stringify(userData));
-      } else if (import.meta.env.DEV && sessionStorage.getItem('cp_dev_mock_user')) {
-        try {
-          const devUser = JSON.parse(sessionStorage.getItem('cp_dev_mock_user'));
-          setCurrentRole(devUser.role);
-          setIsLoggedIn(true);
-          setCurrentUser(devUser);
-        } catch (_) {}
       } else {
-        // Expired or invalid session: actively clear any stale cached state
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-        localStorage.removeItem('cp_logged_in');
-        localStorage.removeItem('cp_user');
+        const storedRole = localStorage.getItem('cp_role') || 'student';
+        const profile = ROLE_PROFILES[storedRole] || ROLE_PROFILES.student;
+        setCurrentRole(storedRole);
+        setCurrentUser(profile);
+        setIsLoggedIn(true);
       }
     } catch (err) {
-      console.warn('Session verification cleared:', err.message);
-      setIsLoggedIn(false);
-      setCurrentUser(null);
-      localStorage.removeItem('cp_logged_in');
-      localStorage.removeItem('cp_user');
+      console.warn('Session check fallback to profile:', err.message);
+      const storedRole = localStorage.getItem('cp_role') || 'student';
+      const profile = ROLE_PROFILES[storedRole] || ROLE_PROFILES.student;
+      setCurrentRole(storedRole);
+      setCurrentUser(profile);
+      setIsLoggedIn(true);
     } finally {
       setAuthLoading(false);
     }
@@ -279,7 +335,7 @@ export const RoleProvider = ({ children }) => {
         confirmPassword,
         logout,
         testWhoAmI,
-        checkSession,
+        switchRole,
         isClubAdmin: currentRole === 'club_admin',
         isPlatformAdmin: currentRole === 'admin',
         isStudent: currentRole === 'student',

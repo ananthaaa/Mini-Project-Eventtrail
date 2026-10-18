@@ -16,6 +16,7 @@ import OrganizerLayout from './components/layout/OrganizerLayout';
 // UI utilities
 import MockToast from './components/ui/MockToast';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import RoleSwitcherBar from './components/common/RoleSwitcherBar';
 
 // Public Pages
 import LandingPage from './pages/LandingPage';
@@ -71,6 +72,7 @@ function App() {
             <ErrorBoundary>
               <Router>
                 <MockToast />
+                <RoleSwitcherBar />
                 <Routes>
 
                   {/* ─── PUBLIC ZONE (no NavBar/Footer) ─── */}

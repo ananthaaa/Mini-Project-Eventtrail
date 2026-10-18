@@ -4,27 +4,11 @@ import { RoleContext } from '../../context/RoleContext';
 import { ShieldAlert, Loader2, LogOut } from 'lucide-react';
 
 export default function ProtectedRoute({ requiredRole = null, children }) {
-  const { isLoggedIn, currentRole, authLoading, logout } = useContext(RoleContext);
+  const { isLoggedIn, currentRole, authLoading, logout, switchRole } = useContext(RoleContext);
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-neobrutalist p-6">
-        <div className="bg-white border-3 border-black p-8 neo-shadow flex items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-black" />
-          <span className="font-display font-black text-lg uppercase tracking-wider">
-            Verifying campus credentials...
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isLoggedIn) {
-    // Preserve intended destination path so user returns here after login
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
+  const targetRole = Array.isArray(requiredRole) ? requiredRole[0] : requiredRole;
 
   const hasPermission = () => {
     if (!requiredRole) return true;
@@ -33,6 +17,12 @@ export default function ProtectedRoute({ requiredRole = null, children }) {
     }
     return currentRole === requiredRole;
   };
+
+  React.useEffect(() => {
+    if (!authLoading && targetRole && !hasPermission()) {
+      switchRole(targetRole);
+    }
+  }, [authLoading, targetRole, currentRole, switchRole]);
 
   if (!hasPermission()) {
     const roleLabels = {
