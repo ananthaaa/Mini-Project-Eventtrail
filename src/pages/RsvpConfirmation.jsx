@@ -5,12 +5,13 @@ import PageShell from '../components/layout/PageShell';
 import { RsvpContext } from '../context/RsvpContext';
 import { NavModeContext } from '../context/NavModeContext';
 import RSVPTicket from '../components/ui/RSVPTicket';
-import { MapPin, ArrowLeft } from 'lucide-react';
+import { MapPin, ArrowLeft, Navigation } from 'lucide-react';
+import { VENUE_TO_NODE } from '../data/buildings';
 
 const RsvpConfirmation = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { events, userRsvps, cancelUserRsvp } = useContext(RsvpContext);
+  const { events, userRsvps, cancelUserRsvp, venues } = useContext(RsvpContext);
   const { startNavigation } = useContext(NavModeContext);
 
   const event = events.find((e) => e.id === id);
@@ -97,19 +98,38 @@ const RsvpConfirmation = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-bg-surface border border-border-subtle rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-6 mb-8"
+            className="bg-white border-3 border-black neo-shadow-lg p-8 flex flex-col md:flex-row items-center justify-between gap-6 mb-8"
           >
             <div>
-              <h3 className="font-display font-bold text-2xl text-text-primary mb-2">Ready to head out?</h3>
-              <p className="text-text-secondary">Launch the indoor/outdoor navigator to find your way to Room {event.venueId === 'science-hall-a' ? 'A' : '202'}.</p>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="bg-pastel-yellow border-2 border-black text-[10px] font-black uppercase px-2 py-0.5">
+                  Campus Directions
+                </span>
+                <span className="bg-pastel-mint border-2 border-black text-[10px] font-black uppercase px-2 py-0.5">
+                  Live Routing
+                </span>
+              </div>
+              <h3 className="font-display font-black text-2xl text-black uppercase mb-1">Ready to head out?</h3>
+              <p className="text-black/80 font-bold text-xs uppercase tracking-wide">
+                Get road network walking directions across ASIET campus to {(venues || []).find(v => v.id === event.venueId)?.name || 'your venue'}, or follow indoor waypoints.
+              </p>
             </div>
-            <button
-              onClick={handleLaunchNavigation}
-              className="w-full md:w-auto bg-accent hover:bg-accent-hover text-accent-contrast font-medium px-8 py-4 rounded-full flex items-center justify-center gap-2 transition-colors shrink-0"
-            >
-              <MapPin size={18} />
-              Launch Navigator
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+              <button
+                onClick={() => navigate(`/student/campus-map?dest=${VENUE_TO_NODE[event.venueId] || 'entrance-cs-block'}`)}
+                className="bg-accent-yellow border-3 border-black text-black font-black uppercase tracking-wider px-6 py-3 shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] active:translate-y-px transition-all flex items-center justify-center gap-2 text-xs"
+              >
+                <Navigation size={16} strokeWidth={3} />
+                Campus Road Route
+              </button>
+              <button
+                onClick={handleLaunchNavigation}
+                className="bg-white border-3 border-black text-black font-black uppercase tracking-wider px-6 py-3 shadow-[3px_3px_0px_0px_#000] hover:bg-pastel-yellow hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] active:translate-y-px transition-all flex items-center justify-center gap-2 text-xs"
+              >
+                <MapPin size={16} strokeWidth={3} />
+                Indoor Guide
+              </button>
+            </div>
           </motion.div>
         )}
 

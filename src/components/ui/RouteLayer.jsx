@@ -1,54 +1,96 @@
-import React, { useState } from 'react';
-import { Source, Layer, Marker, Popup } from 'react-map-gl/mapbox';
+import React, { useState, useEffect } from 'react';
+import { Source, Layer, Marker, Popup, useMap, LngLatBounds } from './CampusMap';
 
 export default function RouteLayer({ path, nodes, showBridgePoints = true }) {
   const [selectedBridge, setSelectedBridge] = useState(null);
-  if (!nodes) return null;
+  const { map } = useMap();
 
   // Mapbox GeoJSON line string expects coordinates in [lng, lat] format
-  const coordinates = (path || []).map(nodeId => {
-    const node = nodes[nodeId];
-    return node ? [node.lng, node.lat] : null;
-  }).filter(Boolean);
+  const coordinates = React.useMemo(() => {
+    if (!nodes || !path) return [];
+    return path.map(nodeId => {
+      const node = nodes[nodeId];
+      return node ? [node.lng, node.lat] : null;
+    }).filter(Boolean);
+  }, [nodes, path]);
 
-  const geojson = {
-    type: 'Feature',
-    properties: {},
-    geometry: {
-      type: 'LineString',
-      coordinates
-    }
-  };
+  useEffect(() => {
+    if (!map || coordinates.length < 2) return;
+    try {
+      let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+      coordinates.forEach(([lng, lat]) => {
+        if (lng < minLng) minLng = lng;
+        if (lng > maxLng) maxLng = lng;
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+      });
+      map.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+        padding: { top: 90, bottom: 120, left: 90, right: 90 },
+        maxZoom: 18.5,
+        duration: 800,
+      });
+    } catch (_) {}
+  }, [map, coordinates]);
 
-  const lineLayerStyle = {
-    id: 'route-line-layer',
-    type: 'line',
-    layout: {
-      'line-join': 'round',
-      'line-cap': 'round'
-    },
-    paint: {
-      'line-color': '#FF5A1F',
-      'line-width': 5,
-      'line-opacity': 0.9,
-      'line-dasharray': [2, 2]
+  // Update built-in outdoor-route GeoJSON line source
+  useEffect(() => {
+    if (!map) return;
+
+    const geojsonData = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: coordinates.length > 1 ? coordinates : [],
+      },
+    };
+
+    const updateRouteOnMap = () => {
+      try {
+        const source = map.getSource('outdoor-route');
+        if (source) {
+          source.setData(geojsonData);
+          return true;
+        }
+      } catch (err) {
+        console.warn('Error setting route GeoJSON:', err);
+      }
+      return false;
+    };
+
+    // Try applying immediately
+    const applied = updateRouteOnMap();
+    if (!applied) {
+      const retryListener = () => {
+        if (updateRouteOnMap()) {
+          map.off('load', retryListener);
+          map.off('styledata', retryListener);
+          map.off('render', retryListener);
+        }
+      };
+      map.on('load', retryListener);
+      map.on('styledata', retryListener);
+      map.on('render', retryListener);
+
+      return () => {
+        map.off('load', retryListener);
+        map.off('styledata', retryListener);
+        map.off('render', retryListener);
+      };
     }
-  };
+  }, [map, coordinates]);
+
+  if (!nodes) return null;
 
   // Render bridge points (entrance nodes for geofence handoff hints)
   const bridgePoints = showBridgePoints 
     ? Object.entries(nodes)
-        .filter(([id, node]) => node.type === 'entrance' || node.type === 'building')
+        .filter(([id, node]) => (node.type === 'entrance' || node.type === 'building') && (node.isDestination || node.label))
         .map(([id, node]) => ({ id, ...node }))
     : [];
 
   return (
     <>
-      {coordinates.length > 1 && (
-        <Source id="route-source" type="geojson" data={geojson}>
-          <Layer {...lineLayerStyle} />
-        </Source>
-      )}
       {bridgePoints.map(bp => (
         <Marker 
           key={bp.id} 

@@ -1,10 +1,7 @@
 import React, { useState, useContext, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import PageShell from '../../components/layout/PageShell';
-import CampusMap from '../../components/ui/CampusMap';
-import { RsvpContext } from '../../context/RsvpContext';
-import { NavModeContext } from '../../context/NavModeContext';
-import { Marker, Popup } from 'react-map-gl/mapbox';
+import CampusMap, { Marker, Popup } from '../../components/ui/CampusMap';
 import { 
   Calendar, 
   MapPin, 

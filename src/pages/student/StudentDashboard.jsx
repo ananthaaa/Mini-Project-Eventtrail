@@ -1,7 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CampusMap from '../../components/ui/CampusMap';
-import { Marker, Popup } from 'react-map-gl/mapbox';
+import CampusMap, { Marker, Popup } from '../../components/ui/CampusMap';
 import { RoleContext } from '../../context/RoleContext';
 import { RsvpContext } from '../../context/RsvpContext';
 import PageShell from '../../components/layout/PageShell';

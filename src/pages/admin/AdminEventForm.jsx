@@ -7,8 +7,7 @@ import { RoleContext } from '../../context/RoleContext';
 import { RsvpContext } from '../../context/RsvpContext';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Save, Plus, X, MapPin } from 'lucide-react';
-import { Marker } from 'react-map-gl/mapbox';
-import CampusMap from '../../components/ui/CampusMap';
+import CampusMap, { Marker } from '../../components/ui/CampusMap';
 
 const AdminEventForm = () => {
   const navigate = useNavigate();

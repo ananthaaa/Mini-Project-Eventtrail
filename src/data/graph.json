@@ -1,94 +1,2916 @@
 {
   "nodes": {
-    "gate-main": {
-      "lat": 10.1772,
-      "lng": 76.4295,
-      "type": "entrance",
-      "label": "Main Gate"
-    },
-    "junction-library": {
-      "lat": 10.1778,
-      "lng": 76.4300,
+    "1170551691": {
+      "nodeId": "1170551691",
+      "lat": 10.179605,
+      "lng": 76.4277971,
       "type": "junction",
-      "label": "Central Library Junction"
+      "label": "Road Waypoint 1691"
     },
-    "entrance-science": {
-      "lat": 10.1782,
-      "lng": 76.4305,
-      "type": "building",
-      "label": "Science Building Block B"
+    "1170551744": {
+      "nodeId": "1170551744",
+      "lat": 10.1777477,
+      "lng": 76.4290995,
+      "type": "junction",
+      "label": "Road Waypoint 1744"
     },
-    "entrance-hub": {
-      "lat": 10.1785,
-      "lng": 76.4308,
-      "type": "building",
-      "label": "Student Activity Hub"
+    "1170551745": {
+      "nodeId": "1170551745",
+      "lat": 10.1710555,
+      "lng": 76.4287655,
+      "type": "junction",
+      "label": "Road Waypoint 1745"
     },
-    "union-cafe": {
-      "lat": 10.1775,
-      "lng": 76.4308,
-      "type": "building",
-      "label": "Student Union Cafe"
+    "1170551845": {
+      "nodeId": "1170551845",
+      "lat": 10.17968,
+      "lng": 76.428078,
+      "type": "junction",
+      "label": "Road Waypoint 1845"
     },
-    "entrance-stadium": {
-      "lat": 10.1789,
-      "lng": 76.4312,
+    "1170551916": {
+      "nodeId": "1170551916",
+      "lat": 10.1797574,
+      "lng": 76.4290351,
+      "type": "junction",
+      "label": "Road Waypoint 1916"
+    },
+    "1170552078": {
+      "nodeId": "1170552078",
+      "lat": 10.17574,
+      "lng": 76.429189,
+      "type": "junction",
+      "label": "Road Waypoint 2078"
+    },
+    "1170552464": {
+      "nodeId": "1170552464",
+      "lat": 10.1732428,
+      "lng": 76.4286978,
+      "type": "junction",
+      "label": "Road Waypoint 2464"
+    },
+    "1170552465": {
+      "nodeId": "1170552465",
+      "lat": 10.171787,
+      "lng": 76.428709,
+      "type": "junction",
+      "label": "Road Waypoint 2465"
+    },
+    "1170552498": {
+      "nodeId": "1170552498",
+      "lat": 10.1772214,
+      "lng": 76.428993,
+      "type": "junction",
+      "label": "Road Waypoint 2498"
+    },
+    "1170552583": {
+      "nodeId": "1170552583",
+      "lat": 10.173673,
+      "lng": 76.428976,
+      "type": "junction",
+      "label": "Road Waypoint 2583"
+    },
+    "2591734326": {
+      "nodeId": "2591734326",
+      "lat": 10.1788734,
+      "lng": 76.429154,
+      "type": "junction",
+      "label": "Road Waypoint 4326"
+    },
+    "2591734327": {
+      "nodeId": "2591734327",
+      "lat": 10.1792659,
+      "lng": 76.4316698,
+      "type": "junction",
+      "label": "Road Waypoint 4327"
+    },
+    "2591734328": {
+      "nodeId": "2591734328",
+      "lat": 10.1775763,
+      "lng": 76.4318254,
+      "type": "junction",
+      "label": "Road Waypoint 4328"
+    },
+    "2591734329": {
+      "nodeId": "2591734329",
+      "lat": 10.1769249,
+      "lng": 76.4290322,
+      "type": "junction",
+      "label": "Road Waypoint 4329"
+    },
+    "2591743611": {
+      "nodeId": "2591743611",
+      "lat": 10.1806464,
+      "lng": 76.4290672,
+      "type": "junction",
+      "label": "Road Waypoint 3611"
+    },
+    "2591743612": {
+      "nodeId": "2591743612",
+      "lat": 10.1802241,
+      "lng": 76.4290951,
+      "type": "junction",
+      "label": "Road Waypoint 3612"
+    },
+    "2591743613": {
+      "nodeId": "2591743613",
+      "lat": 10.1802348,
+      "lng": 76.4292618,
+      "type": "junction",
+      "label": "Road Waypoint 3613"
+    },
+    "2591743614": {
+      "nodeId": "2591743614",
+      "lat": 10.1806571,
+      "lng": 76.4292337,
+      "type": "junction",
+      "label": "Road Waypoint 3614"
+    },
+    "2591765856": {
+      "nodeId": "2591765856",
+      "lat": 10.1767277,
+      "lng": 76.4290583,
+      "type": "junction",
+      "label": "Road Waypoint 5856"
+    },
+    "2594192647": {
+      "nodeId": "2594192647",
+      "lat": 10.182115,
+      "lng": 76.433127,
+      "type": "junction",
+      "label": "Road Waypoint 2647"
+    },
+    "2594192648": {
+      "nodeId": "2594192648",
+      "lat": 10.1816526,
+      "lng": 76.4332427,
+      "type": "junction",
+      "label": "Road Waypoint 2648"
+    },
+    "2594192650": {
+      "nodeId": "2594192650",
+      "lat": 10.1812423,
+      "lng": 76.4333388,
+      "type": "junction",
+      "label": "Road Waypoint 2650"
+    },
+    "2594192653": {
+      "nodeId": "2594192653",
+      "lat": 10.1809526,
+      "lng": 76.4333593,
+      "type": "junction",
+      "label": "Road Waypoint 2653"
+    },
+    "2594192654": {
+      "nodeId": "2594192654",
+      "lat": 10.1807575,
+      "lng": 76.433333,
+      "type": "junction",
+      "label": "Road Waypoint 2654"
+    },
+    "2594192656": {
+      "nodeId": "2594192656",
+      "lat": 10.180462,
+      "lng": 76.4333855,
+      "type": "junction",
+      "label": "Road Waypoint 2656"
+    },
+    "2594192658": {
+      "nodeId": "2594192658",
+      "lat": 10.1802612,
+      "lng": 76.4334234,
+      "type": "junction",
+      "label": "Road Waypoint 2658"
+    },
+    "2594192661": {
+      "nodeId": "2594192661",
+      "lat": 10.180023,
+      "lng": 76.4334059,
+      "type": "junction",
+      "label": "Road Waypoint 2661"
+    },
+    "2594192663": {
+      "nodeId": "2594192663",
+      "lat": 10.1798595,
+      "lng": 76.4333534,
+      "type": "junction",
+      "label": "Road Waypoint 2663"
+    },
+    "2594192665": {
+      "nodeId": "2594192665",
+      "lat": 10.1797304,
+      "lng": 76.4331669,
+      "type": "junction",
+      "label": "Road Waypoint 2665"
+    },
+    "2594192667": {
+      "nodeId": "2594192667",
+      "lat": 10.1796386,
+      "lng": 76.4329133,
+      "type": "junction",
+      "label": "Road Waypoint 2667"
+    },
+    "2594192670": {
+      "nodeId": "2594192670",
+      "lat": 10.1795468,
+      "lng": 76.4327413,
+      "type": "junction",
+      "label": "Road Waypoint 2670"
+    },
+    "2594192672": {
+      "nodeId": "2594192672",
+      "lat": 10.1793747,
+      "lng": 76.4326713,
+      "type": "junction",
+      "label": "Road Waypoint 2672"
+    },
+    "2594192674": {
+      "nodeId": "2594192674",
+      "lat": 10.1790849,
+      "lng": 76.4326509,
+      "type": "junction",
+      "label": "Road Waypoint 2674"
+    },
+    "2594192677": {
+      "nodeId": "2594192677",
+      "lat": 10.1788181,
+      "lng": 76.4326509,
+      "type": "junction",
+      "label": "Road Waypoint 2677"
+    },
+    "2594192679": {
+      "nodeId": "2594192679",
+      "lat": 10.178557,
+      "lng": 76.4326072,
+      "type": "junction",
+      "label": "Road Waypoint 2679"
+    },
+    "2594192682": {
+      "nodeId": "2594192682",
+      "lat": 10.1783303,
+      "lng": 76.4325081,
+      "type": "junction",
+      "label": "Road Waypoint 2682"
+    },
+    "2594192683": {
+      "nodeId": "2594192683",
+      "lat": 10.1781123,
+      "lng": 76.4324469,
+      "type": "junction",
+      "label": "Road Waypoint 2683"
+    },
+    "2594192686": {
+      "nodeId": "2594192686",
+      "lat": 10.1776848,
+      "lng": 76.432237,
+      "type": "junction",
+      "label": "Road Waypoint 2686"
+    },
+    "2594192689": {
+      "nodeId": "2594192689",
+      "lat": 10.1773291,
+      "lng": 76.4321117,
+      "type": "junction",
+      "label": "Road Waypoint 2689"
+    },
+    "2594192691": {
+      "nodeId": "2594192691",
+      "lat": 10.1771971,
+      "lng": 76.4319281,
+      "type": "junction",
+      "label": "Road Waypoint 2691"
+    },
+    "2594192692": {
+      "nodeId": "2594192692",
+      "lat": 10.1771282,
+      "lng": 76.4317007,
+      "type": "junction",
+      "label": "Road Waypoint 2692"
+    },
+    "2594192695": {
+      "nodeId": "2594192695",
+      "lat": 10.1770479,
+      "lng": 76.4311906,
+      "type": "junction",
+      "label": "Road Waypoint 2695"
+    },
+    "2594192698": {
+      "nodeId": "2594192698",
+      "lat": 10.1770823,
+      "lng": 76.4306951,
+      "type": "junction",
+      "label": "Road Waypoint 2698"
+    },
+    "2594192699": {
+      "nodeId": "2594192699",
+      "lat": 10.1771311,
+      "lng": 76.4302928,
+      "type": "junction",
+      "label": "Road Waypoint 2699"
+    },
+    "2594192701": {
+      "nodeId": "2594192701",
+      "lat": 10.1770307,
+      "lng": 76.4297565,
+      "type": "junction",
+      "label": "Road Waypoint 2701"
+    },
+    "2594192705": {
+      "nodeId": "2594192705",
+      "lat": 10.1769877,
+      "lng": 76.4294854,
+      "type": "junction",
+      "label": "Road Waypoint 2705"
+    },
+    "2594192706": {
+      "nodeId": "2594192706",
+      "lat": 10.1769532,
+      "lng": 76.4293193,
+      "type": "junction",
+      "label": "Road Waypoint 2706"
+    },
+    "2971602263": {
+      "nodeId": "2971602263",
+      "lat": 10.1774498,
+      "lng": 76.4288983,
+      "type": "junction",
+      "label": "Road Waypoint 2263"
+    },
+    "2971602264": {
+      "nodeId": "2971602264",
+      "lat": 10.1772857,
+      "lng": 76.4288809,
+      "type": "junction",
+      "label": "Road Waypoint 2264"
+    },
+    "2971602265": {
+      "nodeId": "2971602265",
+      "lat": 10.1772751,
+      "lng": 76.4289837,
+      "type": "junction",
+      "label": "Road Waypoint 2265"
+    },
+    "2971602266": {
+      "nodeId": "2971602266",
+      "lat": 10.1774392,
+      "lng": 76.4290011,
+      "type": "junction",
+      "label": "Road Waypoint 2266"
+    },
+    "3103968162": {
+      "nodeId": "3103968162",
+      "lat": 10.1775261,
+      "lng": 76.4294555,
+      "type": "junction",
+      "label": "Road Waypoint 8162"
+    },
+    "3103968163": {
+      "nodeId": "3103968163",
+      "lat": 10.1785843,
+      "lng": 76.4309894,
+      "type": "junction",
+      "label": "Road Waypoint 8163"
+    },
+    "3103968164": {
+      "nodeId": "3103968164",
+      "lat": 10.1781478,
+      "lng": 76.4309604,
+      "type": "junction",
+      "label": "Road Waypoint 8164"
+    },
+    "3103968165": {
+      "nodeId": "3103968165",
+      "lat": 10.1781543,
+      "lng": 76.4311976,
+      "type": "junction",
+      "label": "Road Waypoint 8165"
+    },
+    "3103968166": {
+      "nodeId": "3103968166",
+      "lat": 10.1785912,
+      "lng": 76.4311815,
+      "type": "junction",
+      "label": "Road Waypoint 8166"
+    },
+    "3103969900": {
+      "nodeId": "3103969900",
+      "lat": 10.1779422,
+      "lng": 76.4310877,
+      "type": "junction",
+      "label": "Road Waypoint 9900"
+    },
+    "3103969901": {
+      "nodeId": "3103969901",
+      "lat": 10.1776986,
+      "lng": 76.4310926,
+      "type": "junction",
+      "label": "Road Waypoint 9901"
+    },
+    "3103969902": {
+      "nodeId": "3103969902",
+      "lat": 10.1776986,
+      "lng": 76.4315176,
+      "type": "junction",
+      "label": "Road Waypoint 9902"
+    },
+    "3103969903": {
+      "nodeId": "3103969903",
+      "lat": 10.1779646,
+      "lng": 76.4315029,
+      "type": "junction",
+      "label": "Road Waypoint 9903"
+    },
+    "3103970130": {
+      "nodeId": "3103970130",
+      "lat": 10.1781602,
+      "lng": 76.4312114,
+      "type": "junction",
+      "label": "Road Waypoint 0130"
+    },
+    "3103970131": {
+      "nodeId": "3103970131",
+      "lat": 10.1779534,
+      "lng": 76.4312228,
+      "type": "junction",
+      "label": "Road Waypoint 0131"
+    },
+    "3103970132": {
+      "nodeId": "3103970132",
+      "lat": 10.1781858,
+      "lng": 76.4314899,
+      "type": "junction",
+      "label": "Road Waypoint 0132"
+    },
+    "3103970133": {
+      "nodeId": "3103970133",
+      "lat": 10.1790362,
+      "lng": 76.4313338,
+      "type": "junction",
+      "label": "Road Waypoint 0133"
+    },
+    "3103970134": {
+      "nodeId": "3103970134",
+      "lat": 10.1785518,
+      "lng": 76.4313176,
+      "type": "junction",
+      "label": "Road Waypoint 0134"
+    },
+    "3103970135": {
+      "nodeId": "3103970135",
+      "lat": 10.1785489,
+      "lng": 76.4314084,
+      "type": "junction",
+      "label": "Road Waypoint 0135"
+    },
+    "3103970136": {
+      "nodeId": "3103970136",
+      "lat": 10.1784983,
+      "lng": 76.4314067,
+      "type": "junction",
+      "label": "Road Waypoint 0136"
+    },
+    "3103970137": {
+      "nodeId": "3103970137",
+      "lat": 10.1784956,
+      "lng": 76.4314896,
+      "type": "junction",
+      "label": "Road Waypoint 0137"
+    },
+    "3103970138": {
+      "nodeId": "3103970138",
+      "lat": 10.1785513,
+      "lng": 76.4314915,
+      "type": "junction",
+      "label": "Road Waypoint 0138"
+    },
+    "3103970139": {
+      "nodeId": "3103970139",
+      "lat": 10.1785477,
+      "lng": 76.4316019,
+      "type": "junction",
+      "label": "Road Waypoint 0139"
+    },
+    "3103970140": {
+      "nodeId": "3103970140",
+      "lat": 10.179027,
+      "lng": 76.4316179,
+      "type": "junction",
+      "label": "Road Waypoint 0140"
+    },
+    "3103972466": {
+      "nodeId": "3103972466",
+      "lat": 10.1785708,
+      "lng": 76.4298864,
+      "type": "junction",
+      "label": "Road Waypoint 2466"
+    },
+    "3103972467": {
+      "nodeId": "3103972467",
+      "lat": 10.1780099,
+      "lng": 76.4299407,
+      "type": "junction",
+      "label": "Road Waypoint 2467"
+    },
+    "3103972468": {
+      "nodeId": "3103972468",
+      "lat": 10.1780309,
+      "lng": 76.4304404,
+      "type": "junction",
+      "label": "Road Waypoint 2468"
+    },
+    "3103972469": {
+      "nodeId": "3103972469",
+      "lat": 10.1779055,
+      "lng": 76.4304458,
+      "type": "junction",
+      "label": "Road Waypoint 2469"
+    },
+    "3103972470": {
+      "nodeId": "3103972470",
+      "lat": 10.1779111,
+      "lng": 76.4305787,
+      "type": "junction",
+      "label": "Road Waypoint 2470"
+    },
+    "3103972471": {
+      "nodeId": "3103972471",
+      "lat": 10.1780433,
+      "lng": 76.430573,
+      "type": "junction",
+      "label": "Road Waypoint 2471"
+    },
+    "3103972472": {
+      "nodeId": "3103972472",
+      "lat": 10.1780558,
+      "lng": 76.4308695,
+      "type": "junction",
+      "label": "Road Waypoint 2472"
+    },
+    "3103972473": {
+      "nodeId": "3103972473",
+      "lat": 10.1781438,
+      "lng": 76.4308657,
+      "type": "junction",
+      "label": "Road Waypoint 2473"
+    },
+    "3103972474": {
+      "nodeId": "3103972474",
+      "lat": 10.1782228,
+      "lng": 76.4309572,
+      "type": "junction",
+      "label": "Road Waypoint 2474"
+    },
+    "3103972475": {
+      "nodeId": "3103972475",
+      "lat": 10.1782195,
+      "lng": 76.4308783,
+      "type": "junction",
+      "label": "Road Waypoint 2475"
+    },
+    "3103972476": {
+      "nodeId": "3103972476",
+      "lat": 10.1784041,
+      "lng": 76.4308703,
+      "type": "junction",
+      "label": "Road Waypoint 2476"
+    },
+    "3103972477": {
+      "nodeId": "3103972477",
+      "lat": 10.1784072,
+      "lng": 76.4309439,
+      "type": "junction",
+      "label": "Road Waypoint 2477"
+    },
+    "3103972478": {
+      "nodeId": "3103972478",
+      "lat": 10.1787671,
+      "lng": 76.4309283,
+      "type": "junction",
+      "label": "Road Waypoint 2478"
+    },
+    "3103972479": {
+      "nodeId": "3103972479",
+      "lat": 10.1787634,
+      "lng": 76.4308389,
+      "type": "junction",
+      "label": "Road Waypoint 2479"
+    },
+    "3103972480": {
+      "nodeId": "3103972480",
+      "lat": 10.1786111,
+      "lng": 76.4308455,
+      "type": "junction",
+      "label": "Road Waypoint 2480"
+    },
+    "4325939458": {
+      "nodeId": "4325939458",
+      "lat": 10.1795592,
+      "lng": 76.4298769,
+      "type": "junction",
+      "label": "Road Waypoint 9458"
+    },
+    "4325939459": {
+      "nodeId": "4325939459",
+      "lat": 10.1795929,
+      "lng": 76.42997,
+      "type": "junction",
+      "label": "Road Waypoint 9459"
+    },
+    "4325939460": {
+      "nodeId": "4325939460",
+      "lat": 10.1794294,
+      "lng": 76.4300312,
+      "type": "junction",
+      "label": "Road Waypoint 9460"
+    },
+    "4325939461": {
+      "nodeId": "4325939461",
+      "lat": 10.179557,
+      "lng": 76.4303826,
+      "type": "junction",
+      "label": "Road Waypoint 9461"
+    },
+    "4325939462": {
+      "nodeId": "4325939462",
+      "lat": 10.1797386,
+      "lng": 76.4303146,
+      "type": "junction",
+      "label": "Road Waypoint 9462"
+    },
+    "4325939463": {
+      "nodeId": "4325939463",
+      "lat": 10.1798081,
+      "lng": 76.4305061,
+      "type": "junction",
+      "label": "Road Waypoint 9463"
+    },
+    "4325939464": {
+      "nodeId": "4325939464",
+      "lat": 10.1796461,
+      "lng": 76.4305668,
+      "type": "junction",
+      "label": "Road Waypoint 9464"
+    },
+    "4325939465": {
+      "nodeId": "4325939465",
+      "lat": 10.1796343,
+      "lng": 76.4305343,
+      "type": "junction",
+      "label": "Road Waypoint 9465"
+    },
+    "4325939466": {
+      "nodeId": "4325939466",
+      "lat": 10.1793972,
+      "lng": 76.4306231,
+      "type": "junction",
+      "label": "Road Waypoint 9466"
+    },
+    "4325939467": {
+      "nodeId": "4325939467",
+      "lat": 10.1794465,
+      "lng": 76.4307589,
+      "type": "junction",
+      "label": "Road Waypoint 9467"
+    },
+    "4325939468": {
+      "nodeId": "4325939468",
+      "lat": 10.1793606,
+      "lng": 76.4307911,
+      "type": "junction",
+      "label": "Road Waypoint 9468"
+    },
+    "4325939469": {
+      "nodeId": "4325939469",
+      "lat": 10.1793256,
+      "lng": 76.4306947,
+      "type": "junction",
+      "label": "Road Waypoint 9469"
+    },
+    "4325939470": {
+      "nodeId": "4325939470",
+      "lat": 10.1792101,
+      "lng": 76.4307379,
+      "type": "junction",
+      "label": "Road Waypoint 9470"
+    },
+    "4325939471": {
+      "nodeId": "4325939471",
+      "lat": 10.1791609,
+      "lng": 76.4306023,
+      "type": "junction",
+      "label": "Road Waypoint 9471"
+    },
+    "4325939472": {
+      "nodeId": "4325939472",
+      "lat": 10.1794792,
+      "lng": 76.430483,
+      "type": "junction",
+      "label": "Road Waypoint 9472"
+    },
+    "4325939473": {
+      "nodeId": "4325939473",
+      "lat": 10.1793355,
+      "lng": 76.4300868,
+      "type": "junction",
+      "label": "Road Waypoint 9473"
+    },
+    "4325939475": {
+      "nodeId": "4325939475",
+      "lat": 10.1791707,
+      "lng": 76.4301485,
+      "type": "junction",
+      "label": "Road Waypoint 9475"
+    },
+    "4325939476": {
+      "nodeId": "4325939476",
+      "lat": 10.1791832,
+      "lng": 76.4301829,
+      "type": "junction",
+      "label": "Road Waypoint 9476"
+    },
+    "4325939477": {
+      "nodeId": "4325939477",
+      "lat": 10.1790359,
+      "lng": 76.4302625,
+      "type": "junction",
+      "label": "Road Waypoint 9477"
+    },
+    "4325939478": {
+      "nodeId": "4325939478",
+      "lat": 10.1790069,
+      "lng": 76.4301825,
+      "type": "junction",
+      "label": "Road Waypoint 9478"
+    },
+    "4325939479": {
+      "nodeId": "4325939479",
+      "lat": 10.1790705,
+      "lng": 76.4301586,
+      "type": "junction",
+      "label": "Road Waypoint 9479"
+    },
+    "4325939480": {
+      "nodeId": "4325939480",
+      "lat": 10.1790283,
+      "lng": 76.4300421,
+      "type": "junction",
+      "label": "Road Waypoint 9480"
+    },
+    "4325939481": {
+      "nodeId": "4325939481",
+      "lat": 10.1789593,
+      "lng": 76.4300679,
+      "type": "junction",
+      "label": "Road Waypoint 9481"
+    },
+    "4325939482": {
+      "nodeId": "4325939482",
+      "lat": 10.1789308,
+      "lng": 76.4299894,
+      "type": "junction",
+      "label": "Road Waypoint 9482"
+    },
+    "4325939483": {
+      "nodeId": "4325939483",
+      "lat": 10.179085,
+      "lng": 76.4299316,
+      "type": "junction",
+      "label": "Road Waypoint 9483"
+    },
+    "4325939484": {
+      "nodeId": "4325939484",
+      "lat": 10.1791228,
+      "lng": 76.4300359,
+      "type": "junction",
+      "label": "Road Waypoint 9484"
+    },
+    "4325939485": {
+      "nodeId": "4325939485",
+      "lat": 10.1793227,
+      "lng": 76.429961,
+      "type": "junction",
+      "label": "Road Waypoint 9485"
+    },
+    "4325939486": {
+      "nodeId": "4325939486",
+      "lat": 10.1792813,
+      "lng": 76.429847,
+      "type": "junction",
+      "label": "Road Waypoint 9486"
+    },
+    "4325939487": {
+      "nodeId": "4325939487",
+      "lat": 10.1793585,
+      "lng": 76.4298181,
+      "type": "junction",
+      "label": "Road Waypoint 9487"
+    },
+    "4325939488": {
+      "nodeId": "4325939488",
+      "lat": 10.1794013,
+      "lng": 76.4299361,
+      "type": "junction",
+      "label": "Road Waypoint 9488"
+    },
+    "4325942681": {
+      "nodeId": "4325942681",
+      "lat": 10.1779267,
+      "lng": 76.4292051,
+      "type": "junction",
+      "label": "Road Waypoint 2681"
+    },
+    "4325942682": {
+      "nodeId": "4325942682",
+      "lat": 10.177961,
+      "lng": 76.4298618,
+      "type": "junction",
+      "label": "Road Waypoint 2682"
+    },
+    "4325942683": {
+      "nodeId": "4325942683",
+      "lat": 10.1789078,
+      "lng": 76.4298106,
+      "type": "junction",
+      "label": "Road Waypoint 2683"
+    },
+    "4820486222": {
+      "nodeId": "4820486222",
+      "lat": 10.1781656,
+      "lng": 76.429934,
+      "type": "junction",
+      "label": "Road Waypoint 6222"
+    },
+    "4820486223": {
+      "nodeId": "4820486223",
+      "lat": 10.1781687,
+      "lng": 76.4300074,
+      "type": "junction",
+      "label": "Road Waypoint 6223"
+    },
+    "4820486224": {
+      "nodeId": "4820486224",
+      "lat": 10.1784229,
+      "lng": 76.4299963,
+      "type": "junction",
+      "label": "Road Waypoint 6224"
+    },
+    "4820486225": {
+      "nodeId": "4820486225",
+      "lat": 10.1791586,
+      "lng": 76.4302165,
+      "type": "junction",
+      "label": "Road Waypoint 6225"
+    },
+    "4820486226": {
+      "nodeId": "4820486226",
+      "lat": 10.1791508,
+      "lng": 76.430195,
+      "type": "junction",
+      "label": "Road Waypoint 6226"
+    },
+    "4820486229": {
+      "nodeId": "4820486229",
+      "lat": 10.1809224,
+      "lng": 76.4303511,
+      "type": "junction",
+      "label": "Road Waypoint 6229"
+    },
+    "4820486230": {
+      "nodeId": "4820486230",
+      "lat": 10.1796602,
+      "lng": 76.4291966,
+      "type": "junction",
+      "label": "Road Waypoint 6230"
+    },
+    "4820486231": {
+      "nodeId": "4820486231",
+      "lat": 10.1775773,
+      "lng": 76.4293131,
+      "type": "junction",
+      "label": "Road Waypoint 6231"
+    },
+    "4820486232": {
+      "nodeId": "4820486232",
+      "lat": 10.1773489,
+      "lng": 76.4296465,
+      "type": "junction",
+      "label": "Road Waypoint 6232"
+    },
+    "4820486233": {
+      "nodeId": "4820486233",
+      "lat": 10.1773924,
+      "lng": 76.4292898,
+      "type": "junction",
+      "label": "Road Waypoint 6233"
+    },
+    "4820486234": {
+      "nodeId": "4820486234",
+      "lat": 10.1775338,
+      "lng": 76.4296698,
+      "type": "junction",
+      "label": "Road Waypoint 6234"
+    },
+    "4820486235": {
+      "nodeId": "4820486235",
+      "lat": 10.17864,
+      "lng": 76.4314072,
+      "type": "junction",
+      "label": "Road Waypoint 6235"
+    },
+    "4820486236": {
+      "nodeId": "4820486236",
+      "lat": 10.1789517,
+      "lng": 76.4314213,
+      "type": "junction",
+      "label": "Road Waypoint 6236"
+    },
+    "4820486237": {
+      "nodeId": "4820486237",
+      "lat": 10.1789468,
+      "lng": 76.4315336,
+      "type": "junction",
+      "label": "Road Waypoint 6237"
+    },
+    "4820486238": {
+      "nodeId": "4820486238",
+      "lat": 10.178635,
+      "lng": 76.4315194,
+      "type": "junction",
+      "label": "Road Waypoint 6238"
+    },
+    "4820486239": {
+      "nodeId": "4820486239",
+      "lat": 10.1781474,
+      "lng": 76.4310055,
+      "type": "junction",
+      "label": "Road Waypoint 6239"
+    },
+    "4820486240": {
+      "nodeId": "4820486240",
+      "lat": 10.1784186,
+      "lng": 76.429893,
+      "type": "junction",
+      "label": "Road Waypoint 6240"
+    },
+    "5971281381": {
+      "nodeId": "5971281381",
+      "lat": 10.1728616,
+      "lng": 76.4286493,
+      "type": "junction",
+      "label": "Road Waypoint 1381"
+    },
+    "5971282307": {
+      "nodeId": "5971282307",
+      "lat": 10.1748145,
+      "lng": 76.4290936,
+      "type": "junction",
+      "label": "Road Waypoint 2307"
+    },
+    "5971282308": {
+      "nodeId": "5971282308",
+      "lat": 10.1753011,
+      "lng": 76.4291438,
+      "type": "junction",
+      "label": "Road Waypoint 2308"
+    },
+    "5971282744": {
+      "nodeId": "5971282744",
+      "lat": 10.179946,
+      "lng": 76.4289991,
+      "type": "junction",
+      "label": "Road Waypoint 2744"
+    },
+    "7463530138": {
+      "nodeId": "7463530138",
+      "lat": 10.1762277,
+      "lng": 76.4330721,
+      "type": "junction",
+      "label": "Road Waypoint 0138"
+    },
+    "7469345854": {
+      "nodeId": "7469345854",
+      "lat": 10.177229,
+      "lng": 76.4320953,
+      "type": "junction",
+      "label": "Road Waypoint 5854"
+    },
+    "7469345855": {
+      "nodeId": "7469345855",
+      "lat": 10.1772128,
+      "lng": 76.4320277,
+      "type": "junction",
+      "label": "Road Waypoint 5855"
+    },
+    "7469345856": {
+      "nodeId": "7469345856",
+      "lat": 10.1771301,
+      "lng": 76.4320558,
+      "type": "junction",
+      "label": "Road Waypoint 5856"
+    },
+    "7469345857": {
+      "nodeId": "7469345857",
+      "lat": 10.1771268,
+      "lng": 76.4321333,
+      "type": "junction",
+      "label": "Road Waypoint 5857"
+    },
+    "7469345874": {
+      "nodeId": "7469345874",
+      "lat": 10.179303,
+      "lng": 76.4320129,
+      "type": "junction",
+      "label": "Road Waypoint 5874"
+    },
+    "7469345875": {
+      "nodeId": "7469345875",
+      "lat": 10.1792137,
+      "lng": 76.4320211,
+      "type": "junction",
+      "label": "Road Waypoint 5875"
+    },
+    "7469345876": {
+      "nodeId": "7469345876",
+      "lat": 10.1792186,
+      "lng": 76.4321085,
+      "type": "junction",
+      "label": "Road Waypoint 5876"
+    },
+    "7469345877": {
+      "nodeId": "7469345877",
+      "lat": 10.1793079,
+      "lng": 76.4321085,
+      "type": "junction",
+      "label": "Road Waypoint 5877"
+    },
+    "7859015614": {
+      "nodeId": "7859015614",
+      "lat": 10.1820465,
+      "lng": 76.4282452,
+      "type": "junction",
+      "label": "Road Waypoint 5614"
+    },
+    "7859015615": {
+      "nodeId": "7859015615",
+      "lat": 10.181026,
+      "lng": 76.4282986,
+      "type": "junction",
+      "label": "Road Waypoint 5615"
+    },
+    "7859015616": {
+      "nodeId": "7859015616",
+      "lat": 10.1810075,
+      "lng": 76.4280264,
+      "type": "junction",
+      "label": "Road Waypoint 5616"
+    },
+    "7859015617": {
+      "nodeId": "7859015617",
+      "lat": 10.1806392,
+      "lng": 76.4280523,
+      "type": "junction",
+      "label": "Road Waypoint 5617"
+    },
+    "7859015618": {
+      "nodeId": "7859015618",
+      "lat": 10.1806555,
+      "lng": 76.4282918,
+      "type": "junction",
+      "label": "Road Waypoint 5618"
+    },
+    "7859015619": {
+      "nodeId": "7859015619",
+      "lat": 10.1799044,
+      "lng": 76.4283447,
+      "type": "junction",
+      "label": "Road Waypoint 5619"
+    },
+    "7859015620": {
+      "nodeId": "7859015620",
+      "lat": 10.1799912,
+      "lng": 76.4289399,
+      "type": "junction",
+      "label": "Road Waypoint 5620"
+    },
+    "7859015624": {
+      "nodeId": "7859015624",
+      "lat": 10.1820472,
+      "lng": 76.4287405,
+      "type": "junction",
+      "label": "Road Waypoint 5624"
+    },
+    "7859015639": {
+      "nodeId": "7859015639",
+      "lat": 10.1800902,
+      "lng": 76.4286088,
+      "type": "junction",
+      "label": "Road Waypoint 5639"
+    },
+    "7859015640": {
+      "nodeId": "7859015640",
+      "lat": 10.1799882,
+      "lng": 76.4286264,
+      "type": "junction",
+      "label": "Road Waypoint 5640"
+    },
+    "7859015641": {
+      "nodeId": "7859015641",
+      "lat": 10.1800349,
+      "lng": 76.4289181,
+      "type": "junction",
+      "label": "Road Waypoint 5641"
+    },
+    "7859015642": {
+      "nodeId": "7859015642",
+      "lat": 10.180419,
+      "lng": 76.4288606,
+      "type": "junction",
+      "label": "Road Waypoint 5642"
+    },
+    "7859015643": {
+      "nodeId": "7859015643",
+      "lat": 10.180407,
+      "lng": 76.4287774,
+      "type": "junction",
+      "label": "Road Waypoint 5643"
+    },
+    "7859015644": {
+      "nodeId": "7859015644",
+      "lat": 10.1801222,
+      "lng": 76.4288201,
+      "type": "junction",
+      "label": "Road Waypoint 5644"
+    },
+    "8407440894": {
+      "nodeId": "8407440894",
+      "lat": 10.1800385,
+      "lng": 76.4286248,
+      "type": "junction",
+      "label": "Road Waypoint 0894"
+    },
+    "8838720362": {
+      "nodeId": "8838720362",
+      "lat": 10.17796,
+      "lng": 76.4290309,
+      "type": "junction",
+      "label": "Road Waypoint 0362"
+    },
+    "8838720363": {
+      "nodeId": "8838720363",
+      "lat": 10.177954,
+      "lng": 76.428915,
+      "type": "junction",
+      "label": "Road Waypoint 0363"
+    },
+    "8838720364": {
+      "nodeId": "8838720364",
+      "lat": 10.17806,
+      "lng": 76.4289109,
+      "type": "junction",
+      "label": "Road Waypoint 0364"
+    },
+    "8838720365": {
+      "nodeId": "8838720365",
+      "lat": 10.178066,
+      "lng": 76.4290288,
+      "type": "junction",
+      "label": "Road Waypoint 0365"
+    },
+    "8838720366": {
+      "nodeId": "8838720366",
+      "lat": 10.178016,
+      "lng": 76.4290492,
+      "type": "junction",
+      "label": "Road Waypoint 0366"
+    },
+    "8852252201": {
+      "nodeId": "8852252201",
+      "lat": 10.1805245,
+      "lng": 76.4333744,
+      "type": "junction",
+      "label": "Road Waypoint 2201"
+    },
+    "9008111602": {
+      "nodeId": "9008111602",
+      "lat": 10.180696,
+      "lng": 76.4315103,
+      "type": "junction",
+      "label": "Road Waypoint 1602"
+    },
+    "9008111603": {
+      "nodeId": "9008111603",
+      "lat": 10.1807171,
+      "lng": 76.4316048,
+      "type": "junction",
+      "label": "Road Waypoint 1603"
+    },
+    "9008111604": {
+      "nodeId": "9008111604",
+      "lat": 10.1801887,
+      "lng": 76.4317319,
+      "type": "junction",
+      "label": "Road Waypoint 1604"
+    },
+    "9008111605": {
+      "nodeId": "9008111605",
+      "lat": 10.1801666,
+      "lng": 76.4316465,
+      "type": "junction",
+      "label": "Road Waypoint 1605"
+    },
+    "9021871129": {
+      "nodeId": "9021871129",
+      "lat": 10.1807019,
+      "lng": 76.4317287,
+      "type": "junction",
+      "label": "Road Waypoint 1129"
+    },
+    "9021871130": {
+      "nodeId": "9021871130",
+      "lat": 10.1806621,
+      "lng": 76.4317872,
+      "type": "junction",
+      "label": "Road Waypoint 1130"
+    },
+    "9021871131": {
+      "nodeId": "9021871131",
+      "lat": 10.1805926,
+      "lng": 76.4318534,
+      "type": "junction",
+      "label": "Road Waypoint 1131"
+    },
+    "9021871132": {
+      "nodeId": "9021871132",
+      "lat": 10.180505,
+      "lng": 76.4318917,
+      "type": "junction",
+      "label": "Road Waypoint 1132"
+    },
+    "9021871133": {
+      "nodeId": "9021871133",
+      "lat": 10.1804098,
+      "lng": 76.4318974,
+      "type": "junction",
+      "label": "Road Waypoint 1133"
+    },
+    "9021871134": {
+      "nodeId": "9021871134",
+      "lat": 10.1803184,
+      "lng": 76.4318699,
+      "type": "junction",
+      "label": "Road Waypoint 1134"
+    },
+    "9021871135": {
+      "nodeId": "9021871135",
+      "lat": 10.1802417,
+      "lng": 76.4318124,
+      "type": "junction",
+      "label": "Road Waypoint 1135"
+    },
+    "9021871136": {
+      "nodeId": "9021871136",
+      "lat": 10.1801717,
+      "lng": 76.4315584,
+      "type": "junction",
+      "label": "Road Waypoint 1136"
+    },
+    "9021871137": {
+      "nodeId": "9021871137",
+      "lat": 10.1802035,
+      "lng": 76.4314762,
+      "type": "junction",
+      "label": "Road Waypoint 1137"
+    },
+    "9021871138": {
+      "nodeId": "9021871138",
+      "lat": 10.1802589,
+      "lng": 76.4314082,
+      "type": "junction",
+      "label": "Road Waypoint 1138"
+    },
+    "9021871139": {
+      "nodeId": "9021871139",
+      "lat": 10.1803323,
+      "lng": 76.431361,
+      "type": "junction",
+      "label": "Road Waypoint 1139"
+    },
+    "9021871140": {
+      "nodeId": "9021871140",
+      "lat": 10.1804166,
+      "lng": 76.4313393,
+      "type": "junction",
+      "label": "Road Waypoint 1140"
+    },
+    "9021871141": {
+      "nodeId": "9021871141",
+      "lat": 10.1805032,
+      "lng": 76.4313453,
+      "type": "junction",
+      "label": "Road Waypoint 1141"
+    },
+    "9021871142": {
+      "nodeId": "9021871142",
+      "lat": 10.1805838,
+      "lng": 76.4313784,
+      "type": "junction",
+      "label": "Road Waypoint 1142"
+    },
+    "9021871143": {
+      "nodeId": "9021871143",
+      "lat": 10.1806503,
+      "lng": 76.4314353,
+      "type": "junction",
+      "label": "Road Waypoint 1143"
+    },
+    "9350953615": {
+      "nodeId": "9350953615",
+      "lat": 10.1792343,
+      "lng": 76.4319218,
+      "type": "junction",
+      "label": "Road Waypoint 3615"
+    },
+    "9427452393": {
+      "nodeId": "9427452393",
+      "lat": 10.1806186,
+      "lng": 76.4296721,
+      "type": "junction",
+      "label": "Road Waypoint 2393"
+    },
+    "9427452394": {
+      "nodeId": "9427452394",
+      "lat": 10.1807183,
+      "lng": 76.4296681,
+      "type": "junction",
+      "label": "Road Waypoint 2394"
+    },
+    "9427452395": {
+      "nodeId": "9427452395",
+      "lat": 10.18071,
+      "lng": 76.4293498,
+      "type": "junction",
+      "label": "Road Waypoint 2395"
+    },
+    "9427452396": {
+      "nodeId": "9427452396",
+      "lat": 10.1802524,
+      "lng": 76.429368,
+      "type": "junction",
+      "label": "Road Waypoint 2396"
+    },
+    "9427452397": {
+      "nodeId": "9427452397",
+      "lat": 10.1802577,
+      "lng": 76.4295039,
+      "type": "junction",
+      "label": "Road Waypoint 2397"
+    },
+    "9427452398": {
+      "nodeId": "9427452398",
+      "lat": 10.1806115,
+      "lng": 76.4294898,
+      "type": "junction",
+      "label": "Road Waypoint 2398"
+    },
+    "9427452399": {
+      "nodeId": "9427452399",
+      "lat": 10.1807138,
+      "lng": 76.4294494,
+      "type": "junction",
+      "label": "Road Waypoint 2399"
+    },
+    "9427452400": {
+      "nodeId": "9427452400",
+      "lat": 10.1807528,
+      "lng": 76.4294479,
+      "type": "junction",
+      "label": "Road Waypoint 2400"
+    },
+    "9427452401": {
+      "nodeId": "9427452401",
+      "lat": 10.1807569,
+      "lng": 76.4295536,
+      "type": "junction",
+      "label": "Road Waypoint 2401"
+    },
+    "9427452402": {
+      "nodeId": "9427452402",
+      "lat": 10.180714,
+      "lng": 76.4295553,
+      "type": "junction",
+      "label": "Road Waypoint 2402"
+    },
+    "9427452403": {
+      "nodeId": "9427452403",
+      "lat": 10.1808762,
+      "lng": 76.4290084,
+      "type": "junction",
+      "label": "Road Waypoint 2403"
+    },
+    "9427452404": {
+      "nodeId": "9427452404",
+      "lat": 10.1800883,
+      "lng": 76.4290731,
+      "type": "junction",
+      "label": "Road Waypoint 2404"
+    },
+    "9430722485": {
+      "nodeId": "9430722485",
+      "lat": 10.1814674,
+      "lng": 76.428737,
+      "type": "junction",
+      "label": "Road Waypoint 2485"
+    },
+    "9431609647": {
+      "nodeId": "9431609647",
+      "lat": 10.1786499,
+      "lng": 76.4288796,
+      "type": "junction",
+      "label": "Road Waypoint 9647"
+    },
+    "9679099814": {
+      "nodeId": "9679099814",
+      "lat": 10.1793954,
+      "lng": 76.4333389,
+      "type": "junction",
+      "label": "Road Waypoint 9814"
+    },
+    "9679099815": {
+      "nodeId": "9679099815",
+      "lat": 10.1792476,
+      "lng": 76.4326624,
+      "type": "junction",
+      "label": "Road Waypoint 9815"
+    },
+    "9679099816": {
+      "nodeId": "9679099816",
+      "lat": 10.1791579,
+      "lng": 76.4323033,
+      "type": "junction",
+      "label": "Road Waypoint 9816"
+    },
+    "9679099817": {
+      "nodeId": "9679099817",
+      "lat": 10.1791526,
+      "lng": 76.4318526,
+      "type": "junction",
+      "label": "Road Waypoint 9817"
+    },
+    "9679099830": {
+      "nodeId": "9679099830",
+      "lat": 10.1767077,
+      "lng": 76.4313267,
+      "type": "junction",
+      "label": "Road Waypoint 9830"
+    },
+    "9679099831": {
+      "nodeId": "9679099831",
+      "lat": 10.1768978,
+      "lng": 76.4313374,
+      "type": "junction",
+      "label": "Road Waypoint 9831"
+    },
+    "9679099832": {
+      "nodeId": "9679099832",
+      "lat": 10.1770719,
+      "lng": 76.4313428,
+      "type": "junction",
+      "label": "Road Waypoint 9832"
+    },
+    "9679108437": {
+      "nodeId": "9679108437",
+      "lat": 10.1759472,
+      "lng": 76.4291616,
+      "type": "junction",
+      "label": "Road Waypoint 8437"
+    },
+    "10540292290": {
+      "nodeId": "10540292290",
+      "lat": 10.1724182,
+      "lng": 76.4286783,
+      "type": "junction",
+      "label": "Road Waypoint 2290"
+    },
+    "11393367302": {
+      "nodeId": "11393367302",
+      "lat": 10.1730749,
+      "lng": 76.4286501,
+      "type": "junction",
+      "label": "Road Waypoint 7302"
+    },
+    "12107500070": {
+      "nodeId": "12107500070",
+      "lat": 10.1771192,
+      "lng": 76.4316435,
+      "type": "junction",
+      "label": "Road Waypoint 0070"
+    },
+    "12107500071": {
+      "nodeId": "12107500071",
+      "lat": 10.1769237,
+      "lng": 76.431732,
+      "type": "junction",
+      "label": "Road Waypoint 0071"
+    },
+    "12107500072": {
+      "nodeId": "12107500072",
+      "lat": 10.1766788,
+      "lng": 76.4317664,
+      "type": "junction",
+      "label": "Road Waypoint 0072"
+    },
+    "12107500073": {
+      "nodeId": "12107500073",
+      "lat": 10.1766809,
+      "lng": 76.4320861,
+      "type": "junction",
+      "label": "Road Waypoint 0073"
+    },
+    "12107500074": {
+      "nodeId": "12107500074",
+      "lat": 10.1765013,
+      "lng": 76.4321075,
+      "type": "junction",
+      "label": "Road Waypoint 0074"
+    },
+    "12107500075": {
+      "nodeId": "12107500075",
+      "lat": 10.1764,
+      "lng": 76.4323479,
+      "type": "junction",
+      "label": "Road Waypoint 0075"
+    },
+    "12107500076": {
+      "nodeId": "12107500076",
+      "lat": 10.1763028,
+      "lng": 76.4325539,
+      "type": "junction",
+      "label": "Road Waypoint 0076"
+    },
+    "12107500077": {
+      "nodeId": "12107500077",
+      "lat": 10.1762247,
+      "lng": 76.432792,
+      "type": "junction",
+      "label": "Road Waypoint 0077"
+    },
+    "12107500078": {
+      "nodeId": "12107500078",
+      "lat": 10.1762754,
+      "lng": 76.4329208,
+      "type": "junction",
+      "label": "Road Waypoint 0078"
+    },
+    "12107500079": {
+      "nodeId": "12107500079",
+      "lat": 10.1778808,
+      "lng": 76.4323332,
+      "type": "junction",
+      "label": "Road Waypoint 0079"
+    },
+    "12107500085": {
+      "nodeId": "12107500085",
+      "lat": 10.1780382,
+      "lng": 76.4324105,
+      "type": "junction",
+      "label": "Road Waypoint 0085"
+    },
+    "13146877343": {
+      "nodeId": "13146877343",
+      "lat": 10.1791054,
+      "lng": 76.4291358,
+      "type": "junction",
+      "label": "Road Waypoint 7343"
+    },
+    "13998006798": {
+      "nodeId": "13998006798",
+      "lat": 10.1776534,
+      "lng": 76.4299559,
+      "type": "junction",
+      "label": "Road Waypoint 6798"
+    },
+    "13998006799": {
+      "nodeId": "13998006799",
+      "lat": 10.1775479,
+      "lng": 76.4299577,
+      "type": "junction",
+      "label": "Road Waypoint 6799"
+    },
+    "13998006800": {
+      "nodeId": "13998006800",
+      "lat": 10.1775424,
+      "lng": 76.4301731,
+      "type": "junction",
+      "label": "Road Waypoint 6800"
+    },
+    "13998031901": {
+      "nodeId": "13998031901",
+      "lat": 10.1776543,
+      "lng": 76.4301694,
+      "type": "junction",
+      "label": "Road Waypoint 1901"
+    },
+    "13998031909": {
+      "nodeId": "13998031909",
+      "lat": 10.1778003,
+      "lng": 76.4304804,
+      "type": "junction",
+      "label": "Road Waypoint 1909"
+    },
+    "13998031910": {
+      "nodeId": "13998031910",
+      "lat": 10.1775619,
+      "lng": 76.4304988,
+      "type": "junction",
+      "label": "Road Waypoint 1910"
+    },
+    "13998031911": {
+      "nodeId": "13998031911",
+      "lat": 10.1775656,
+      "lng": 76.4306449,
+      "type": "junction",
+      "label": "Road Waypoint 1911"
+    },
+    "13998031912": {
+      "nodeId": "13998031912",
+      "lat": 10.1778067,
+      "lng": 76.4306319,
+      "type": "junction",
+      "label": "Road Waypoint 1912"
+    },
+    "13998039349": {
+      "nodeId": "13998039349",
+      "lat": 10.1773532,
+      "lng": 76.4297456,
+      "type": "junction",
+      "label": "Road Waypoint 9349"
+    },
+    "13998039350": {
+      "nodeId": "13998039350",
+      "lat": 10.1771662,
+      "lng": 76.4297649,
+      "type": "junction",
+      "label": "Road Waypoint 9350"
+    },
+    "13998039351": {
+      "nodeId": "13998039351",
+      "lat": 10.1772169,
+      "lng": 76.430032,
+      "type": "junction",
+      "label": "Road Waypoint 9351"
+    },
+    "13998039352": {
+      "nodeId": "13998039352",
+      "lat": 10.1774704,
+      "lng": 76.4299934,
+      "type": "junction",
+      "label": "Road Waypoint 9352"
+    },
+    "13998039353": {
+      "nodeId": "13998039353",
+      "lat": 10.1774514,
+      "lng": 76.4298325,
+      "type": "junction",
+      "label": "Road Waypoint 9353"
+    },
+    "13998050978": {
+      "nodeId": "13998050978",
+      "lat": 10.1774899,
+      "lng": 76.4293937,
+      "type": "junction",
+      "label": "Road Waypoint 0978"
+    },
+    "13998051004": {
+      "nodeId": "13998051004",
+      "lat": 10.1772779,
+      "lng": 76.4292348,
+      "type": "junction",
+      "label": "Road Waypoint 1004"
+    },
+    "13998051005": {
+      "nodeId": "13998051005",
+      "lat": 10.1770823,
+      "lng": 76.4292477,
+      "type": "junction",
+      "label": "Road Waypoint 1005"
+    },
+    "13998051006": {
+      "nodeId": "13998051006",
+      "lat": 10.1770942,
+      "lng": 76.4297209,
+      "type": "junction",
+      "label": "Road Waypoint 1006"
+    },
+    "13998051007": {
+      "nodeId": "13998051007",
+      "lat": 10.1772033,
+      "lng": 76.4297209,
+      "type": "junction",
+      "label": "Road Waypoint 1007"
+    },
+    "13998051008": {
+      "nodeId": "13998051008",
+      "lat": 10.1772061,
+      "lng": 76.4294982,
+      "type": "junction",
+      "label": "Road Waypoint 1008"
+    },
+    "13998051009": {
+      "nodeId": "13998051009",
+      "lat": 10.1772552,
+      "lng": 76.4294887,
+      "type": "junction",
+      "label": "Road Waypoint 1009"
+    },
+    "13998056173": {
+      "nodeId": "13998056173",
+      "lat": 10.1778323,
+      "lng": 76.4295906,
+      "type": "junction",
+      "label": "Road Waypoint 6173"
+    },
+    "13998056174": {
+      "nodeId": "13998056174",
+      "lat": 10.1778256,
+      "lng": 76.4294223,
+      "type": "junction",
+      "label": "Road Waypoint 6174"
+    },
+    "13998056175": {
+      "nodeId": "13998056175",
+      "lat": 10.1777464,
+      "lng": 76.4295617,
+      "type": "junction",
+      "label": "Road Waypoint 6175"
+    },
+    "13998056176": {
+      "nodeId": "13998056176",
+      "lat": 10.1776816,
+      "lng": 76.4296983,
+      "type": "junction",
+      "label": "Road Waypoint 6176"
+    },
+    "13998056177": {
+      "nodeId": "13998056177",
+      "lat": 10.1775839,
+      "lng": 76.4299571,
+      "type": "junction",
+      "label": "Road Waypoint 6177"
+    },
+    "13998058178": {
+      "nodeId": "13998058178",
+      "lat": 10.1774751,
+      "lng": 76.4295745,
+      "type": "junction",
+      "label": "Road Waypoint 8178"
+    },
+    "13998065967": {
+      "nodeId": "13998065967",
+      "lat": 10.1778216,
+      "lng": 76.4293198,
+      "type": "junction",
+      "label": "Road Waypoint 5967"
+    },
+    "13998065968": {
+      "nodeId": "13998065968",
+      "lat": 10.1776208,
+      "lng": 76.4296906,
+      "type": "junction",
+      "label": "Road Waypoint 5968"
+    },
+    "13998065970": {
+      "nodeId": "13998065970",
+      "lat": 10.1779716,
+      "lng": 76.4310677,
+      "type": "junction",
+      "label": "Road Waypoint 5970"
+    },
+    "13998065971": {
+      "nodeId": "13998065971",
+      "lat": 10.1781502,
+      "lng": 76.4310845,
+      "type": "junction",
+      "label": "Road Waypoint 5971"
+    },
+    "13998067644": {
+      "nodeId": "13998067644",
+      "lat": 10.1779221,
+      "lng": 76.4309876,
+      "type": "junction",
+      "label": "Road Waypoint 7644"
+    },
+    "13998067645": {
+      "nodeId": "13998067645",
+      "lat": 10.1778689,
+      "lng": 76.4310891,
+      "type": "junction",
+      "label": "Road Waypoint 7645"
+    },
+    "13998069844": {
+      "nodeId": "13998069844",
+      "lat": 10.1778441,
+      "lng": 76.4291021,
+      "type": "junction",
+      "label": "Road Waypoint 9844"
+    },
+    "13998069845": {
+      "nodeId": "13998069845",
+      "lat": 10.177813,
+      "lng": 76.4291012,
+      "type": "junction",
+      "label": "Road Waypoint 9845"
+    },
+    "13998069846": {
+      "nodeId": "13998069846",
+      "lat": 10.1778849,
+      "lng": 76.4309273,
+      "type": "junction",
+      "label": "Road Waypoint 9846"
+    },
+    "13998069847": {
+      "nodeId": "13998069847",
+      "lat": 10.1780506,
+      "lng": 76.4312174,
+      "type": "junction",
+      "label": "Road Waypoint 9847"
+    },
+    "13998069856": {
+      "nodeId": "13998069856",
+      "lat": 10.1778188,
+      "lng": 76.4292491,
+      "type": "junction",
+      "label": "Road Waypoint 9856"
+    },
+    "13998069857": {
+      "nodeId": "13998069857",
+      "lat": 10.1776064,
+      "lng": 76.4292223,
+      "type": "junction",
+      "label": "Road Waypoint 9857"
+    },
+    "13998078223": {
+      "nodeId": "13998078223",
+      "lat": 10.1778688,
+      "lng": 76.430518,
+      "type": "junction",
+      "label": "Road Waypoint 8223"
+    },
+    "13998078224": {
+      "nodeId": "13998078224",
+      "lat": 10.1779085,
+      "lng": 76.4305177,
+      "type": "junction",
+      "label": "Road Waypoint 8224"
+    },
+    "14008132989": {
+      "nodeId": "14008132989",
+      "lat": 10.1778451,
+      "lng": 76.4299169,
+      "type": "junction",
+      "label": "Road Waypoint 2989"
+    },
+    "14008132990": {
+      "nodeId": "14008132990",
+      "lat": 10.1781517,
+      "lng": 76.4298935,
+      "type": "junction",
+      "label": "Road Waypoint 2990"
+    },
+    "14008132991": {
+      "nodeId": "14008132991",
+      "lat": 10.1781569,
+      "lng": 76.4298512,
+      "type": "junction",
+      "label": "Road Waypoint 2991"
+    },
+    "14008142301": {
+      "nodeId": "14008142301",
+      "lat": 10.1777406,
+      "lng": 76.4294694,
+      "type": "junction",
+      "label": "Road Waypoint 2301"
+    },
+    "14008142302": {
+      "nodeId": "14008142302",
+      "lat": 10.1775627,
+      "lng": 76.4294329,
+      "type": "junction",
+      "label": "Road Waypoint 2302"
+    },
+    "14014329062": {
+      "nodeId": "14014329062",
+      "lat": 10.1789173,
+      "lng": 76.4299284,
+      "type": "junction",
+      "label": "Road Waypoint 9062"
+    },
+    "14014329063": {
+      "nodeId": "14014329063",
+      "lat": 10.178777,
+      "lng": 76.4308198,
+      "type": "junction",
+      "label": "Road Waypoint 9063"
+    },
+    "14014329064": {
+      "nodeId": "14014329064",
+      "lat": 10.178633,
+      "lng": 76.4300414,
+      "type": "junction",
+      "label": "Road Waypoint 9064"
+    },
+    "gate-main": {
+      "nodeId": "gate-main",
+      "lat": 10.177813,
+      "lng": 76.4291012,
+      "type": "entrance",
+      "label": "Entrance - main gate",
+      "isDestination": true
+    },
+    "btech-block": {
+      "nodeId": "btech-block",
+      "lat": 10.178252304761903,
+      "lng": 76.43053197142856,
       "type": "building",
-      "label": "Campus Stadium"
+      "label": "B.Tech Academic Block",
+      "isDestination": true
     },
     "entrance-cs-block": {
-      "lat": 10.1788,
-      "lng": 76.4318,
+      "nodeId": "entrance-cs-block",
+      "lat": 10.178252304761903,
+      "lng": 76.43053197142856,
       "type": "building",
-      "label": "CS Block"
+      "label": "CS Block (B.Tech Building)",
+      "isDestination": true
+    },
+    "mech-block": {
+      "nodeId": "mech-block",
+      "lat": 10.177834579999999,
+      "lng": 76.43125798,
+      "type": "building",
+      "label": "Mechanical Engineering Block",
+      "isDestination": true
+    },
+    "mba-block": {
+      "nodeId": "mba-block",
+      "lat": 10.178062920000002,
+      "lng": 76.43132888,
+      "type": "building",
+      "label": "MBA & Management Block",
+      "isDestination": true
+    },
+    "civil-block": {
+      "nodeId": "civil-block",
+      "lat": 10.1771865,
+      "lng": 76.4294852,
+      "type": "building",
+      "label": "Civil Engineering Block",
+      "isDestination": true
+    },
+    "pg-block": {
+      "nodeId": "pg-block",
+      "lat": 10.17748302,
+      "lng": 76.42947042,
+      "type": "building",
+      "label": "PG Block & Research Labs",
+      "isDestination": true
+    },
+    "entrance-science": {
+      "nodeId": "entrance-science",
+      "lat": 10.17748302,
+      "lng": 76.42947042,
+      "type": "building",
+      "label": "Science Building Block B",
+      "isDestination": true
+    },
+    "ctf-lab": {
+      "nodeId": "ctf-lab",
+      "lat": 10.177596379999999,
+      "lng": 76.43004264,
+      "type": "building",
+      "label": "CTF & Cyber Security Lab",
+      "isDestination": true
+    },
+    "workshop-block": {
+      "nodeId": "workshop-block",
+      "lat": 10.17832548,
+      "lng": 76.4310917,
+      "type": "building",
+      "label": "Central Workshop & Smithy",
+      "isDestination": true
+    },
+    "junction-library": {
+      "nodeId": "junction-library",
+      "lat": 10.1778451,
+      "lng": 76.4299169,
+      "type": "junction",
+      "label": "Central Library Junction",
+      "isDestination": true
+    },
+    "entrance-hub": {
+      "nodeId": "entrance-hub",
+      "lat": 10.17759638,
+      "lng": 76.43004264,
+      "type": "building",
+      "label": "Student Activity Hub",
+      "isDestination": true
+    },
+    "union-cafe": {
+      "nodeId": "union-cafe",
+      "lat": 10.1774514,
+      "lng": 76.4298325,
+      "type": "building",
+      "label": "Student Union Cafe & Canteen",
+      "isDestination": true
+    },
+    "entrance-stadium": {
+      "nodeId": "entrance-stadium",
+      "lat": 10.1777,
+      "lng": 76.4305,
+      "type": "facility",
+      "label": "Campus Sports Ground & Basketball Court",
+      "isDestination": true
+    },
+    "north-gate": {
+      "nodeId": "north-gate",
+      "lat": 10.179946,
+      "lng": 76.4289991,
+      "type": "junction",
+      "label": "Road Junction (North Exit)",
+      "isDestination": false
     },
     "isolated-node": {
-      "lat": 10.1795,
-      "lng": 76.4325,
+      "nodeId": "isolated-node",
+      "lat": 10.185,
+      "lng": 76.435,
       "type": "building",
-      "label": "North Research Annex (Disconnected)"
+      "label": "North Research Annex (Disconnected)",
+      "isDestination": true
     }
   },
   "edges": [
     {
+      "edgeId": "road-e1",
+      "from": "2594192647",
+      "to": "2594192648",
+      "fromNode": "2594192647",
+      "toNode": "2594192648",
+      "distance": 53
+    },
+    {
+      "edgeId": "road-e2",
+      "from": "2594192648",
+      "to": "2594192650",
+      "fromNode": "2594192648",
+      "toNode": "2594192650",
+      "distance": 46.9
+    },
+    {
+      "edgeId": "road-e3",
+      "from": "2594192650",
+      "to": "2594192653",
+      "fromNode": "2594192650",
+      "toNode": "2594192653",
+      "distance": 32.3
+    },
+    {
+      "edgeId": "road-e4",
+      "from": "2594192653",
+      "to": "2594192654",
+      "fromNode": "2594192653",
+      "toNode": "2594192654",
+      "distance": 21.9
+    },
+    {
+      "edgeId": "road-e5",
+      "from": "2594192654",
+      "to": "8852252201",
+      "fromNode": "2594192654",
+      "toNode": "8852252201",
+      "distance": 26.3
+    },
+    {
+      "edgeId": "road-e6",
+      "from": "8852252201",
+      "to": "2594192656",
+      "fromNode": "8852252201",
+      "toNode": "2594192656",
+      "distance": 7.1
+    },
+    {
+      "edgeId": "road-e7",
+      "from": "2594192656",
+      "to": "2594192658",
+      "fromNode": "2594192656",
+      "toNode": "2594192658",
+      "distance": 22.7
+    },
+    {
+      "edgeId": "road-e8",
+      "from": "2594192658",
+      "to": "2594192661",
+      "fromNode": "2594192658",
+      "toNode": "2594192661",
+      "distance": 26.6
+    },
+    {
+      "edgeId": "road-e9",
+      "from": "2594192661",
+      "to": "2594192663",
+      "fromNode": "2594192661",
+      "toNode": "2594192663",
+      "distance": 19.1
+    },
+    {
+      "edgeId": "road-e10",
+      "from": "2594192663",
+      "to": "2594192665",
+      "fromNode": "2594192663",
+      "toNode": "2594192665",
+      "distance": 25
+    },
+    {
+      "edgeId": "road-e11",
+      "from": "2594192665",
+      "to": "2594192667",
+      "fromNode": "2594192665",
+      "toNode": "2594192667",
+      "distance": 29.6
+    },
+    {
+      "edgeId": "road-e12",
+      "from": "2594192667",
+      "to": "2594192670",
+      "fromNode": "2594192667",
+      "toNode": "2594192670",
+      "distance": 21.4
+    },
+    {
+      "edgeId": "road-e13",
+      "from": "2594192670",
+      "to": "2594192672",
+      "fromNode": "2594192670",
+      "toNode": "2594192672",
+      "distance": 20.6
+    },
+    {
+      "edgeId": "road-e14",
+      "from": "2594192672",
+      "to": "9679099815",
+      "fromNode": "2594192672",
+      "toNode": "9679099815",
+      "distance": 14.2
+    },
+    {
+      "edgeId": "road-e15",
+      "from": "9679099815",
+      "to": "2594192674",
+      "fromNode": "9679099815",
+      "toNode": "2594192674",
+      "distance": 18.2
+    },
+    {
+      "edgeId": "road-e16",
+      "from": "2594192674",
+      "to": "2594192677",
+      "fromNode": "2594192674",
+      "toNode": "2594192677",
+      "distance": 29.7
+    },
+    {
+      "edgeId": "road-e17",
+      "from": "2594192677",
+      "to": "2594192679",
+      "fromNode": "2594192677",
+      "toNode": "2594192679",
+      "distance": 29.5
+    },
+    {
+      "edgeId": "road-e18",
+      "from": "2594192679",
+      "to": "2594192682",
+      "fromNode": "2594192679",
+      "toNode": "2594192682",
+      "distance": 27.5
+    },
+    {
+      "edgeId": "road-e19",
+      "from": "2594192682",
+      "to": "2594192683",
+      "fromNode": "2594192682",
+      "toNode": "2594192683",
+      "distance": 25.2
+    },
+    {
+      "edgeId": "road-e20",
+      "from": "2594192683",
+      "to": "12107500085",
+      "fromNode": "2594192683",
+      "toNode": "12107500085",
+      "distance": 9.2
+    },
+    {
+      "edgeId": "road-e21",
+      "from": "12107500085",
+      "to": "12107500079",
+      "fromNode": "12107500085",
+      "toNode": "12107500079",
+      "distance": 19.5
+    },
+    {
+      "edgeId": "road-e22",
+      "from": "12107500079",
+      "to": "2594192686",
+      "fromNode": "12107500079",
+      "toNode": "2594192686",
+      "distance": 24.2
+    },
+    {
+      "edgeId": "road-e23",
+      "from": "2594192686",
+      "to": "2594192689",
+      "fromNode": "2594192686",
+      "toNode": "2594192689",
+      "distance": 41.9
+    },
+    {
+      "edgeId": "road-e24",
+      "from": "2594192689",
+      "to": "2594192691",
+      "fromNode": "2594192689",
+      "toNode": "2594192691",
+      "distance": 24.9
+    },
+    {
+      "edgeId": "road-e25",
+      "from": "2594192691",
+      "to": "2594192692",
+      "fromNode": "2594192691",
+      "toNode": "2594192692",
+      "distance": 26.1
+    },
+    {
+      "edgeId": "road-e26",
+      "from": "2594192692",
+      "to": "12107500070",
+      "fromNode": "2594192692",
+      "toNode": "12107500070",
+      "distance": 6.3
+    },
+    {
+      "edgeId": "road-e27",
+      "from": "12107500070",
+      "to": "9679099832",
+      "fromNode": "12107500070",
+      "toNode": "9679099832",
+      "distance": 33.3
+    },
+    {
+      "edgeId": "road-e28",
+      "from": "9679099832",
+      "to": "2594192695",
+      "fromNode": "9679099832",
+      "toNode": "2594192695",
+      "distance": 16.9
+    },
+    {
+      "edgeId": "road-e29",
+      "from": "2594192695",
+      "to": "2594192698",
+      "fromNode": "2594192695",
+      "toNode": "2594192698",
+      "distance": 54.4
+    },
+    {
+      "edgeId": "road-e30",
+      "from": "2594192698",
+      "to": "2594192699",
+      "fromNode": "2594192698",
+      "toNode": "2594192699",
+      "distance": 44.4
+    },
+    {
+      "edgeId": "road-e31",
+      "from": "2594192699",
+      "to": "2594192701",
+      "fromNode": "2594192699",
+      "toNode": "2594192701",
+      "distance": 59.8
+    },
+    {
+      "edgeId": "road-e32",
+      "from": "2594192701",
+      "to": "2594192705",
+      "fromNode": "2594192701",
+      "toNode": "2594192705",
+      "distance": 30.1
+    },
+    {
+      "edgeId": "road-e33",
+      "from": "2594192705",
+      "to": "2594192706",
+      "fromNode": "2594192705",
+      "toNode": "2594192706",
+      "distance": 18.6
+    },
+    {
+      "edgeId": "road-e34",
+      "from": "2594192706",
+      "to": "2591765856",
+      "fromNode": "2594192706",
+      "toNode": "2591765856",
+      "distance": 38
+    },
+    {
+      "edgeId": "road-e35",
+      "from": "9679099814",
+      "to": "9679099815",
+      "fromNode": "9679099814",
+      "toNode": "9679099815",
+      "distance": 75.9
+    },
+    {
+      "edgeId": "road-e36",
+      "from": "9679099815",
+      "to": "9679099816",
+      "fromNode": "9679099815",
+      "toNode": "9679099816",
+      "distance": 40.6
+    },
+    {
+      "edgeId": "road-e37",
+      "from": "9679099816",
+      "to": "9679099817",
+      "fromNode": "9679099816",
+      "toNode": "9679099817",
+      "distance": 49.4
+    },
+    {
+      "edgeId": "road-e38",
+      "from": "9679099830",
+      "to": "9679099831",
+      "fromNode": "9679099830",
+      "toNode": "9679099831",
+      "distance": 21.2
+    },
+    {
+      "edgeId": "road-e39",
+      "from": "9679099831",
+      "to": "9679099832",
+      "fromNode": "9679099831",
+      "toNode": "9679099832",
+      "distance": 19.4
+    },
+    {
+      "edgeId": "road-e40",
+      "from": "12107500070",
+      "to": "12107500071",
+      "fromNode": "12107500070",
+      "toNode": "12107500071",
+      "distance": 23.8
+    },
+    {
+      "edgeId": "road-e41",
+      "from": "12107500071",
+      "to": "12107500072",
+      "fromNode": "12107500071",
+      "toNode": "12107500072",
+      "distance": 27.5
+    },
+    {
+      "edgeId": "road-e42",
+      "from": "12107500072",
+      "to": "12107500073",
+      "fromNode": "12107500072",
+      "toNode": "12107500073",
+      "distance": 35
+    },
+    {
+      "edgeId": "road-e43",
+      "from": "12107500073",
+      "to": "12107500074",
+      "fromNode": "12107500073",
+      "toNode": "12107500074",
+      "distance": 20.1
+    },
+    {
+      "edgeId": "road-e44",
+      "from": "12107500074",
+      "to": "12107500075",
+      "fromNode": "12107500074",
+      "toNode": "12107500075",
+      "distance": 28.6
+    },
+    {
+      "edgeId": "road-e45",
+      "from": "12107500075",
+      "to": "12107500076",
+      "fromNode": "12107500075",
+      "toNode": "12107500076",
+      "distance": 25
+    },
+    {
+      "edgeId": "road-e46",
+      "from": "12107500076",
+      "to": "12107500077",
+      "fromNode": "12107500076",
+      "toNode": "12107500077",
+      "distance": 27.5
+    },
+    {
+      "edgeId": "road-e47",
+      "from": "12107500077",
+      "to": "12107500078",
+      "fromNode": "12107500077",
+      "toNode": "12107500078",
+      "distance": 15.2
+    },
+    {
+      "edgeId": "road-e48",
+      "from": "12107500078",
+      "to": "7463530138",
+      "fromNode": "12107500078",
+      "toNode": "7463530138",
+      "distance": 17.4
+    },
+    {
+      "edgeId": "road-e49",
+      "from": "5971282744",
+      "to": "1170551916",
+      "fromNode": "5971282744",
+      "toNode": "1170551916",
+      "distance": 21.4
+    },
+    {
+      "edgeId": "road-e50",
+      "from": "1170551916",
+      "to": "13146877343",
+      "fromNode": "1170551916",
+      "toNode": "13146877343",
+      "distance": 73.4
+    },
+    {
+      "edgeId": "road-e51",
+      "from": "13146877343",
+      "to": "13998069844",
+      "fromNode": "13146877343",
+      "toNode": "13998069844",
+      "distance": 140.5
+    },
+    {
+      "edgeId": "road-e52",
+      "from": "13998069844",
+      "to": "13998069845",
+      "fromNode": "13998069844",
+      "toNode": "13998069845",
+      "distance": 3.5
+    },
+    {
+      "edgeId": "road-e53",
+      "from": "13998069845",
+      "to": "1170551744",
+      "fromNode": "13998069845",
+      "toNode": "1170551744",
+      "distance": 7.3
+    },
+    {
+      "edgeId": "road-e54",
+      "from": "1170551744",
+      "to": "1170552498",
+      "fromNode": "1170551744",
+      "toNode": "1170552498",
+      "distance": 59.7
+    },
+    {
+      "edgeId": "road-e55",
+      "from": "1170552498",
+      "to": "2591734329",
+      "fromNode": "1170552498",
+      "toNode": "2591734329",
+      "distance": 33.3
+    },
+    {
+      "edgeId": "road-e56",
+      "from": "2591734329",
+      "to": "2591765856",
+      "fromNode": "2591734329",
+      "toNode": "2591765856",
+      "distance": 22.1
+    },
+    {
+      "edgeId": "road-e57",
+      "from": "2591765856",
+      "to": "9679108437",
+      "fromNode": "2591765856",
+      "toNode": "9679108437",
+      "distance": 87.6
+    },
+    {
+      "edgeId": "road-e58",
+      "from": "9679108437",
+      "to": "1170552078",
+      "fromNode": "9679108437",
+      "toNode": "1170552078",
+      "distance": 23.3
+    },
+    {
+      "edgeId": "road-e59",
+      "from": "1170552078",
+      "to": "5971282308",
+      "fromNode": "1170552078",
+      "toNode": "5971282308",
+      "distance": 49.1
+    },
+    {
+      "edgeId": "road-e60",
+      "from": "5971282308",
+      "to": "5971282307",
+      "fromNode": "5971282308",
+      "toNode": "5971282307",
+      "distance": 54.4
+    },
+    {
+      "edgeId": "road-e61",
+      "from": "5971282307",
+      "to": "1170552583",
+      "fromNode": "5971282307",
+      "toNode": "1170552583",
+      "distance": 127.7
+    },
+    {
+      "edgeId": "road-e62",
+      "from": "1170552583",
+      "to": "1170552464",
+      "fromNode": "1170552583",
+      "toNode": "1170552464",
+      "distance": 56.8
+    },
+    {
+      "edgeId": "road-e63",
+      "from": "1170552464",
+      "to": "11393367302",
+      "fromNode": "1170552464",
+      "toNode": "11393367302",
+      "distance": 19.4
+    },
+    {
+      "edgeId": "road-e64",
+      "from": "11393367302",
+      "to": "5971281381",
+      "fromNode": "11393367302",
+      "toNode": "5971281381",
+      "distance": 23.7
+    },
+    {
+      "edgeId": "road-e65",
+      "from": "5971281381",
+      "to": "10540292290",
+      "fromNode": "5971281381",
+      "toNode": "10540292290",
+      "distance": 49.5
+    },
+    {
+      "edgeId": "road-e66",
+      "from": "10540292290",
+      "to": "1170552465",
+      "fromNode": "10540292290",
+      "toNode": "1170552465",
+      "distance": 70.3
+    },
+    {
+      "edgeId": "road-e67",
+      "from": "1170552465",
+      "to": "1170551745",
+      "fromNode": "1170552465",
+      "toNode": "1170551745",
+      "distance": 81.7
+    },
+    {
+      "edgeId": "road-e68",
+      "from": "1170551691",
+      "to": "1170551845",
+      "fromNode": "1170551691",
+      "toNode": "1170551845",
+      "distance": 31.9
+    },
+    {
+      "edgeId": "road-e69",
+      "from": "1170551845",
+      "to": "5971282744",
+      "fromNode": "1170551845",
+      "toNode": "5971282744",
+      "distance": 105.1
+    },
+    {
+      "edgeId": "road-e70",
+      "from": "13998069845",
+      "to": "13998069856",
+      "fromNode": "13998069845",
+      "toNode": "13998069856",
+      "distance": 16.2
+    },
+    {
+      "edgeId": "road-e71",
+      "from": "13998069856",
+      "to": "13998065967",
+      "fromNode": "13998069856",
+      "toNode": "13998065967",
+      "distance": 7.7
+    },
+    {
+      "edgeId": "road-e72",
+      "from": "13998065967",
+      "to": "13998056174",
+      "fromNode": "13998065967",
+      "toNode": "13998056174",
+      "distance": 11.2
+    },
+    {
+      "edgeId": "road-e73",
+      "from": "13998056174",
+      "to": "13998056173",
+      "fromNode": "13998056174",
+      "toNode": "13998056173",
+      "distance": 18.4
+    },
+    {
+      "edgeId": "road-e74",
+      "from": "13998056173",
+      "to": "14008132989",
+      "fromNode": "13998056173",
+      "toNode": "14008132989",
+      "distance": 35.8
+    },
+    {
+      "edgeId": "road-e75",
+      "from": "14008132989",
+      "to": "13998078223",
+      "fromNode": "14008132989",
+      "toNode": "13998078223",
+      "distance": 65.9
+    },
+    {
+      "edgeId": "road-e76",
+      "from": "13998078223",
+      "to": "13998069846",
+      "fromNode": "13998078223",
+      "toNode": "13998069846",
+      "distance": 44.9
+    },
+    {
+      "edgeId": "road-e77",
+      "from": "13998069846",
+      "to": "13998067644",
+      "fromNode": "13998069846",
+      "toNode": "13998067644",
+      "distance": 7.8
+    },
+    {
+      "edgeId": "road-e78",
+      "from": "13998067644",
+      "to": "13998065970",
+      "fromNode": "13998067644",
+      "toNode": "13998065970",
+      "distance": 10.4
+    },
+    {
+      "edgeId": "road-e79",
+      "from": "13998065970",
+      "to": "13998069847",
+      "fromNode": "13998065970",
+      "toNode": "13998069847",
+      "distance": 18.6
+    },
+    {
+      "edgeId": "road-e80",
+      "from": "13998067644",
+      "to": "13998067645",
+      "fromNode": "13998067644",
+      "toNode": "13998067645",
+      "distance": 12.6
+    },
+    {
+      "edgeId": "road-e81",
+      "from": "13998069856",
+      "to": "13998069857",
+      "fromNode": "13998069856",
+      "toNode": "13998069857",
+      "distance": 23.8
+    },
+    {
+      "edgeId": "road-e82",
+      "from": "13998069857",
+      "to": "13998051004",
+      "fromNode": "13998069857",
+      "toNode": "13998051004",
+      "distance": 36.6
+    },
+    {
+      "edgeId": "road-e83",
+      "from": "13998065967",
+      "to": "14008142301",
+      "fromNode": "13998065967",
+      "toNode": "14008142301",
+      "distance": 18.7
+    },
+    {
+      "edgeId": "road-e84",
+      "from": "14008142301",
+      "to": "13998065968",
+      "fromNode": "14008142301",
+      "toNode": "13998065968",
+      "distance": 27.7
+    },
+    {
+      "edgeId": "road-e85",
+      "from": "13998065968",
+      "to": "13998039353",
+      "fromNode": "13998065968",
+      "toNode": "13998039353",
+      "distance": 24.4
+    },
+    {
+      "edgeId": "road-e86",
+      "from": "13998056174",
+      "to": "13998056175",
+      "fromNode": "13998056174",
+      "toNode": "13998056175",
+      "distance": 17.6
+    },
+    {
+      "edgeId": "road-e87",
+      "from": "13998056175",
+      "to": "13998056176",
+      "fromNode": "13998056175",
+      "toNode": "13998056176",
+      "distance": 16.6
+    },
+    {
+      "edgeId": "road-e88",
+      "from": "13998056176",
+      "to": "13998056177",
+      "fromNode": "13998056176",
+      "toNode": "13998056177",
+      "distance": 30.4
+    },
+    {
+      "edgeId": "road-e89",
+      "from": "13998078223",
+      "to": "13998078224",
+      "fromNode": "13998078223",
+      "toNode": "13998078224",
+      "distance": 4.4
+    },
+    {
+      "edgeId": "road-e90",
+      "from": "13998065970",
+      "to": "13998065971",
+      "fromNode": "13998065970",
+      "toNode": "13998065971",
+      "distance": 20
+    },
+    {
+      "edgeId": "road-e91",
+      "from": "14008142301",
+      "to": "14008142302",
+      "fromNode": "14008142301",
+      "toNode": "14008142302",
+      "distance": 20.2
+    },
+    {
+      "edgeId": "road-e92",
+      "from": "14008132989",
+      "to": "14008132990",
+      "fromNode": "14008132989",
+      "toNode": "14008132990",
+      "distance": 34.2
+    },
+    {
+      "edgeId": "road-e93",
+      "from": "14008132990",
+      "to": "14008132991",
+      "fromNode": "14008132990",
+      "toNode": "14008132991",
+      "distance": 4.7
+    },
+    {
+      "edgeId": "entrance-e94",
       "from": "gate-main",
-      "to": "junction-library",
-      "distance": 85.4
+      "to": "13998069845",
+      "fromNode": "gate-main",
+      "toNode": "13998069845",
+      "distance": 2
     },
     {
-      "from": "junction-library",
-      "to": "entrance-science",
-      "distance": 70.2
+      "edgeId": "entrance-e95",
+      "from": "btech-block",
+      "to": "13998078224",
+      "fromNode": "btech-block",
+      "toNode": "13998078224",
+      "distance": 2
     },
     {
-      "from": "junction-library",
-      "to": "union-cafe",
-      "distance": 92.6
+      "edgeId": "entrance-e96",
+      "from": "entrance-cs-block",
+      "to": "13998078224",
+      "fromNode": "entrance-cs-block",
+      "toNode": "13998078224",
+      "distance": 2
     },
     {
+      "edgeId": "entrance-e97",
+      "from": "mech-block",
+      "to": "13998067645",
+      "fromNode": "mech-block",
+      "toNode": "13998067645",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e98",
+      "from": "mba-block",
+      "to": "13998069847",
+      "fromNode": "mba-block",
+      "toNode": "13998069847",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e99",
+      "from": "civil-block",
+      "to": "13998051004",
+      "fromNode": "civil-block",
+      "toNode": "13998051004",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e100",
+      "from": "pg-block",
+      "to": "14008142302",
+      "fromNode": "pg-block",
+      "toNode": "14008142302",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e101",
       "from": "entrance-science",
-      "to": "entrance-hub",
-      "distance": 45.1
+      "to": "14008142302",
+      "fromNode": "entrance-science",
+      "toNode": "14008142302",
+      "distance": 2
     },
     {
-      "from": "union-cafe",
-      "to": "entrance-hub",
-      "distance": 111.3
+      "edgeId": "entrance-e102",
+      "from": "ctf-lab",
+      "to": "13998056177",
+      "fromNode": "ctf-lab",
+      "toNode": "13998056177",
+      "distance": 2
     },
     {
+      "edgeId": "entrance-e103",
+      "from": "workshop-block",
+      "to": "13998065971",
+      "fromNode": "workshop-block",
+      "toNode": "13998065971",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e104",
+      "from": "junction-library",
+      "to": "14008132989",
+      "fromNode": "junction-library",
+      "toNode": "14008132989",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e105",
       "from": "entrance-hub",
-      "to": "entrance-stadium",
-      "distance": 62.8
+      "to": "13998056177",
+      "fromNode": "entrance-hub",
+      "toNode": "13998056177",
+      "distance": 2
     },
     {
-      "from": "entrance-stadium",
-      "to": "entrance-cs-block",
-      "distance": 66.5
-    },
-    {
+      "edgeId": "entrance-e106",
       "from": "union-cafe",
-      "to": "entrance-cs-block",
-      "distance": 180.2
+      "to": "13998039353",
+      "fromNode": "union-cafe",
+      "toNode": "13998039353",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e107",
+      "from": "entrance-stadium",
+      "to": "13998078223",
+      "fromNode": "entrance-stadium",
+      "toNode": "13998078223",
+      "distance": 2
+    },
+    {
+      "edgeId": "entrance-e108",
+      "from": "north-gate",
+      "to": "5971282744",
+      "fromNode": "north-gate",
+      "toNode": "5971282744",
+      "distance": 2
     }
   ]
 }

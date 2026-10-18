@@ -1,34 +1,36 @@
 import { fetchPathNodes as apiFetchPathNodes, fetchPathEdges as apiFetchPathEdges } from './apiService';
-import fallbackGraph from '../data/graph.json';
+import roadGraph from '../data/graph.json';
 
 export async function fetchPathNodes() {
   try {
     const nodesArr = await apiFetchPathNodes();
-    if (Array.isArray(nodesArr) && nodesArr.length > 0) {
+    // Only use API if it contains the full digitized road network (>50 nodes)
+    if (Array.isArray(nodesArr) && nodesArr.length > 50) {
       const nodesObj = {};
       nodesArr.forEach(node => {
-        // Copy all properties (including type, label) from the API response
         nodesObj[node.nodeId] = { ...node };
       });
       return nodesObj;
     }
-    // Fallback: use local graph.json nodes
-    return fallbackGraph.nodes;
+    // Authoritative digitized ASIET campus road network (290 nodes)
+    return roadGraph.nodes;
   } catch (e) {
-    console.warn('Graph nodes API failed, using fallback:', e.message);
-    return fallbackGraph.nodes;
+    console.warn('Graph nodes API unavailable, using verified road network:', e.message);
+    return roadGraph.nodes;
   }
 }
 
 export async function fetchPathEdges() {
   try {
     const edgesArr = await apiFetchPathEdges();
-    if (Array.isArray(edgesArr) && edgesArr.length > 0) {
+    // Only use API if it contains the full digitized road network (>50 edges)
+    if (Array.isArray(edgesArr) && edgesArr.length > 50) {
       return edgesArr;
     }
-    return fallbackGraph.edges;
+    // Authoritative digitized ASIET campus road network (108 road segments)
+    return roadGraph.edges;
   } catch (e) {
-    console.warn('Graph edges API failed, using fallback:', e.message);
-    return fallbackGraph.edges;
+    console.warn('Graph edges API unavailable, using verified road network:', e.message);
+    return roadGraph.edges;
   }
 }

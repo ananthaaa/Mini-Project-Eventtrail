@@ -6,14 +6,13 @@ import { RsvpContext } from '../../context/RsvpContext';
 import { createVenue } from '../../services/apiService';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import { ArrowLeft, Plus, Trash2, Save, MapPin, X } from 'lucide-react';
-import { Marker } from 'react-map-gl/mapbox';
-import CampusMap from '../../components/ui/CampusMap';
+import CampusMap, { Marker } from '../../components/ui/CampusMap';
 
 const AdminVenueUpload = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
-  const { events, venues } = useContext(RsvpContext);
+  const { events, venues, addVenue } = useContext(RsvpContext);
   const mockVenues = venues;
 
   const eventId = searchParams.get('eventId') || (events[0]?.id || '');
@@ -26,7 +25,7 @@ const AdminVenueUpload = () => {
   const initialVenue = useMemo(() => {
     if (!selectedEvent) return null;
     return mockVenues.find((v) => v.id === selectedEvent.venueId) || mockVenues[0];
-  }, [selectedEvent]);
+  }, [selectedEvent, mockVenues]);
 
   const [waypoints, setWaypoints] = useState(() => {
     return initialVenue ? initialVenue.waypoints : [];
@@ -71,8 +70,8 @@ const AdminVenueUpload = () => {
     const ev = events.find((item) => item.id === evId);
     const ven = mockVenues.find((v) => v.id === ev?.venueId) || mockVenues[0];
     if (ven) {
-      setWaypoints(ven.waypoints);
-      setBuilding(ven.building);
+      setWaypoints(ven.waypoints || []);
+      setBuilding(ven.building || ven.name);
     }
   };
 
@@ -105,15 +104,25 @@ const AdminVenueUpload = () => {
 
   const handleSaveConfiguration = async (e) => {
     e.preventDefault();
-    if (!building) return alert('Building name is required.');
+    if (!building || !building.trim()) return alert('Building / Venue name is required.');
 
+    const venueId = 'venue-' + Date.now();
     const newVenue = {
-      name: building,
+      id: venueId,
+      name: building.trim(),
+      building: building.trim(),
       category: 'Campus',
-      description: 'Automatically created from Admin Setup',
+      distance: '150m',
+      nodeId: venueId,
+      lat: mapPosition.lat,
+      lng: mapPosition.lng,
+      outdoorCoordinates: mapPosition,
+      description: newDetails || `ASIET ${building.trim()} facility and department building.`,
       floorPlanImage: svgUrl,
+      indoorSteps: indoorSteps.filter(s => s && s.trim()),
+      waypoints: waypoints,
       graphData: {
-        indoorSteps,
+        indoorSteps: indoorSteps.filter(s => s && s.trim()),
         mapPosition,
         waypoints
       }
@@ -121,9 +130,16 @@ const AdminVenueUpload = () => {
 
     setIsSubmitting(true);
     try {
-      await createVenue(newVenue);
-      alert(`Configuration saved for venue: ${building}.`);
-      navigate('/admin');
+      if (addVenue) {
+        addVenue(newVenue);
+      }
+      try {
+        await createVenue(newVenue);
+      } catch (apiErr) {
+        console.warn('API sync deferred; venue stored in local campus data:', apiErr.message);
+      }
+      alert(`Building / Venue "${building}" added successfully! Students can now view and navigate to it on the campus map.`);
+      navigate('/admin/venues');
     } catch (error) {
       console.error('Error saving venue:', error);
       alert('Failed to save venue. ' + error.message);

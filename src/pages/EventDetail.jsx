@@ -6,12 +6,16 @@ import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
 import { fetchSpeakers, fetchClubs, fetchEventById } from '../services/apiService';
 import SeatMeter from '../components/ui/SeatMeter';
-import { Calendar, Clock, MapPin, ArrowLeft, Ticket, CheckCircle2, ChevronRight, Users } from 'lucide-react';
+import {
+  Calendar, Clock, MapPin, ArrowLeft, Ticket, CheckCircle2,
+  ChevronRight, Users, Navigation, Compass, ExternalLink
+} from 'lucide-react';
+import { VENUE_TO_NODE, BUILDING_INFO } from '../data/buildings';
 
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { userRsvps, submitRsvp } = useContext(RsvpContext);
+  const { userRsvps, submitRsvp, venues } = useContext(RsvpContext);
   const { addNotification } = useContext(NotificationContext);
 
   const [event, setEvent] = React.useState(null);
@@ -75,6 +79,16 @@ const EventDetail = () => {
   const club = clubs.find((c) => c.id === event.organizerId);
   const userRsvp = (userRsvps || {})[event.id];
 
+  const currentVenue = (venues || []).find((v) => v.id === event.venueId) || {
+    id: event.venueId,
+    name: event.venueId === 'science-hall-a' ? 'Science Auditorium A' : event.venueId === 'stadium-field-1' ? 'Main Athletics Field' : 'Creative Hub Room 202',
+    building: event.venueId === 'science-hall-a' ? 'Science Building Block B' : event.venueId === 'stadium-field-1' ? 'Campus Stadium' : 'Student Activity Hub',
+    distance: event.venueId === 'science-hall-a' ? '450m' : event.venueId === 'stadium-field-1' ? '750m' : '320m',
+    timeEstimation: event.venueId === 'science-hall-a' ? '6 mins' : event.venueId === 'stadium-field-1' ? '10 mins' : '4 mins',
+  };
+  const targetNodeId = VENUE_TO_NODE[event.venueId] || 'entrance-cs-block';
+  const targetBuilding = BUILDING_INFO[targetNodeId];
+
   const handleRsvpAction = async () => {
     if (userRsvp) {
       navigate(`/student/rsvp-confirmation/${event.id}`);
@@ -130,7 +144,15 @@ const EventDetail = () => {
               <div className="flex flex-wrap items-center gap-6 text-sm font-bold text-black uppercase tracking-wider">
                 <div className="flex items-center gap-2"><Calendar size={18} strokeWidth={2.5} /><span>{event.date}</span></div>
                 <div className="flex items-center gap-2"><Clock size={18} strokeWidth={2.5} /><span>{event.time}</span></div>
-                <div className="flex items-center gap-2"><MapPin size={18} strokeWidth={2.5} /><span>Room {event.venueId === 'science-hall-a' ? 'A' : '202'}</span></div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/student/campus-map?dest=${targetNodeId}`)}
+                  className="flex items-center gap-2 hover:underline cursor-pointer group text-left"
+                  title="View walking route on Campus Map"
+                >
+                  <MapPin size={18} strokeWidth={2.5} className="group-hover:text-red-600 transition-colors shrink-0" />
+                  <span>{currentVenue.name}</span>
+                </button>
               </div>
             </div>
           </motion.div>
@@ -183,6 +205,62 @@ const EventDetail = () => {
               )}
             </button>
           </motion.div>
+
+          {/* Venue & Navigation Card */}
+          <div className="bg-white border-3 border-black p-6 neo-shadow space-y-4">
+            <div className="flex items-center justify-between border-b-2 border-black pb-3">
+              <div className="flex items-center gap-2">
+                <Compass className="w-5 h-5 text-black" strokeWidth={3} />
+                <h3 className="font-display font-black text-lg text-black uppercase">Venue Location</h3>
+              </div>
+              <span className="bg-pastel-yellow border-2 border-black text-[10px] font-black uppercase px-2 py-0.5">
+                Campus Map
+              </span>
+            </div>
+
+            <div>
+              <h4 className="font-display font-black text-xl text-black uppercase leading-tight">
+                {currentVenue.name}
+              </h4>
+              <p className="text-xs font-bold text-black/70 uppercase mt-1">
+                {currentVenue.building || targetBuilding?.label}
+              </p>
+              {targetBuilding?.description && (
+                <p className="text-xs font-bold text-black/80 mt-2 line-clamp-2">
+                  {targetBuilding.description}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="bg-pastel-mint border-2 border-black p-2 text-center">
+                <span className="text-[10px] font-black uppercase text-black/60 block">Distance</span>
+                <span className="text-xs font-black text-black">{currentVenue.distance || '450m'}</span>
+              </div>
+              <div className="bg-pastel-peach border-2 border-black p-2 text-center">
+                <span className="text-[10px] font-black uppercase text-black/60 block">Walk Time</span>
+                <span className="text-xs font-black text-black">{currentVenue.timeEstimation || '6 mins'}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                onClick={() => navigate(`/student/campus-map?dest=${targetNodeId}`)}
+                className="w-full bg-accent-yellow border-3 border-black text-black font-black uppercase tracking-wider py-3 shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] active:translate-y-px transition-all flex items-center justify-center gap-2 text-xs"
+              >
+                <Navigation className="w-4 h-4" strokeWidth={3} />
+                Navigate on Campus Map
+              </button>
+
+              <button
+                onClick={() => navigate('/student/navigate')}
+                className="w-full bg-white border-2 border-black text-black font-black uppercase tracking-wider py-2 shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-yellow transition-all flex items-center justify-center gap-2 text-xs"
+              >
+                <ExternalLink className="w-3.5 h-3.5" strokeWidth={3} />
+                Indoor Step-by-Step Guide
+              </button>
+            </div>
+          </div>
 
           {club && (
             <div className="bg-pastel-peach border-3 border-black p-6 neo-shadow">

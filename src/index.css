@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,100..900;1,100..900&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-@import "mapbox-gl/dist/mapbox-gl.css";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 @tailwind base;
 @tailwind components;
@@ -111,20 +111,38 @@ body {
   font-size: 18px;
 }
 
-/* Neo-brutalist Mapbox Popup Overrides */
-.neo-mapbox-popup .mapboxgl-popup-content {
+/* Neo-brutalist MapLibre Popup Overrides */
+.neo-mapbox-popup .maplibregl-popup-content {
   background: #ffffff;
   border: 3px solid #000000;
   border-radius: 0;
   box-shadow: 4px 4px 0px 0px #000000;
   padding: 12px;
 }
-.neo-mapbox-popup .mapboxgl-popup-tip {
+.neo-mapbox-popup .maplibregl-popup-tip {
   border-top-color: #000000 !important;
 }
-.neo-mapbox-popup .mapboxgl-popup-close-button {
+.neo-mapbox-popup .maplibregl-popup-close-button {
   color: #000000;
   font-weight: 900;
   padding: 4px 8px;
   font-size: 18px;
+}
+
+/* Building details panel slide-in */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.building-panel-enter {
+  animation: slideInRight 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Animate spin (slow) for compass icon */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
 }

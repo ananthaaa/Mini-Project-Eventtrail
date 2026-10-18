@@ -15,11 +15,16 @@ export function haversineHeuristic(a, b, nodes) {
 
 export function buildAdjacencyList(edges) {
   const adjacency = {};
-  edges.forEach(({ fromNode, toNode, distance }) => {
-    if (!adjacency[fromNode]) adjacency[fromNode] = [];
-    if (!adjacency[toNode]) adjacency[toNode] = [];
-    adjacency[fromNode].push({ node: toNode, weight: distance });
-    adjacency[toNode].push({ node: fromNode, weight: distance }); // bidirectional
+  if (!Array.isArray(edges)) return adjacency;
+  edges.forEach((edge) => {
+    const from = edge.fromNode || edge.from;
+    const to = edge.toNode || edge.to;
+    const distance = edge.distance != null ? edge.distance : (edge.weight != null ? edge.weight : 0);
+    if (!from || !to) return;
+    if (!adjacency[from]) adjacency[from] = [];
+    if (!adjacency[to]) adjacency[to] = [];
+    adjacency[from].push({ node: to, weight: distance });
+    adjacency[to].push({ node: from, weight: distance }); // bidirectional
   });
   return adjacency;
 }

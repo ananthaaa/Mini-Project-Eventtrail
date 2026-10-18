@@ -1,73 +1,576 @@
-import React, { useRef, useCallback, useEffect } from 'react';
-import Map, { NavigationControl } from 'react-map-gl/mapbox';
+import React, { useRef, useEffect, useState, useCallback, createContext, useContext } from 'react';
+import { createPortal } from 'react-dom';
+import * as maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import campusData from '../../data/asiet-campus.json';
 
-// Custom Mapbox style requested by user
-const DEFAULT_MAP_STYLE = "mapbox://styles/ananthakrishnanaca/cms0kbfy500o901qk07sm6tdc";
+// ASIET Campus center [lng, lat]
+export const ASIET_CAMPUS_CENTER = [76.4302, 10.1780];
 
-const DEFAULT_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
+// Strictly bounded to the ASIET Campus compound — restricts panning outside campus
+export const ASIET_CAMPUS_BOUNDS = [
+  [76.4270, 10.1750], // Southwest [lng, lat]
+  [76.4335, 10.1808], // Northeast [lng, lat]
+];
 
-const CampusMap = ({ 
-  children, 
-  onLocationSelect, 
-  center, 
-  zoom, 
-  style, 
-  className,
-  mapStyle = DEFAULT_MAP_STYLE,
-  mapboxAccessToken = DEFAULT_TOKEN,
-  interactive = true,
-  showNavigation = true,
-  ...props 
-}) => {
-  const mapRef = useRef(null);
+/**
+ * Strict ASIET Campus Map Style
+ * ONLY renders ASIET campus compound features:
+ * - Clean campus ground (#e8ddd5)
+ * - Campus boundary land (#d4d3bc)
+ * - Internal campus walking roads
+ * - Strictly filtered 3D ASIET campus buildings (all non-campus buildings/shops/houses completely excluded)
+ */
+export const ASIET_MAP_STYLE = {
+  version: 8,
+  sources: {
+    campus: {
+      type: 'geojson',
+      data: campusData,
+    },
+    'outdoor-route': {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+    },
+  },
+  layers: [
+    {
+      id: 'ground',
+      type: 'background',
+      paint: {
+        'background-color': '#e8ddd5',
+      },
+    },
+    {
+      id: 'land',
+      type: 'fill',
+      source: 'campus',
+      filter: ['==', 'kind', 'land'],
+      paint: {
+        'fill-color': '#d4d3bc',
+        'fill-opacity': 0.65,
+      },
+    },
+    {
+      id: 'ground-pitch',
+      type: 'fill',
+      source: 'campus',
+      filter: ['==', 'kind', 'ground'],
+      paint: {
+        'fill-color': '#b8db9c',
+        'fill-opacity': 0.85,
+      },
+    },
+    {
+      id: 'ground-pitch-outline',
+      type: 'line',
+      source: 'campus',
+      filter: ['==', 'kind', 'ground'],
+      paint: {
+        'line-color': '#7fa868',
+        'line-width': 2.5,
+      },
+    },
+    {
+      id: 'road-edge',
+      type: 'line',
+      source: 'campus',
+      filter: ['==', 'kind', 'road'],
+      paint: {
+        'line-color': '#cdc2b1',
+        'line-width': 12,
+      },
+    },
+    {
+      id: 'roads',
+      type: 'line',
+      source: 'campus',
+      filter: ['==', 'kind', 'road'],
+      paint: {
+        'line-color': '#f7f3e8',
+        'line-width': 8,
+      },
+    },
+    {
+      id: 'buildings',
+      type: 'fill-extrusion',
+      source: 'campus',
+      filter: ['==', 'kind', 'building'],
+      paint: {
+        'fill-extrusion-color': [
+          'match',
+          ['get', 'name'],
+          'Adi Shankara Institute Of Engineering And Technology B.Tech Block', '#e9c758',
+          'Asiet Mechanical Block', '#eac95f',
+          'Asiet mba Block', '#eed073',
+          'Asiet pg Block', '#e2be4b',
+          'ASIET CIVIL BLOCK', '#e5c353',
+          'Asiet Smithy and Foundry Workshop', '#deb83f',
+          'CTF Lab', '#f0d47e',
+          '#e9c758'
+        ],
+        'fill-extrusion-height': ['get', 'height'],
+        'fill-extrusion-opacity': 0.95,
+      },
+    },
+    {
+      id: 'outdoor-route-casing',
+      type: 'line',
+      source: 'outdoor-route',
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
+      paint: {
+        'line-color': '#000000',
+        'line-width': 10,
+        'line-opacity': 0.95,
+      },
+    },
+    {
+      id: 'outdoor-route-line',
+      type: 'line',
+      source: 'outdoor-route',
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
+      paint: {
+        'line-color': '#FF5A1F',
+        'line-width': 6,
+        'line-opacity': 1,
+      },
+    },
+  ],
+};
 
-  // Default center [lat, lng] in Leaflet was [10.1785, 76.4308].
-  // Mapbox GL expects longitude (76.4308) and latitude (10.1785).
-  const defaultLng = center ? center[1] : 76.4308;
-  const defaultLat = center ? center[0] : 10.1785;
-  const defaultZoom = zoom || 17;
+export const MapContext = createContext({ map: null });
+export const useMap = () => useContext(MapContext);
+export const LngLatBounds = maplibregl.LngLatBounds;
 
-  const handleClick = useCallback((e) => {
-    if (onLocationSelect && e.lngLat) {
-      onLocationSelect({ lat: e.lngLat.lat, lng: e.lngLat.lng });
+// Normalize center coordinate to [lng, lat]
+const toLngLat = (coords) => {
+  if (!coords) return ASIET_CAMPUS_CENTER;
+  if (Array.isArray(coords)) {
+    // If [lat, lng] format (lat ~10, lng ~76)
+    if (coords[0] < coords[1]) {
+      return [coords[1], coords[0]];
     }
-  }, [onLocationSelect]);
+    return [coords[0], coords[1]];
+  }
+  if (coords.lng != null && coords.lat != null) {
+    return [coords.lng, coords.lat];
+  }
+  return ASIET_CAMPUS_CENTER;
+};
 
+/**
+ * CampusMap — Campus Area Only 3D/2D Map
+ * Renders ONLY the ASIET campus compound, campus roads, and campus buildings from ASIET-Campus-Map.zip
+ */
+export const CampusMap = ({
+  children,
+  center,
+  zoom = 17.8,
+  onLocationSelect,
+  className = '',
+  style = {},
+  interactive = true,
+  showControls = true,
+  initialPitch = 55,
+  initialBearing = -25,
+}) => {
+  const containerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const [map, setMap] = useState(null);
+  const [is3D, setIs3D] = useState(initialPitch > 0);
+
+  const initialCenter = toLngLat(center);
+
+  // Initialize MapLibre GL Map with Campus-Only style
   useEffect(() => {
-    // Invalidate size on resize or mount for smooth rendering
-    const timer = setTimeout(() => {
-      if (mapRef.current) {
-        mapRef.current.resize();
-      }
-    }, 200);
-    return () => clearTimeout(timer);
+    if (!containerRef.current) return;
+
+    const mapInstance = new maplibregl.Map({
+      container: containerRef.current,
+      style: ASIET_MAP_STYLE,
+      center: initialCenter,
+      zoom,
+      pitch: initialPitch,
+      bearing: initialBearing,
+      maxBounds: ASIET_CAMPUS_BOUNDS,
+      maxZoom: 21,
+      minZoom: 16,
+      interactive,
+      attributionControl: false,
+    });
+
+    mapInstance.addControl(
+      new maplibregl.AttributionControl({
+        compact: true,
+        customAttribution: '<span style="font-size:9px">ASIET Campus Compound</span>',
+      }),
+      'bottom-right'
+    );
+
+    mapInstance.on('load', () => {
+      mapInstanceRef.current = mapInstance;
+      setMap(mapInstance);
+    });
+
+    if (onLocationSelect) {
+      mapInstance.on('click', (e) => {
+        onLocationSelect({
+          lat: e.lngLat.lat,
+          lng: e.lngLat.lng,
+          lngLat: { lat: e.lngLat.lat, lng: e.lngLat.lng },
+        });
+      });
+    }
+
+    return () => {
+      mapInstance.remove();
+      mapInstanceRef.current = null;
+      setMap(null);
+    };
   }, []);
 
+  // Sync center when props change
+  useEffect(() => {
+    if (!map || !center) return;
+    const targetLngLat = toLngLat(center);
+    map.easeTo({
+      center: targetLngLat,
+      zoom: zoom || map.getZoom(),
+      duration: 1000,
+    });
+  }, [map, JSON.stringify(center), zoom]);
+
+  // Handle Resize
+  useEffect(() => {
+    if (!map) return;
+    const timer = setTimeout(() => {
+      map.resize();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+
+  // Toggle 2D / 3D camera
+  const handleToggleView = useCallback(() => {
+    if (!map) return;
+    const nextIs3D = !is3D;
+    setIs3D(nextIs3D);
+    map.easeTo({
+      pitch: nextIs3D ? 55 : 0,
+      bearing: nextIs3D ? -25 : 0,
+      duration: 800,
+    });
+  }, [map, is3D]);
+
+  // Reset to default campus view
+  const handleResetCampus = useCallback(() => {
+    if (!map) return;
+    map.flyTo({
+      center: ASIET_CAMPUS_CENTER,
+      zoom: 17.8,
+      pitch: is3D ? 55 : 0,
+      bearing: is3D ? -25 : 0,
+      duration: 1000,
+    });
+  }, [map, is3D]);
+
   return (
-    <div 
-      className={`relative w-full h-full neo-border overflow-hidden bg-[#F9F5F6] ${className || ''}`} 
+    <div
+      className={`relative w-full h-full neo-border overflow-hidden bg-[#e8ddd5] ${className}`}
       style={{ minHeight: '400px', ...style }}
     >
-      <Map
-        ref={mapRef}
-        initialViewState={{
-          longitude: defaultLng,
-          latitude: defaultLat,
-          zoom: defaultZoom
-        }}
-        style={{ width: '100%', height: '100%' }}
-        mapStyle={mapStyle}
-        mapboxAccessToken={mapboxAccessToken}
-        onClick={handleClick}
-        interactive={interactive}
-        attributionControl={true}
-        {...props}
-      >
-        {showNavigation && <NavigationControl position="top-right" />}
-        {children}
-      </Map>
+      <div ref={containerRef} className="w-full h-full" style={{ width: '100%', height: '100%' }} />
+
+      {/* Floating 2D / 3D & Campus Controls (Neo-brutalist EventTrail Theme) */}
+      {showControls && map && (
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleResetCampus}
+            className="bg-white border-2 border-black px-2.5 py-1 text-xs font-black uppercase text-black shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-yellow transition-colors cursor-pointer"
+            title="Reset to campus center"
+          >
+            ⌂ Campus
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleView}
+            className="bg-pastel-yellow border-2 border-black px-2.5 py-1 text-xs font-black uppercase text-black shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-mint transition-colors cursor-pointer"
+            title="Toggle between 2D and 3D camera view"
+          >
+            {is3D ? '2D view' : '3D view'}
+          </button>
+        </div>
+      )}
+
+      <MapContext.Provider value={{ map }}>
+        {map && children}
+      </MapContext.Provider>
     </div>
   );
 };
+
+/**
+ * Marker — MapLibre GL Marker with React Portal for custom JSX elements
+ */
+export const Marker = ({
+  longitude,
+  latitude,
+  lng,
+  lat,
+  position,
+  children,
+  onClick,
+  draggable = false,
+  onDragEnd,
+  anchor = 'center',
+}) => {
+  const { map } = useMap();
+  const markerRef = useRef(null);
+  const containerRef = useRef(document.createElement('div'));
+  const [mounted, setMounted] = useState(false);
+
+  const targetLng = longitude != null ? longitude : (lng != null ? lng : (position ? position[1] : null));
+  const targetLat = latitude != null ? latitude : (lat != null ? lat : (position ? position[0] : null));
+
+  const onClickRef = useRef(onClick);
+  onClickRef.current = onClick;
+
+  useEffect(() => {
+    if (!map || targetLng == null || targetLat == null) return;
+
+    let marker;
+    try {
+      marker = new maplibregl.Marker({
+        element: containerRef.current,
+        draggable,
+        anchor,
+      })
+        .setLngLat([targetLng, targetLat])
+        .addTo(map);
+
+      markerRef.current = marker;
+      setMounted(true);
+
+      const handleClick = (e) => {
+        e.stopPropagation();
+        e.originalEvent = e;
+        if (onClickRef.current) {
+          onClickRef.current(e);
+        }
+      };
+      containerRef.current.style.cursor = 'pointer';
+      containerRef.current.addEventListener('click', handleClick);
+      marker._handleClick = handleClick;
+
+      if (onDragEnd) {
+        marker.on('dragend', () => {
+          const pos = marker.getLngLat();
+          onDragEnd({
+            lngLat: { lat: pos.lat, lng: pos.lng },
+            lat: pos.lat,
+            lng: pos.lng,
+          });
+        });
+      }
+    } catch (err) {
+      console.warn('Marker initialization error:', err);
+      return;
+    }
+
+    return () => {
+      try {
+        if (marker) {
+          if (marker._handleClick) {
+            containerRef.current.removeEventListener('click', marker._handleClick);
+          }
+          marker.remove();
+        }
+      } catch (_) {}
+      markerRef.current = null;
+      setMounted(false);
+    };
+  }, [map, draggable, anchor, targetLng, targetLat]);
+
+  useEffect(() => {
+    if (markerRef.current && targetLng != null && targetLat != null) {
+      markerRef.current.setLngLat([targetLng, targetLat]);
+    }
+  }, [targetLng, targetLat]);
+
+  return mounted && children ? createPortal(children, containerRef.current) : null;
+};
+
+/**
+ * Popup — MapLibre GL Popup with Neo-brutalist styling
+ */
+export const Popup = ({
+  longitude,
+  latitude,
+  lng,
+  lat,
+  position,
+  children,
+  onClose,
+  offset = 15,
+  anchor,
+  className = '',
+}) => {
+  const { map } = useMap();
+  const popupRef = useRef(null);
+  const containerRef = useRef(document.createElement('div'));
+  const [mounted, setMounted] = useState(false);
+
+  const targetLng = longitude != null ? longitude : (lng != null ? lng : (position ? position[1] : null));
+  const targetLat = latitude != null ? latitude : (lat != null ? lat : (position ? position[0] : null));
+
+  useEffect(() => {
+    if (!map || targetLng == null || targetLat == null) return;
+
+    const popup = new maplibregl.Popup({
+      offset,
+      anchor,
+      closeButton: true,
+      closeOnClick: false,
+      className: `neo-mapbox-popup ${className}`,
+    })
+      .setLngLat([targetLng, targetLat])
+      .setDOMContent(containerRef.current)
+      .addTo(map);
+
+    popupRef.current = popup;
+    setMounted(true);
+
+    popup.on('close', () => {
+      if (onClose) onClose();
+    });
+
+    return () => {
+      popup.remove();
+      popupRef.current = null;
+      setMounted(false);
+    };
+  }, [map, offset, anchor]);
+
+  useEffect(() => {
+    if (popupRef.current && targetLng != null && targetLat != null) {
+      popupRef.current.setLngLat([targetLng, targetLat]);
+    }
+  }, [targetLng, targetLat]);
+
+  return mounted && children ? createPortal(children, containerRef.current) : null;
+};
+
+/**
+ * Source & Layer compatibility wrappers for GeoJSON layers
+ */
+export const SourceContext = createContext(null);
+
+export const Source = ({ id, type = 'geojson', data, children }) => {
+  const { map } = useMap();
+  const [sourceReady, setSourceReady] = useState(false);
+
+  useEffect(() => {
+    if (!map || !id || !data) return;
+
+    const applySource = () => {
+      try {
+        const existing = map.getSource(id);
+        if (existing) {
+          existing.setData(data);
+          setSourceReady(true);
+        } else {
+          map.addSource(id, { type, data });
+          setSourceReady(true);
+        }
+      } catch (err) {
+        console.warn('Error configuring source:', err);
+      }
+    };
+
+    if (map.isStyleLoaded()) {
+      applySource();
+    } else {
+      map.once('styledata', applySource);
+    }
+
+    return () => {
+      map.off('styledata', applySource);
+      try {
+        const style = map.getStyle();
+        if (style && style.layers) {
+          style.layers.forEach((l) => {
+            if (l.source === id) {
+              try { map.removeLayer(l.id); } catch (_) {}
+            }
+          });
+        }
+        if (map.getSource(id)) {
+          map.removeSource(id);
+        }
+      } catch (_) {}
+    };
+  }, [map, id, JSON.stringify(data)]);
+
+  return (
+    <SourceContext.Provider value={id}>
+      {sourceReady ? children : null}
+    </SourceContext.Provider>
+  );
+};
+
+export const Layer = ({ id, type = 'line', source, layout = {}, paint = {} }) => {
+  const { map } = useMap();
+  const parentSource = useContext(SourceContext);
+  const targetSource = source || parentSource || 'route';
+
+  useEffect(() => {
+    if (!map || !id || !targetSource) return;
+
+    const applyLayer = () => {
+      try {
+        if (!map.getSource(targetSource)) return;
+        if (!map.getLayer(id)) {
+          map.addLayer({
+            id,
+            type,
+            source: targetSource,
+            layout,
+            paint,
+          });
+        }
+      } catch (err) {
+        console.warn('Error adding layer:', err);
+      }
+    };
+
+    if (map.isStyleLoaded()) {
+      applyLayer();
+    } else {
+      map.once('styledata', applyLayer);
+    }
+
+    return () => {
+      map.off('styledata', applyLayer);
+      try {
+        if (map.getLayer(id)) {
+          map.removeLayer(id);
+        }
+      } catch (_) {}
+    };
+  }, [map, id, targetSource, type, JSON.stringify(paint), JSON.stringify(layout)]);
+
+  return null;
+};
+
+export const NavigationControl = () => null;
 
 export default CampusMap;
