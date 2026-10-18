@@ -224,25 +224,67 @@ export const markNotificationRead = async (notificationId) => {
 // --- Governance: Event Review & Approval ---
 
 export const reviewEvent = async (eventId, { action, reviewComment = '' }) => {
-  return fetchWithAuth(`/events/${eventId}/review`, {
-    method: 'POST',
-    body: JSON.stringify({ action, reviewComment })
-  });
+  try {
+    return await fetchWithAuth(`/events/${eventId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ action, reviewComment })
+    });
+  } catch (err) {
+    if (import.meta.env.DEV && (err.message?.includes('Failed to fetch') || err.status === 404 || err.status === 401)) {
+      console.warn('[Local Dev] Simulating event review action:', eventId, action);
+      await new Promise(r => setTimeout(r, 400));
+      return {
+        success: true,
+        eventId,
+        action,
+        status: action === 'approve' ? 'published' : (action === 'request_changes' ? 'needs_changes' : 'rejected'),
+        reviewComment,
+        simulated: true
+      };
+    }
+    throw err;
+  }
 };
 
 // --- Governance: Organizer Account Provisioning & Management ---
 
 export const createOrganizer = async ({ email, name, clubId, temporaryPassword }) => {
-  return fetchWithAuth('/admin/organizers', {
-    method: 'POST',
-    body: JSON.stringify({ email, name, clubId, temporaryPassword })
-  });
+  try {
+    return await fetchWithAuth('/admin/organizers', {
+      method: 'POST',
+      body: JSON.stringify({ email, name, clubId, temporaryPassword })
+    });
+  } catch (err) {
+    if (import.meta.env.DEV && (err.message?.includes('Failed to fetch') || err.status === 404 || err.status === 401 || err.status === 403)) {
+      console.warn('[Local Dev] Simulating organizer provisioning:', email);
+      await new Promise(r => setTimeout(r, 500));
+      return {
+        success: true,
+        username: email,
+        email,
+        name,
+        clubId,
+        temporaryPassword,
+        simulated: true
+      };
+    }
+    throw err;
+  }
 };
 
 export const manageOrganizer = async (username, { action, temporaryPassword }) => {
-  return fetchWithAuth(`/admin/organizers/${encodeURIComponent(username)}`, {
-    method: 'PATCH',
-    body: JSON.stringify({ action, temporaryPassword })
-  });
+  try {
+    return await fetchWithAuth(`/admin/organizers/${encodeURIComponent(username)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action, temporaryPassword })
+    });
+  } catch (err) {
+    if (import.meta.env.DEV && (err.message?.includes('Failed to fetch') || err.status === 404 || err.status === 401)) {
+      console.warn('[Local Dev] Simulating manage organizer:', username, action);
+      await new Promise(r => setTimeout(r, 400));
+      return { success: true, username, action, simulated: true };
+    }
+    throw err;
+  }
 };
 
