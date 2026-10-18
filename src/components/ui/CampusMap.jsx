@@ -199,19 +199,24 @@ export const CampusMap = ({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const mapInstance = new maplibregl.Map({
-      container: containerRef.current,
-      style: ASIET_MAP_STYLE,
-      center: initialCenter,
-      zoom,
-      pitch: initialPitch,
-      bearing: initialBearing,
-      maxBounds: ASIET_CAMPUS_BOUNDS,
-      maxZoom: 21,
-      minZoom: 16,
-      interactive,
-      attributionControl: false,
-    });
+    let mapInstance;
+    try {
+      mapInstance = new maplibregl.Map({
+        container: containerRef.current,
+        style: ASIET_MAP_STYLE,
+        center: initialCenter,
+        zoom,
+        pitch: initialPitch,
+        bearing: initialBearing,
+        maxZoom: 22,
+        minZoom: 14,
+        interactive,
+        attributionControl: false,
+      });
+    } catch (err) {
+      console.error('Failed to construct MapLibre instance:', err);
+      return;
+    }
 
     mapInstance.addControl(
       new maplibregl.AttributionControl({
@@ -221,10 +226,25 @@ export const CampusMap = ({
       'bottom-right'
     );
 
-    mapInstance.on('load', () => {
-      mapInstanceRef.current = mapInstance;
-      setMap(mapInstance);
-      mapInstance.resize();
+    // Provide map instance to state immediately so controls and children can mount
+    mapInstanceRef.current = mapInstance;
+    setMap(mapInstance);
+
+    const handleReady = () => {
+      try {
+        mapInstance.resize();
+      } catch (_) {}
+    };
+
+    if (mapInstance.loaded() || mapInstance.isStyleLoaded()) {
+      handleReady();
+    } else {
+      mapInstance.once('load', handleReady);
+      mapInstance.once('styledata', handleReady);
+    }
+
+    mapInstance.on('error', (err) => {
+      console.warn('MapLibre event notice:', err);
     });
 
     if (onLocationSelect) {
@@ -238,7 +258,9 @@ export const CampusMap = ({
     }
 
     return () => {
-      mapInstance.remove();
+      try {
+        mapInstance.remove();
+      } catch (_) {}
       mapInstanceRef.current = null;
       setMap(null);
     };
