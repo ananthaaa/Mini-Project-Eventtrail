@@ -30,21 +30,53 @@ export const ROLE_PROFILES = {
   }
 };
 
+function getTabRoleFromUrl() {
+  const hash = window.location.hash || '';
+  const pathname = window.location.pathname || '';
+  if (hash.includes('/admin') || pathname.includes('/admin')) return 'admin';
+  if (hash.includes('/organizer') || pathname.includes('/organizer')) return 'club_admin';
+  return 'student';
+}
+
 export const RoleProvider = ({ children }) => {
   const [currentRole, setCurrentRole] = useState(() => {
-    return localStorage.getItem('cp_role') || 'student';
+    return getTabRoleFromUrl();
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [currentUser, setCurrentUser] = useState(() => {
+    const role = getTabRoleFromUrl();
+    let preservedToken = null;
     try {
-      const stored = JSON.parse(localStorage.getItem('cp_user') || 'null');
-      if (stored) return stored;
+      const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
+      preservedToken = stored.token;
     } catch (_) {}
-    const role = localStorage.getItem('cp_role') || 'student';
-    return ROLE_PROFILES[role] || ROLE_PROFILES.student;
+    const profile = ROLE_PROFILES[role] || ROLE_PROFILES.student;
+    return { ...profile, token: preservedToken || profile.token };
   });
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Synchronize role whenever URL changes in this tab
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const urlRole = getTabRoleFromUrl();
+      setCurrentRole(urlRole);
+      let preservedToken = null;
+      try {
+        const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
+        preservedToken = stored.token;
+      } catch (_) {}
+      const profile = ROLE_PROFILES[urlRole] || ROLE_PROFILES.student;
+      setCurrentUser({ ...profile, token: preservedToken || profile.token });
+    };
+
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
 
   /**
    * Switch the active role instantly across Student, Organizer, and Admin
@@ -68,45 +100,44 @@ export const RoleProvider = ({ children }) => {
     setCurrentUser(updatedUser);
     setIsLoggedIn(true);
 
-    localStorage.setItem('cp_role', roleKey);
-    localStorage.setItem('cp_logged_in', 'true');
-    localStorage.setItem('cp_user', JSON.stringify(updatedUser));
-    sessionStorage.setItem('cp_active_role', roleKey);
     return updatedUser;
   }, []);
 
   // Initialize session from Cognito on mount
   const checkSession = useCallback(async () => {
     try {
+      const urlRole = getTabRoleFromUrl();
+      const baseProfile = ROLE_PROFILES[urlRole] || ROLE_PROFILES.student;
       const session = await authService.getCurrentSession();
       if (session && session.isValid) {
         const userData = {
+          ...baseProfile,
           id: session.sub || session.email,
-          email: session.email,
-          name: session.name,
-          role: session.role,
-          clubId: session.clubId,
-          avatar: session.avatar,
+          email: session.email || baseProfile.email,
+          name: session.name || baseProfile.name,
+          role: urlRole,
+          clubId: session.clubId || baseProfile.clubId,
+          avatar: session.avatar || baseProfile.avatar,
           token: session.idToken,
         };
-        setCurrentRole(session.role);
+        setCurrentRole(urlRole);
         setIsLoggedIn(true);
         setCurrentUser(userData);
-        localStorage.setItem('cp_role', session.role);
-        localStorage.setItem('cp_logged_in', 'true');
-        localStorage.setItem('cp_user', JSON.stringify(userData));
       } else {
-        const storedRole = localStorage.getItem('cp_role') || 'student';
-        const profile = ROLE_PROFILES[storedRole] || ROLE_PROFILES.student;
-        setCurrentRole(storedRole);
-        setCurrentUser(profile);
+        let preservedToken = null;
+        try {
+          const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
+          preservedToken = stored.token;
+        } catch (_) {}
+        setCurrentRole(urlRole);
+        setCurrentUser({ ...baseProfile, token: preservedToken || baseProfile.token });
         setIsLoggedIn(true);
       }
     } catch (err) {
-      console.warn('Session check fallback to profile:', err.message);
-      const storedRole = localStorage.getItem('cp_role') || 'student';
-      const profile = ROLE_PROFILES[storedRole] || ROLE_PROFILES.student;
-      setCurrentRole(storedRole);
+      console.warn('Session check fallback:', err.message);
+      const urlRole = getTabRoleFromUrl();
+      const profile = ROLE_PROFILES[urlRole] || ROLE_PROFILES.student;
+      setCurrentRole(urlRole);
       setCurrentUser(profile);
       setIsLoggedIn(true);
     } finally {
