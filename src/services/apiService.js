@@ -1,22 +1,39 @@
 import { authService } from './authService';
 
-const API_BASE_URL = import.meta.env.VITE_HTTP_API_URL;
+const API_BASE_URL = (import.meta.env.VITE_HTTP_API_URL || 'https://k1f5xsammd.execute-api.ap-south-1.amazonaws.com/').replace(/\/$/, '');
 
 const fetchFromApi = async (endpoint, options = {}) => {
+  const controller = new AbortController();
+  const timeoutMs = options.timeoutMs || 15000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, options);
+    const response = await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal,
+    });
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       let errorMsg = response.statusText;
       try {
         const errBody = await response.json();
         if (errBody.error) errorMsg = errBody.error;
       } catch (e) {}
-      throw new Error(`API error ${response.status}: ${errorMsg}`);
+      const err = new Error(errorMsg || `HTTP ${response.status}`);
+      err.status = response.status;
+      throw err;
     }
     return await response.json();
   } catch (error) {
-    console.error(`Error fetching ${endpoint}:`, error);
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      const timeoutErr = new Error('Request timed out. Please check your network and try again.');
+      timeoutErr.isTimeout = true;
+      throw timeoutErr;
+    }
+    console.error(`Error fetching ${endpoint}:`, error.message);
     throw error;
   }
 };
@@ -25,7 +42,9 @@ const fetchWithAuth = async (endpoint, options = {}) => {
   const session = await authService.getCurrentSession();
   const token = session?.idToken;
   if (!token) {
-    throw new Error('No authentication token available');
+    const err = new Error('Authentication required for this operation');
+    err.status = 401;
+    throw err;
   }
 
   const headers = {
@@ -37,28 +56,48 @@ const fetchWithAuth = async (endpoint, options = {}) => {
   return fetchFromApi(endpoint, { ...options, headers });
 };
 
-export const fetchEvents = async (params = {}) => {
+// --- Events (Public Browsing) ---
+
+export const fetchEvents = async (params = {}, options = {}) => {
+  let headers = {};
+  try {
+    const session = await authService.getCurrentSession();
+    if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
+  } catch (_) {}
+
   const urlParams = new URLSearchParams(params).toString();
   const endpoint = urlParams ? `/events?${urlParams}` : '/events';
-  return fetchFromApi(endpoint);
+  return fetchFromApi(endpoint, { ...options, headers: { ...headers, ...(options.headers || {}) } });
 };
 
-export const fetchEventById = async (id) => {
-  return fetchFromApi(`/events/${id}`);
+export const fetchEventById = async (id, options = {}) => {
+  return fetchFromApi(`/events/${id}`, options);
 };
 
-// --- Clubs ---
+// --- Clubs (Public Reads with Optional Auth Enrichment) ---
 
-export const fetchClubs = async () => {
-  return fetchWithAuth(`/clubs`);
+export const fetchClubs = async (options = {}) => {
+  let headers = {};
+  try {
+    const session = await authService.getCurrentSession();
+    if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
+  } catch (_) {}
+
+  return fetchFromApi('/clubs', { ...options, headers: { ...headers, ...(options.headers || {}) } });
 };
 
-export const fetchClubById = async (id) => {
-  return fetchWithAuth(`/clubs/${id}`);
+export const fetchClubById = async (id, options = {}) => {
+  let headers = {};
+  try {
+    const session = await authService.getCurrentSession();
+    if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
+  } catch (_) {}
+
+  return fetchFromApi(`/clubs/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
 };
 
 export const createClub = async (clubData) => {
-  return fetchWithAuth(`/clubs`, {
+  return fetchWithAuth('/clubs', {
     method: 'POST',
     body: JSON.stringify(clubData)
   });
@@ -82,24 +121,26 @@ export const deleteClub = async (id) => {
   });
 };
 
-export const fetchVenues = async () => {
-  return fetchFromApi('/venues');
+// --- Venues & Graph (Public Reads) ---
+
+export const fetchVenues = async (options = {}) => {
+  return fetchFromApi('/venues', options);
 };
 
-export const fetchVenueById = async (id) => {
-  return fetchFromApi(`/venues/${id}`);
+export const fetchVenueById = async (id, options = {}) => {
+  return fetchFromApi(`/venues/${id}`, options);
 };
 
-export const fetchSpeakers = async () => {
-  return fetchFromApi('/speakers');
+export const fetchSpeakers = async (options = {}) => {
+  return fetchFromApi('/speakers', options);
 };
 
-export const fetchPathNodes = async () => {
-  return fetchFromApi('/graph/nodes');
+export const fetchPathNodes = async (options = {}) => {
+  return fetchFromApi('/graph/nodes', options);
 };
 
-export const fetchPathEdges = async () => {
-  return fetchFromApi('/graph/edges');
+export const fetchPathEdges = async (options = {}) => {
+  return fetchFromApi('/graph/edges', options);
 };
 
 // --- Authenticated Admin Operations ---
@@ -125,20 +166,20 @@ export const updateEvent = async (id, eventData) => {
   });
 };
 
-export const deleteEvent = async (id) => {
-  return fetchWithAuth(`/events/${id}`, {
+export const deleteEvent = async (id, hard = false) => {
+  return fetchWithAuth(`/events/${id}${hard ? '?hard=true' : ''}`, {
     method: 'DELETE'
   });
 };
 
-export const getPresignedUrl = async (fileName, fileType) => {
-  return fetchWithAuth(`${API_BASE_URL}/media/presigned-url`, {
+export const createVenue = async (venueData) => {
+  return fetchWithAuth('/venues', {
     method: 'POST',
-    body: JSON.stringify({ fileName, fileType })
+    body: JSON.stringify(venueData)
   });
 };
 
-// --- RSVPs ---
+// --- RSVPs & Tickets ---
 
 export const createRsvp = async (eventId) => {
   return fetchWithAuth(`/events/${eventId}/rsvp`, {
@@ -152,18 +193,25 @@ export const cancelRsvp = async (eventId) => {
   });
 };
 
-export const fetchMyRsvps = async (userId) => {
-  return fetchWithAuth(`/users/${userId}/rsvps`);
+export const fetchMyRsvps = async (userId, options = {}) => {
+  return fetchWithAuth(`/users/${userId}/rsvps`, options);
 };
 
-export const fetchEventRsvps = async (eventId) => {
-  return fetchWithAuth(`/events/${eventId}/rsvps`);
+export const fetchEventRsvps = async (eventId, options = {}) => {
+  return fetchWithAuth(`/events/${eventId}/rsvps`, options);
+};
+
+export const checkInAttendee = async (eventId, { checkInCode, ticketId }) => {
+  return fetchWithAuth(`/events/${eventId}/checkin`, {
+    method: 'POST',
+    body: JSON.stringify({ checkInCode, ticketId })
+  });
 };
 
 // --- Notifications ---
 
-export const getNotifications = async (userId) => {
-  return fetchWithAuth(`/users/${userId}/notifications`);
+export const getNotifications = async (userId, options = {}) => {
+  return fetchWithAuth(`/users/${userId}/notifications`, options);
 };
 
 export const markNotificationRead = async (notificationId) => {
@@ -173,9 +221,28 @@ export const markNotificationRead = async (notificationId) => {
   });
 };
 
-export const createVenue = async (venueData) => {
-  return fetchWithAuth('/venues', {
+// --- Governance: Event Review & Approval ---
+
+export const reviewEvent = async (eventId, { action, reviewComment = '' }) => {
+  return fetchWithAuth(`/events/${eventId}/review`, {
     method: 'POST',
-    body: JSON.stringify(venueData)
+    body: JSON.stringify({ action, reviewComment })
   });
 };
+
+// --- Governance: Organizer Account Provisioning & Management ---
+
+export const createOrganizer = async ({ email, name, clubId, temporaryPassword }) => {
+  return fetchWithAuth('/admin/organizers', {
+    method: 'POST',
+    body: JSON.stringify({ email, name, clubId, temporaryPassword })
+  });
+};
+
+export const manageOrganizer = async (username, { action, temporaryPassword }) => {
+  return fetchWithAuth(`/admin/organizers/${encodeURIComponent(username)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action, temporaryPassword })
+  });
+};
+

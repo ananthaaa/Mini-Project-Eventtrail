@@ -15,6 +15,8 @@ import { VENUE_TO_NODE, BUILDING_INFO } from '../data/buildings';
 const EventDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { currentUser, user, isLoggedIn } = useContext(RoleContext);
+  const activeUser = currentUser || user;
   const { userRsvps, submitRsvp, venues } = useContext(RsvpContext);
   const { addNotification } = useContext(NotificationContext);
 
@@ -22,54 +24,87 @@ const EventDetail = () => {
   const [speakers, setSpeakers] = React.useState([]);
   const [clubs, setClubs] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [fetchError, setFetchError] = React.useState(false);
+  const [fetchError, setFetchError] = React.useState(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  React.useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      setFetchError(false);
-      try {
-        // We now fetch the specific event by ID along with reference data
-        const [apiEvent, apiSpeakers, apiClubs] = await Promise.all([
-          fetchEventById(id),
-          fetchSpeakers(),
-          fetchClubs()
-        ]);
-        
-        setEvent(apiEvent);
-        setSpeakers(Array.isArray(apiSpeakers) ? apiSpeakers : []);
-        setClubs(Array.isArray(apiClubs) ? apiClubs : []);
-      } catch (error) {
-        console.error('Failed to load event details:', error.message);
-        setFetchError(true);
-        setEvent(null);
-        setSpeakers([]);
-        setClubs([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
+  const loadData = React.useCallback(async () => {
+    setIsLoading(true);
+    setFetchError(null);
+    try {
+      // 1. Load essential event details independently
+      const apiEvent = await fetchEventById(id);
+      setEvent(apiEvent);
+
+      // 2. Enrich with optional speaker and club info without failing the event
+      Promise.allSettled([fetchSpeakers(), fetchClubs()])
+        .then(([speakersRes, clubsRes]) => {
+          if (speakersRes.status === 'fulfilled' && Array.isArray(speakersRes.value)) {
+            setSpeakers(speakersRes.value);
+          }
+          if (clubsRes.status === 'fulfilled' && Array.isArray(clubsRes.value)) {
+            setClubs(clubsRes.value);
+          }
+        })
+        .catch(() => {});
+    } catch (error) {
+      console.error('Failed to load event details:', error);
+      setFetchError(error);
+      setEvent(null);
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
 
-  if (isLoading || fetchError || !event) {
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  if (isLoading) {
     return (
       <PageShell>
-        <div className="max-w-md mx-auto text-center mt-20">
-          <h3 className="font-display font-bold text-3xl text-text-primary mb-4">
-            {isLoading ? "Loading Event Details..." : "Event Not Found"}
+        <div className="max-w-md mx-auto text-center mt-20 bg-white border-3 border-black p-8 neo-shadow">
+          <div className="w-10 h-10 border-4 border-black border-t-accent-yellow rounded-full animate-spin mx-auto mb-4" />
+          <h3 className="font-display font-black text-2xl uppercase tracking-wider text-black">
+            Loading Event Details...
           </h3>
-          {!isLoading && (
-            <>
-              <p className="text-text-secondary mb-8">
-                The event you are looking for does not exist or has been deleted.
-              </p>
-              <Link to="/discover" className="inline-flex items-center gap-2 bg-bg-surface border border-border-subtle px-6 py-3 rounded-full text-text-primary hover:text-accent transition-colors">
-                <ArrowLeft size={16} />
-                Back to Discover
-              </Link>
-            </>
-          )}
+          <p className="text-xs font-bold text-black/60 uppercase mt-2">
+            Fetching verified schedule and venue coordinates
+          </p>
+        </div>
+      </PageShell>
+    );
+  }
+
+  if (fetchError || !event) {
+    const isNotFound = fetchError?.status === 404;
+    return (
+      <PageShell>
+        <div className="max-w-md mx-auto text-center mt-20 bg-white border-3 border-black p-8 neo-shadow">
+          <h3 className="font-display font-black text-3xl text-black mb-3 uppercase tracking-tight">
+            {isNotFound ? "Event Not Found" : "Connection Error"}
+          </h3>
+          <p className="text-black/70 font-bold text-sm mb-6">
+            {isNotFound
+              ? "The event you are looking for does not exist or may have been unlisted."
+              : "Unable to load event details. Please verify your internet connection and try again."}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {!isNotFound && (
+              <button
+                onClick={loadData}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-pastel-yellow border-3 border-black px-6 py-3 font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000] hover:translate-y-px transition-all"
+              >
+                Retry
+              </button>
+            )}
+            <Link
+              to="/student/events"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white border-3 border-black px-6 py-3 font-black uppercase text-xs shadow-[3px_3px_0px_0px_#000] hover:translate-y-px transition-all"
+            >
+              <ArrowLeft size={16} strokeWidth={3} />
+              Browse Events
+            </Link>
+          </div>
         </div>
       </PageShell>
     );
@@ -81,10 +116,10 @@ const EventDetail = () => {
 
   const currentVenue = (venues || []).find((v) => v.id === event.venueId) || {
     id: event.venueId,
-    name: event.venueId === 'science-hall-a' ? 'Science Auditorium A' : event.venueId === 'stadium-field-1' ? 'Main Athletics Field' : 'Creative Hub Room 202',
-    building: event.venueId === 'science-hall-a' ? 'Science Building Block B' : event.venueId === 'stadium-field-1' ? 'Campus Stadium' : 'Student Activity Hub',
-    distance: event.venueId === 'science-hall-a' ? '450m' : event.venueId === 'stadium-field-1' ? '750m' : '320m',
-    timeEstimation: event.venueId === 'science-hall-a' ? '6 mins' : event.venueId === 'stadium-field-1' ? '10 mins' : '4 mins',
+    name: event.location || 'Campus Auditorium',
+    building: event.locationDetails?.building || 'Main Campus Complex',
+    distance: 'Campus compound',
+    timeEstimation: 'Walkable',
   };
   const targetNodeId = VENUE_TO_NODE[event.venueId] || 'entrance-cs-block';
   const targetBuilding = BUILDING_INFO[targetNodeId];
@@ -92,18 +127,29 @@ const EventDetail = () => {
   const handleRsvpAction = async () => {
     if (userRsvp) {
       navigate(`/student/rsvp-confirmation/${event.id}`);
-    } else {
-      try {
-        const res = await submitRsvp(event.id);
-        if (res.rsvpStatus === "RSVP'd") {
-          addNotification("Successfully registered for event!", "success");
-        } else {
-          addNotification("Added to waitlist.", "info");
-        }
-        navigate(`/student/rsvp-confirmation/${event.id}`);
-      } catch (err) {
-        addNotification(err.message || "Failed to RSVP", "error");
+      return;
+    }
+
+    if (!isLoggedIn || !activeUser) {
+      navigate('/login', { state: { from: `/student/events/${event.id}` } });
+      return;
+    }
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await submitRsvp(event.id);
+      if (res.rsvpStatus === "RSVP'd") {
+        addNotification("Registration confirmed! Your admission ticket is ready.", "success");
+      } else {
+        addNotification("Event is currently full. You have joined the waitlist queue.", "info");
       }
+      navigate(`/student/rsvp-confirmation/${event.id}`);
+    } catch (err) {
+      addNotification(err.message || "Failed to complete reservation", "error");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

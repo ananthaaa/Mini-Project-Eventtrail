@@ -10,7 +10,8 @@ import Badge from '../components/ui/Badge';
 const ClubProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useContext(RoleContext);
+  const { currentUser, user, isLoggedIn } = useContext(RoleContext);
+  const activeUser = currentUser || user;
   
   const [club, setClub] = useState(null);
   const [events, setEvents] = useState([]);
@@ -22,12 +23,23 @@ const ClubProfile = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const [apiClub, allEvents] = await Promise.all([
+        const [apiClub, allEvents] = await Promise.allSettled([
           fetchClubById(id),
           fetchEvents()
         ]);
-        setClub(apiClub);
-        setEvents(Array.isArray(allEvents) ? allEvents.filter(e => e.organizerId === id) : []);
+        
+        if (apiClub.status === 'fulfilled' && apiClub.value) {
+          setClub(apiClub.value);
+          setIsMember(Boolean(apiClub.value.isMember));
+        } else {
+          setClub(null);
+        }
+
+        if (allEvents.status === 'fulfilled' && Array.isArray(allEvents.value)) {
+          setEvents(allEvents.value.filter(e => e.organizerId === id));
+        } else {
+          setEvents([]);
+        }
       } catch (error) {
         console.error('Failed to load club:', error.message);
         setClub(null);
@@ -36,11 +48,11 @@ const ClubProfile = () => {
       }
     };
     loadData();
-  }, [id]);
+  }, [id, activeUser]);
 
   const handleJoinToggle = async () => {
-    if (!user) {
-      alert("Please log in to join clubs");
+    if (!isLoggedIn || !activeUser) {
+      navigate('/login', { state: { from: `/student/clubs/${id}` } });
       return;
     }
     
@@ -49,13 +61,15 @@ const ClubProfile = () => {
       if (isMember) {
         await leaveClub(id);
         setIsMember(false);
+        setClub(prev => prev ? { ...prev, memberCount: Math.max(0, (prev.memberCount || 1) - 1) } : prev);
       } else {
         await joinClub(id);
         setIsMember(true);
+        setClub(prev => prev ? { ...prev, memberCount: (prev.memberCount || 0) + 1 } : prev);
       }
     } catch (err) {
       console.error("Failed to toggle membership", err);
-      alert("Error updating membership");
+      alert("Error updating membership. Please check your connection.");
     } finally {
       setIsJoining(false);
     }
@@ -73,7 +87,7 @@ const ClubProfile = () => {
               <p className="text-black/70 font-bold uppercase tracking-wide mb-8">
                 The student organization you are looking for does not exist or has been removed.
               </p>
-              <Link to="/clubs" className="inline-flex items-center gap-2 bg-accent-yellow border-3 border-black px-6 py-3 text-black font-bold uppercase tracking-wider hover:bg-black hover:text-accent-yellow transition-colors shadow-[4px_4px_0px_0px_#000]">
+              <Link to="/student/clubs" className="inline-flex items-center gap-2 bg-accent-yellow border-3 border-black px-6 py-3 text-black font-bold uppercase tracking-wider hover:bg-black hover:text-accent-yellow transition-colors shadow-[4px_4px_0px_0px_#000]">
                 <ArrowLeft size={16} />
                 Back to Directory
               </Link>

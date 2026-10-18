@@ -1,16 +1,26 @@
 import React, { useContext, useEffect, useState, useMemo, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageShell from '../components/layout/PageShell';
 import { NavModeContext } from '../context/NavModeContext';
 import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
 import StepTracker from '../components/ui/StepTracker';
-import { MapPin, Navigation, CheckCircle2, ChevronRight, ArrowLeft, Info, Compass } from 'lucide-react';
+import { MapPin, Navigation, CheckCircle2, ChevronRight, ArrowLeft, Info, Compass, Play, Pause, RotateCcw, AlertTriangle, Crosshair, Check } from 'lucide-react';
 import CampusMap, { Marker } from '../components/ui/CampusMap';
 import RouteLayer from '../components/ui/RouteLayer';
+import CampusBuildingMarkers from '../components/ui/CampusBuildingMarkers';
 import { fetchPathNodes, fetchPathEdges } from '../services/mapService';
 import { buildAdjacencyList, findPathAStar } from '../utils/pathfinding';
+import Badge from '../components/ui/Badge';
+
+const CAMPUS_STARTING_POINTS = [
+  { id: 'main-gate', name: 'Campus Main Gate (South Entrance)', lat: 10.1768, lng: 76.4290 },
+  { id: 'library', name: 'Central Library Entrance', lat: 10.1778, lng: 76.4298 },
+  { id: 'canteen', name: 'Student Canteen & Plaza', lat: 10.1772, lng: 76.4308 },
+  { id: 'sports-field', name: 'Athletics Ground Pavillion', lat: 10.1776, lng: 76.4312 },
+  { id: 'cs-block', name: 'Computer Science Block Lobby', lat: 10.1785, lng: 76.4302 },
+];
 
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371e3;
@@ -25,16 +35,13 @@ const haversineDistance = (lat1, lon1, lat2, lon2) => {
 
 const Navigate = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const destParam = searchParams.get('dest');
+
   const {
     activeEventId,
     currentPhase,
-    outdoorProgress,
-    outdoorStatus,
     activeIndoorStep,
-    completedIndoorSteps,
-    setOutdoorProgress,
-    setOutdoorStatus,
-    simulateArrival,
     setIndoorStep,
     markIndoorStepCompleted,
     finishNavigation,
@@ -44,34 +51,106 @@ const Navigate = () => {
   const { events, venues } = useContext(RsvpContext);
   const { addNotification } = useContext(NotificationContext);
 
+  // Determine active event or fallback to first event with venue
   const activeEvent = useMemo(() => {
-    return events.find((e) => e.id === activeEventId);
-  }, [events, activeEventId]);
+    if (activeEventId) return events.find(e => e.id === activeEventId);
+    if (destParam) return events.find(e => e.id === destParam || e.venueId === destParam);
+    return events[0] || null;
+  }, [events, activeEventId, destParam]);
 
   const venue = useMemo(() => {
-    if (!activeEvent) return null;
-    return venues.find((v) => v.id === activeEvent.venueId);
+    if (!activeEvent) return venues[0] || null;
+    return venues.find((v) => v.id === activeEvent.venueId) || venues[0] || null;
   }, [activeEvent, venues]);
 
-  const progressRef = useRef(outdoorProgress);
-  useEffect(() => {
-    progressRef.current = outdoorProgress;
-  }, [outdoorProgress]);
+  // Destination coordinates
+  const destLat = activeEvent?.locationDetails?.entranceLat || venue?.lat || 10.1780;
+  const destLng = activeEvent?.locationDetails?.entranceLng || venue?.lng || 76.4302;
 
-  const startLat = 10.1768;
-  const startLng = 76.4290;
-  const destLat = activeEvent?.locationDetails?.entranceLat || 10.1788;
-  const destLng = activeEvent?.locationDetails?.entranceLng || 76.4320;
+  // Navigation mode: 'manual' (default honest landmark walk) | 'live_gps' | 'simulation' (explicit demo)
+  const [navMode, setNavMode] = useState('manual');
+  const [selectedStartPoint, setSelectedStartPoint] = useState(CAMPUS_STARTING_POINTS[0].id);
+  const [gpsError, setGpsError] = useState(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState(null);
 
-  const [currentLat, setCurrentLat] = useState(startLat);
-  const [currentLng, setCurrentLng] = useState(startLng);
-  const [distanceRemaining, setDistanceRemaining] = useState(haversineDistance(startLat, startLng, destLat, destLng));
+  // Position coordinates
+  const [currentLat, setCurrentLat] = useState(CAMPUS_STARTING_POINTS[0].lat);
+  const [currentLng, setCurrentLng] = useState(CAMPUS_STARTING_POINTS[0].lng);
 
+  // Simulation controls
+  const [simPlaying, setSimPlaying] = useState(false);
+  const [simProgress, setSimProgress] = useState(0);
+
+  // Graph state for pathfinding
   const [nodes, setNodes] = useState(null);
   const [adjacency, setAdjacency] = useState(null);
   const [computedPath, setComputedPath] = useState(null);
   const [pathError, setPathError] = useState('');
 
+  // Manual start point change
+  const handleStartPointChange = (startId) => {
+    setSelectedStartPoint(startId);
+    const pt = CAMPUS_STARTING_POINTS.find(p => p.id === startId);
+    if (pt) {
+      setCurrentLat(pt.lat);
+      setCurrentLng(pt.lng);
+      setSimProgress(0);
+      setSimPlaying(false);
+    }
+  };
+
+  // Live GPS Tracking
+  useEffect(() => {
+    if (navMode !== 'live_gps') return;
+
+    if (!('geolocation' in navigator)) {
+      setGpsError('Geolocation is not supported by your browser.');
+      setNavMode('manual');
+      return;
+    }
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setGpsError(null);
+        setCurrentLat(pos.coords.latitude);
+        setCurrentLng(pos.coords.longitude);
+        setGpsAccuracy(Math.round(pos.coords.accuracy));
+      },
+      (err) => {
+        console.warn('Geolocation access denied or failed:', err.message);
+        setGpsError('GPS access denied or unavailable. Switched to manual landmark selection.');
+        setNavMode('manual');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [navMode]);
+
+  // Explicit Simulation Mode
+  useEffect(() => {
+    let timer;
+    if (navMode === 'simulation' && simPlaying && simProgress < 100) {
+      timer = setInterval(() => {
+        setSimProgress(prev => {
+          const next = Math.min(prev + 3, 100);
+          const startPt = CAMPUS_STARTING_POINTS.find(p => p.id === selectedStartPoint) || CAMPUS_STARTING_POINTS[0];
+          const fraction = next / 100;
+          setCurrentLat(startPt.lat + (destLat - startPt.lat) * fraction);
+          setCurrentLng(startPt.lng + (destLng - startPt.lng) * fraction);
+
+          if (next >= 100) {
+            setSimPlaying(false);
+            addNotification("Simulation arrival reached: At building entrance.", "info");
+          }
+          return next;
+        });
+      }, 800);
+    }
+    return () => clearInterval(timer);
+  }, [navMode, simPlaying, simProgress, destLat, destLng, selectedStartPoint]);
+
+  // Load graph for A* navigation
   useEffect(() => {
     async function loadGraph() {
       try {
@@ -80,7 +159,7 @@ const Navigate = () => {
         setNodes(fetchedNodes);
         setAdjacency(buildAdjacencyList(fetchedEdges));
       } catch (e) {
-        console.error("Failed to load map data", e);
+        console.warn("Could not load road graph, path preview unavailable:", e.message);
       }
     }
     loadGraph();
@@ -100,351 +179,318 @@ const Navigate = () => {
   };
 
   useEffect(() => {
-    if (nodes && adjacency && currentPhase === 'outdoor') {
-      const startNodeId = getClosestNode(startLat, startLng, nodes);
+    if (nodes && adjacency) {
+      const startNodeId = getClosestNode(currentLat, currentLng, nodes);
       const destNodeId = getClosestNode(destLat, destLng, nodes);
-      
-      const path = findPathAStar(startNodeId, destNodeId, adjacency, nodes);
-      if (path) {
-        setComputedPath(path);
-        setPathError('');
-      } else {
-        setComputedPath(null);
-        setPathError('No valid walking route found between these locations.');
+      if (startNodeId && destNodeId) {
+        const path = findPathAStar(startNodeId, destNodeId, adjacency, nodes);
+        if (path) {
+          setComputedPath(path);
+          setPathError('');
+        } else {
+          setComputedPath(null);
+          setPathError('No verified paved path found between chosen coordinates.');
+        }
       }
     }
-  }, [nodes, adjacency, startLat, startLng, destLat, destLng, currentPhase]);
+  }, [nodes, adjacency, currentLat, currentLng, destLat, destLng]);
 
+  const distanceRemaining = Math.round(haversineDistance(currentLat, currentLng, destLat, destLng));
+  const estimatedWalkingMinutes = Math.max(1, Math.round(distanceRemaining / 75)); // ~4.5 km/h walk
 
-  useEffect(() => {
-    let timer;
-    if (currentPhase === 'outdoor' && progressRef.current < 100) {
-      timer = setInterval(() => {
-        const current = progressRef.current;
-        if (current >= 100) {
-          clearInterval(timer);
-          return;
-        }
-        const next = Math.min(current + 2, 100);
-        progressRef.current = next;
-        setOutdoorProgress(next);
-
-        const fraction = next / 100;
-        const newLat = startLat + (destLat - startLat) * fraction;
-        const newLng = startLng + (destLng - startLng) * fraction;
-        setCurrentLat(newLat);
-        setCurrentLng(newLng);
-
-        const dist = haversineDistance(newLat, newLng, destLat, destLng);
-        setDistanceRemaining(dist);
-
-        if (dist <= 30) {
-          clearInterval(timer);
-          setOutdoorStatus("Arrived at building boundary! Handoff active.");
-          addNotification("Geofence Boundary Reached. Switching from Outdoor GPS to Indoor Map...", "success");
-          setTimeout(() => {
-            simulateArrival();
-          }, 3000);
-        } else if (dist < 100) {
-          setOutdoorStatus("Approaching building entrance...");
-        } else if (dist < 300) {
-          setOutdoorStatus("Walking down Campus Mall corridor...");
-        } else {
-          setOutdoorStatus("Leaving student union square...");
-        }
-      }, 1000);
+  // Indoor Turn-by-Turn Steps
+  const indoorStepsArray = useMemo(() => {
+    if (activeEvent?.locationDetails?.indoorSteps && activeEvent.locationDetails.indoorSteps.length > 0) {
+      return activeEvent.locationDetails.indoorSteps;
     }
-    return () => clearInterval(timer);
-  }, [currentPhase, destLat, destLng]);
+    if (venue?.indoorSteps && venue.indoorSteps.length > 0) {
+      return venue.indoorSteps;
+    }
+    return [
+      'Enter the building through the designated campus entrance',
+      'Check the floor directory sign in the main lobby',
+      'Proceed to the event hall/room listed on your admission pass'
+    ];
+  }, [activeEvent, venue]);
 
-  if (!activeEvent || !venue) {
+  if (!activeEvent && events.length === 0) {
     return (
       <PageShell>
-        <div className="max-w-md mx-auto text-center mt-20">
-          <div className="w-16 h-16 bg-bg-surface-alt rounded-full flex items-center justify-center mx-auto mb-6">
-            <Navigation className="w-8 h-8 text-accent" />
-          </div>
-          <h3 className="font-display font-bold text-3xl text-text-primary mb-4">No Active Navigation</h3>
-          <p className="text-text-secondary mb-8">
-            You must claim a ticket and click "Launch Navigator" to start your route.
+        <div className="max-w-md mx-auto text-center mt-20 bg-white border-3 border-black p-8 neo-shadow">
+          <Navigation className="w-12 h-12 text-black/40 mx-auto mb-4" />
+          <h2 className="font-display font-black text-2xl uppercase mb-2">No Active Navigation</h2>
+          <p className="font-bold text-sm text-black/70 mb-6">
+            Explore live campus events and launch walking directions from any event details page.
           </p>
-          <Link to="/discover" className="inline-flex items-center gap-2 bg-bg-surface border border-border-subtle px-6 py-3 rounded-full text-text-primary hover:text-accent transition-colors">
-            Browse Live Events
+          <Link
+            to="/student/events"
+            className="inline-block py-3 px-6 bg-pastel-yellow border-3 border-black font-black uppercase text-xs tracking-wider shadow-[3px_3px_0px_0px_#000]"
+          >
+            Browse Campus Events
           </Link>
         </div>
       </PageShell>
     );
   }
 
-  const indoorStepsArray = activeEvent?.locationDetails?.indoorSteps 
-    ? activeEvent.locationDetails.indoorSteps.map((s, idx) => ({ step: idx + 1, instruction: s, x: 250, y: 150 })) 
-    : venue.waypoints;
-
-  const pathDValue = indoorStepsArray
-    .map((wp, idx) => `${idx === 0 ? 'M' : 'L'} ${wp.x} ${wp.y}`)
-    .join(' ');
-
-  const currentWaypoint = indoorStepsArray[activeIndoorStep] || null;
-  const isLastIndoorStep = activeIndoorStep === indoorStepsArray.length - 1;
-  const isNavCompleted = currentPhase === 'arrived';
-
-  const handleNextStep = () => {
-    markIndoorStepCompleted(activeIndoorStep, true);
-    if (isLastIndoorStep) {
-      finishNavigation();
-    } else {
-      setIndoorStep(activeIndoorStep + 1);
-    }
-  };
-
-  const handlePrevStep = () => {
-    if (activeIndoorStep > 0) {
-      setIndoorStep(activeIndoorStep - 1);
-    }
-  };
-
   return (
     <PageShell>
-      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      {/* Title Header */}
+      <div className="mb-6 text-left border-b-3 border-black pb-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="px-3 py-1 rounded-full bg-accent/20 border border-accent/30 text-accent text-xs uppercase tracking-wider font-medium">Phase: {currentPhase.toUpperCase()}</span>
-            <span className="px-3 py-1 rounded-full bg-bg-surface border border-border-subtle text-text-primary text-xs uppercase tracking-wider font-medium">{venue.building}</span>
-          </div>
-          <h1 className="font-display font-bold text-4xl md:text-5xl text-text-primary tracking-tight">
-            Routing to {activeEvent.title}
+          <Link
+            to={`/student/events/${activeEvent?.id || ''}`}
+            className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-black mb-2 hover:underline"
+          >
+            <ArrowLeft size={14} strokeWidth={3} />
+            Back to Event Details
+          </Link>
+          <h1 className="font-display font-black text-3xl md:text-4xl uppercase tracking-tight text-black">
+            Campus Walking Guide
           </h1>
         </div>
-        <button
-          onClick={resetNavigation}
-          className="px-4 py-2 text-sm font-medium text-text-tertiary hover:text-red-400 bg-bg-surface hover:bg-bg-primary border border-border-subtle rounded-full transition-colors"
-        >
-          Cancel Navigation
-        </button>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="mint" className="border-2 border-black shadow-[1px_1px_0px_0px_#000]">
+            Destination: {activeEvent?.location || venue?.name || 'Campus Venue'}
+          </Badge>
+        </div>
       </div>
 
-      {currentPhase === 'outdoor' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="bg-white border-3 border-black h-[500px] relative z-0 neo-shadow-lg">
-              <CampusMap center={[(startLat + destLat)/2, (startLng + destLng)/2]}>
-                {pathError && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-100 border-2 border-red-500 text-red-700 px-4 py-2 z-[1000] font-bold shadow-md">
-                    {pathError}
-                  </div>
-                )}
-                <Marker longitude={destLng} latitude={destLat} anchor="bottom">
-                  <div className="flex flex-col items-center">
-                    <div className="bg-[#FF5A1F] text-white text-[9px] font-black uppercase px-1.5 py-0.5 border border-black shadow-sm mb-1">
-                      TARGET
-                    </div>
-                    <div className="w-5 h-5 bg-[#FF5A1F] border-2 border-black rounded-full shadow-[2px_2px_0px_0px_#000] animate-pulse" />
-                  </div>
-                </Marker>
-                <Marker longitude={currentLng} latitude={currentLat} anchor="center">
-                  <div className="w-5 h-5 bg-[#007bff] border-3 border-white rounded-full shadow-[0_0_12px_rgba(0,123,255,0.9)] animate-bounce" />
-                </Marker>
-                <RouteLayer path={computedPath} nodes={nodes} />
-              </CampusMap>
-
-              <div className="absolute bottom-6 left-6 right-6 bg-white border-3 border-black p-5 flex flex-col sm:flex-row justify-between items-center gap-4 z-10 shadow-[4px_4px_0px_0px_#000]">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-pastel-yellow border-2 border-black flex items-center justify-center text-black shadow-[2px_2px_0px_0px_#000]">
-                    <Compass className="w-6 h-6 animate-spin-slow" strokeWidth={3} />
-                  </div>
-                  <div>
-                    <span className="font-black text-black uppercase tracking-wider block text-lg">{outdoorStatus}</span>
-                    <span className="text-sm font-bold text-black/70 uppercase">Walking Route Active</span>
-                  </div>
-                </div>
-                <div className="bg-pastel-mint border-3 border-black px-4 py-2 text-black font-bold uppercase tracking-wider shadow-[2px_2px_0px_0px_#000]">
-                  {Math.round(distanceRemaining)}m remaining
-                </div>
-              </div>
-            </div>
+      {/* Navigation Mode Selector */}
+      <div className="bg-white border-3 border-black p-4 neo-shadow mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-xs font-black uppercase tracking-wider text-black block mb-1">
+              Select Navigation Mode
+            </span>
+            <p className="text-xs font-medium text-black/70">
+              Choose live GPS, landmark walking directions, or run a demonstration simulation.
+            </p>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-white border-3 border-black p-8 space-y-6 neo-shadow">
-              <h3 className="font-display font-black text-2xl text-black uppercase">Outdoor Navigation HUD</h3>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center border-b-3 border-black border-dashed pb-3">
-                  <span className="text-black/70 font-bold uppercase tracking-wider text-xs">Target Building</span>
-                  <span className="text-black font-black uppercase tracking-wider">{venue.building}</span>
-                </div>
-                <div className="flex justify-between items-center border-b-3 border-black border-dashed pb-3">
-                  <span className="text-black/70 font-bold uppercase tracking-wider text-xs">GPS Distance</span>
-                  <span className="text-black font-black uppercase tracking-wider">{Math.round(distanceRemaining)} metres</span>
-                </div>
-                <div className="flex justify-between items-center pb-3">
-                  <span className="text-black/70 font-bold uppercase tracking-wider text-xs">Estimated walk</span>
-                  <span className="text-black font-black uppercase tracking-wider">{venue.timeEstimation}</span>
-                </div>
-              </div>
-
+          <div className="flex border-2 border-black bg-gray-100 p-1 shadow-[2px_2px_0px_0px_#000]">
+            {[
+              { id: 'manual', label: 'Landmark Route' },
+              { id: 'live_gps', label: 'Live GPS' },
+              { id: 'simulation', label: 'Demo Simulation' },
+            ].map(m => (
               <button
-                onClick={simulateArrival}
-                className="w-full bg-pastel-mint border-3 border-black text-black font-black uppercase tracking-wider py-3 shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all"
+                key={m.id}
+                onClick={() => {
+                  setNavMode(m.id);
+                  if (m.id !== 'simulation') setSimPlaying(false);
+                }}
+                className={`px-3 py-1.5 text-xs font-display font-black uppercase tracking-wider transition-all ${
+                  navMode === m.id
+                    ? 'bg-pastel-yellow border border-black shadow-[1px_1px_0px_0px_#000]'
+                    : 'text-black/60 hover:text-black'
+                }`}
               >
-                Simulate Geofence Arrival
+                {m.label}
               </button>
-            </div>
-
-            <div className="bg-pastel-peach border-3 border-black p-6 flex gap-4 items-start neo-shadow-sm">
-              <Info size={24} className="text-black shrink-0 mt-1" strokeWidth={3} />
-              <p className="text-sm text-black font-bold leading-relaxed uppercase tracking-wide">
-                The app is simulating your walking coordinates. In a production build, your device's background GPS coordinates will trigger the geofence to switch automatically.
-              </p>
-            </div>
+            ))}
           </div>
         </div>
-      )}
 
-      {(currentPhase === 'indoor' || isNavCompleted) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white border-3 border-black p-6 neo-shadow">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-display font-black text-2xl text-black uppercase">Indoor Waypoint Map (2nd Floor Block B)</h3>
-              </div>
-
-              <div className="w-full aspect-[4/3] bg-pastel-yellow relative overflow-hidden border-3 border-black shadow-[4px_4px_0px_0px_#000]">
-                <svg viewBox="0 0 500 350" className="w-full h-full">
-                  <rect x="20" y="20" width="460" height="310" fill="none" stroke="#333" strokeWidth="2" />
-                  
-                  <rect x="50" y="50" width="100" height="250" fill="#222" stroke="#333" strokeWidth="1" />
-                  <rect x="150" y="50" width="200" height="100" fill="#222" stroke="#333" strokeWidth="1" />
-                  <rect x="350" y="50" width="100" height="250" fill="#222" stroke="#333" strokeWidth="1" />
-                  
-                  <line x1="150" y1="150" x2="350" y2="150" stroke="#333" strokeWidth="1" />
-                  
-                  <text x="100" y="295" fontSize="10" fontWeight="bold" fontFamily="Inter, sans-serif" fill="#666" textAnchor="middle">UNION CAFE</text>
-                  <text x="250" y="125" fontSize="10" fontWeight="bold" fontFamily="Inter, sans-serif" fill="#666" textAnchor="middle">RESEARCH GALLERY</text>
-                  <text x="400" y="295" fontSize="10" fontWeight="bold" fontFamily="Inter, sans-serif" fill="#666" textAnchor="middle">{activeEvent.venueId === 'science-hall-a' ? 'AUDITORIUM A' : 'HUB ROOM 202'}</text>
-
-                  <path
-                    d={pathDValue}
-                    fill="none"
-                    stroke="#FF5A1F"
-                    strokeWidth="4"
-                    strokeDasharray="8,8"
-                    opacity="0.5"
-                  />
-
-                  {indoorStepsArray.map((wp, idx) => {
-                    const isActive = idx === activeIndoorStep && !isNavCompleted;
-                    const isCompleted = completedIndoorSteps[idx] || isNavCompleted;
-                    
-                    return (
-                      <g key={wp.step} className="cursor-pointer" onClick={() => setIndoorStep(idx)}>
-                        <circle
-                          cx={wp.x}
-                          cy={wp.y}
-                          r={isActive ? "14" : "10"}
-                          fill={isActive ? "#FFDB58" : isCompleted ? "#00B67A" : "#151517"}
-                          stroke={isActive ? "#0B0B0C" : isCompleted ? "#0B0B0C" : "#444"}
-                          strokeWidth="2"
-                        />
-                        <text
-                          x={wp.x}
-                          y={wp.y + 3}
-                          fontSize="10"
-                          fontWeight="bold"
-                          fontFamily="Inter, sans-serif"
-                          fill={isActive ? "#000" : "#fff"}
-                          textAnchor="middle"
-                        >
-                          {wp.step}
-                        </text>
-                        
-                        {isActive && (
-                          <circle
-                            cx={wp.x}
-                            cy={wp.y}
-                            r="24"
-                            fill="none"
-                            stroke="#FFDB58"
-                            strokeWidth="2"
-                            className="animate-ping"
-                          />
-                        )}
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            {isNavCompleted ? (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-pastel-mint border-3 border-black p-8 text-center space-y-6 neo-shadow"
-              >
-                <div className="w-20 h-20 bg-white border-3 border-black flex items-center justify-center mx-auto shadow-[4px_4px_0px_0px_#000]">
-                  <CheckCircle2 className="w-10 h-10 text-black" strokeWidth={3} />
-                </div>
-                <div>
-                  <h3 className="font-display font-black text-3xl text-black uppercase tracking-tight mb-3">You Have Arrived!</h3>
-                  <p className="text-black font-bold uppercase tracking-wide leading-relaxed">
-                    You have reached the venue destination. Present your ticket barcode to the host organizer to scan and check in. Enjoy the event!
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-4 pt-4">
-                  <button
-                    onClick={() => navigate(`/student/rsvp-confirmation/${activeEvent.id}`)}
-                    className="w-full bg-pastel-yellow border-3 border-black text-black font-black uppercase tracking-wider py-4 shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all"
-                  >
-                    Show Ticket Barcode
-                  </button>
-                  <button
-                    onClick={() => {
-                      resetNavigation();
-                      navigate('/');
-                    }}
-                    className="w-full bg-white border-3 border-black text-black font-black uppercase tracking-wider py-4 shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all"
-                  >
-                    Finish Journey
-                  </button>
-                </div>
-              </motion.div>
-            ) : (
-              <div className="bg-white border-3 border-black p-8 neo-shadow">
-                <h3 className="font-display font-black text-2xl text-black uppercase mb-6">Navigation Steps</h3>
-                
-                <div className="mb-8">
-                  <StepTracker 
-                    steps={indoorStepsArray}
-                    activeStepIndex={activeIndoorStep}
-                    completedSteps={completedIndoorSteps}
-                    onStepClick={setIndoorStep}
-                  />
-                </div>
-
-                <div className="flex gap-4 pt-6 border-t-3 border-black border-dashed">
-                  <button
-                    onClick={handlePrevStep}
-                    disabled={activeIndoorStep === 0}
-                    className="flex-1 py-3 px-4 bg-white border-3 border-black disabled:opacity-50 disabled:cursor-not-allowed text-black font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 transition-all"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={handleNextStep}
-                    className="flex-1 py-3 px-4 bg-pastel-mint border-3 border-black text-black font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 transition-all"
-                  >
-                    {activeIndoorStep === indoorStepsArray.length - 1 ? 'Finish' : 'Next Step'}
-                  </button>
-                </div>
-              </div>
+        {/* GPS status feedback */}
+        {navMode === 'live_gps' && (
+          <div className="mt-3 pt-3 border-t border-black/10 flex items-center justify-between text-xs font-bold text-black">
+            <span className="flex items-center gap-1.5 text-green-700">
+              <Crosshair size={14} className="animate-pulse" />
+              Live GPS Tracking Active
+            </span>
+            {gpsAccuracy && (
+              <span className="font-mono text-black/60">Accuracy: ±{gpsAccuracy}m</span>
             )}
           </div>
+        )}
+
+        {gpsError && (
+          <div className="mt-3 p-2 bg-amber-50 border-2 border-amber-400 text-amber-800 text-xs font-bold flex items-center gap-2">
+            <AlertTriangle size={14} />
+            {gpsError}
+          </div>
+        )}
+
+        {/* Manual Landmark Selector */}
+        {navMode === 'manual' && (
+          <div className="mt-3 pt-3 border-t border-black/10 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <label htmlFor="nav-startpoint" className="text-xs font-black uppercase tracking-wider shrink-0">
+              Starting Landmark:
+            </label>
+            <select
+              id="nav-startpoint"
+              value={selectedStartPoint}
+              onChange={(e) => handleStartPointChange(e.target.value)}
+              className="border-2 border-black p-2 font-bold text-xs bg-white uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] w-full sm:w-auto"
+            >
+              {CAMPUS_STARTING_POINTS.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Explicit Demo Simulation Controls */}
+        {navMode === 'simulation' && (
+          <div className="mt-3 pt-3 border-t border-black/10 bg-amber-50/60 p-3 border-2 border-dashed border-amber-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="yellow" className="border border-black">DEMO SIMULATION</Badge>
+              <span className="text-xs font-bold text-black/80">
+                Simulated walking path demonstration ({simProgress}% complete)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSimPlaying(!simPlaying)}
+                className="px-3 py-1.5 bg-pastel-mint border-2 border-black font-black uppercase text-xs shadow-[1px_1px_0px_0px_#000] flex items-center gap-1"
+              >
+                {simPlaying ? <Pause size={12} /> : <Play size={12} />}
+                {simPlaying ? 'Pause' : 'Play Walk'}
+              </button>
+              <button
+                onClick={() => { setSimProgress(0); setSimPlaying(false); handleStartPointChange(selectedStartPoint); }}
+                className="p-1.5 bg-white border-2 border-black hover:bg-gray-100 shadow-[1px_1px_0px_0px_#000]"
+                title="Reset Simulation"
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Grid: Interactive Campus Map & Turn-by-Turn Guide */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left Column: Campus Vector Map */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          <div className="bg-white border-3 border-black neo-shadow overflow-hidden flex flex-col h-[460px] md:h-[520px]">
+            <div className="p-3 border-b-2 border-black bg-pastel-yellow flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider">
+                <MapPin size={14} />
+                ASIET Campus Map Navigation
+              </div>
+              <div className="flex items-center gap-3 text-xs font-bold">
+                <span>Distance: ~{distanceRemaining}m</span>
+                <span>Est: ~{estimatedWalkingMinutes} min walk</span>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full relative min-h-[480px]">
+              <CampusMap center={[destLng, destLat]} zoom={17.8} initialPitch={55} initialBearing={-25}>
+                {/* Road Route Path Layer */}
+                {computedPath && <RouteLayer path={computedPath} nodes={nodes} autoFitBounds={false} />}
+
+                {/* Same Canonical Campus Building Name Markers */}
+                <CampusBuildingMarkers nodes={nodes} />
+
+                {/* Destination Venue Pin matching FullCampusMap style */}
+                <Marker longitude={destLng} latitude={destLat} anchor="bottom">
+                  <div className="flex flex-col items-center cursor-pointer group">
+                    <div className="bg-[#FF5A1F] text-white text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_#000] mb-1">
+                      DEST
+                    </div>
+                    <div className="w-5 h-5 bg-[#FF5A1F] border-3 border-black rounded-none shadow-[2px_2px_0px_0px_#000]" />
+                  </div>
+                </Marker>
+
+                {/* User Current / Starting Position Marker */}
+                <Marker longitude={currentLng} latitude={currentLat} anchor="bottom">
+                  <div className="flex flex-col items-center">
+                    <div className="bg-[#00B67A] text-white text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_#000] mb-1">
+                      {navMode === 'live_gps' ? 'YOU' : 'START'}
+                    </div>
+                    <div className="w-5 h-5 bg-[#00B67A] border-3 border-black rounded-full shadow-[2px_2px_0px_0px_#000] animate-bounce" />
+                  </div>
+                </Marker>
+              </CampusMap>
+            </div>
+          </div>
+
+          {/* Quick Details Banner */}
+          <div className="bg-white border-3 border-black p-4 neo-shadow flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-left">
+              <span className="text-[10px] font-black uppercase tracking-wider text-black/60 block">Target Hall</span>
+              <span className="font-display font-black text-base uppercase text-black">{activeEvent?.location || venue?.name}</span>
+            </div>
+            <div className="text-left sm:text-right">
+              <span className="text-[10px] font-black uppercase tracking-wider text-black/60 block">Building Complex</span>
+              <span className="font-bold text-xs uppercase text-black">{venue?.building || 'Main Campus'}</span>
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Right Column: Turn-by-Turn Walking & Indoor Steps */}
+        <div className="flex flex-col gap-4">
+          <div className="bg-white border-3 border-black p-6 neo-shadow flex flex-col h-full text-left">
+            <h2 className="font-display font-black text-lg uppercase border-b-2 border-black pb-2 mb-4 flex items-center justify-between">
+              <span>Indoor Directions</span>
+              <span className="text-xs font-mono font-bold bg-pastel-mint px-2 py-0.5 border border-black">
+                {indoorStepsArray.length} steps
+              </span>
+            </h2>
+
+            <p className="text-xs font-bold text-black/70 mb-4">
+              Follow these verified steps once you arrive at the building entrance:
+            </p>
+
+            <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+              {indoorStepsArray.map((stepText, idx) => {
+                const isCurrent = activeIndoorStep === idx;
+                const isDone = idx < activeIndoorStep;
+
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setIndoorStep(idx)}
+                    className={`p-3.5 border-2 border-black transition-all cursor-pointer ${
+                      isCurrent
+                        ? 'bg-pastel-yellow shadow-[3px_3px_0px_0px_#000] scale-[1.02]'
+                        : isDone
+                        ? 'bg-pastel-mint/30 opacity-70'
+                        : 'bg-gray-50 hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className={`w-6 h-6 rounded-full border border-black text-xs font-black flex items-center justify-center shrink-0 ${
+                        isDone ? 'bg-pastel-mint' : isCurrent ? 'bg-black text-white' : 'bg-white'
+                      }`}>
+                        {isDone ? <Check size={12} strokeWidth={3} /> : idx + 1}
+                      </span>
+                      <p className="text-xs font-bold text-black leading-snug pt-0.5">
+                        {stepText}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 pt-4 border-t-2 border-black/15 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setIndoorStep(Math.max(0, activeIndoorStep - 1))}
+                disabled={activeIndoorStep <= 0}
+                className="px-3 py-2 border-2 border-black bg-white font-black uppercase text-xs tracking-wider shadow-[2px_2px_0px_0px_#000] disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setIndoorStep(Math.min(indoorStepsArray.length - 1, activeIndoorStep + 1))}
+                disabled={activeIndoorStep >= indoorStepsArray.length - 1}
+                className="px-4 py-2 border-2 border-black bg-pastel-mint font-black uppercase text-xs tracking-wider shadow-[2px_2px_0px_0px_#000] disabled:opacity-40"
+              >
+                Next Step →
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </PageShell>
   );
 };

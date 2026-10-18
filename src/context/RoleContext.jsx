@@ -8,27 +8,8 @@ export const RoleProvider = ({ children }) => {
     return localStorage.getItem('cp_role') || 'student'; // 'student' | 'admin'
   });
 
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('cp_logged_in') === 'true';
-  });
-
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('cp_user');
-    if (!saved) return null;
-    try {
-      const user = JSON.parse(saved);
-      if (user && user.avatar && user.avatar.includes('pravatar.cc')) {
-        const gender = user.gender || 'male';
-        const rand = (user.email ? user.email.length : 1) % 3 + 1;
-        user.avatar = `images/avatars/${gender}${rand}.jpg`;
-        user.avatar = import.meta.env.BASE_URL + user.avatar; 
-      }
-      return user;
-    } catch {
-      return null;
-    }
-  });
-
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   // Initialize session from Cognito on mount
@@ -49,9 +30,29 @@ export const RoleProvider = ({ children }) => {
         setCurrentRole(session.role);
         setIsLoggedIn(true);
         setCurrentUser(userData);
+        localStorage.setItem('cp_role', session.role);
+        localStorage.setItem('cp_logged_in', 'true');
+        localStorage.setItem('cp_user', JSON.stringify(userData));
+      } else if (import.meta.env.DEV && sessionStorage.getItem('cp_dev_mock_user')) {
+        try {
+          const devUser = JSON.parse(sessionStorage.getItem('cp_dev_mock_user'));
+          setCurrentRole(devUser.role);
+          setIsLoggedIn(true);
+          setCurrentUser(devUser);
+        } catch (_) {}
+      } else {
+        // Expired or invalid session: actively clear any stale cached state
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+        localStorage.removeItem('cp_logged_in');
+        localStorage.removeItem('cp_user');
       }
     } catch (err) {
-      console.warn('No active Cognito session found:', err.message);
+      console.warn('Session verification cleared:', err.message);
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      localStorage.removeItem('cp_logged_in');
+      localStorage.removeItem('cp_user');
     } finally {
       setAuthLoading(false);
     }
@@ -61,24 +62,15 @@ export const RoleProvider = ({ children }) => {
     checkSession();
   }, [checkSession]);
 
-  useEffect(() => {
-    localStorage.setItem('cp_role', currentRole);
-  }, [currentRole]);
-
-  useEffect(() => {
-    localStorage.setItem('cp_logged_in', isLoggedIn);
-    if (currentUser) {
-      localStorage.setItem('cp_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('cp_user');
-    }
-  }, [isLoggedIn, currentUser]);
-
   /**
    * Real Cognito Sign In — requires email and password
    */
   const login = async (email, password) => {
-    const session = await authService.signIn(email, password);
+    const res = await authService.signIn(email, password);
+    if (res && res.challengeName === 'NEW_PASSWORD_REQUIRED') {
+      return res; // Return challenge directly so UI can prompt organizer to set their new password
+    }
+    const session = res;
     const userData = {
       id: session.sub || session.email,
       email: session.email,
@@ -91,30 +83,88 @@ export const RoleProvider = ({ children }) => {
     setCurrentRole(session.role);
     setIsLoggedIn(true);
     setCurrentUser(userData);
+    localStorage.setItem('cp_role', session.role);
+    localStorage.setItem('cp_logged_in', 'true');
+    localStorage.setItem('cp_user', JSON.stringify(userData));
     return session;
   };
 
   /**
-   * Real Cognito Sign Up — always requires password
+   * Complete First-Time Login Password Change for Admin-Created Users (e.g. Club Organizers)
    */
-  const signup = async ({ name, email, password, role = 'student', clubId, gender }) => {
+  const completeNewPassword = async (cognitoUser, newPassword, userAttributes = {}) => {
+    const session = await authService.completeNewPasswordChallenge(cognitoUser, newPassword, userAttributes);
+    const userData = {
+      id: session.sub || session.email,
+      email: session.email,
+      name: session.name,
+      role: session.role,
+      clubId: session.clubId,
+      avatar: session.avatar,
+      token: session.idToken,
+    };
+    setCurrentRole(session.role);
+    setIsLoggedIn(true);
+    setCurrentUser(userData);
+    localStorage.setItem('cp_role', session.role);
+    localStorage.setItem('cp_logged_in', 'true');
+    localStorage.setItem('cp_user', JSON.stringify(userData));
+    return session;
+  };
+
+  /**
+   * Real Cognito Sign Up
+   */
+  const signup = async ({ name, email, password, role = 'student', clubId, studentId, gender = 'unspecified' }) => {
     const result = await authService.signUp(email, password, name, role, clubId, gender);
+    // Persist safe pending confirmation state across page refreshes (no password stored!)
+    try {
+      sessionStorage.setItem('cp_pending_confirmation', JSON.stringify({
+        username: result.username,
+        email,
+        studentId: studentId || '',
+        name
+      }));
+    } catch (_) {}
+
     return {
       needsConfirmation: !result.userConfirmed,
       email,
       sub: result.sub,
-      username: result.username, // generated username (not email) — needed for confirmSignUp
+      username: result.username,
     };
   };
 
   /**
    * Confirm email verification code
-   * @param {string} username - The generated username from signUp result (NOT email)
-   * @param {string} code - 6-digit OTP
    */
   const confirmSignup = async (username, code) => {
     const res = await authService.confirmSignUp(username, code);
+    try {
+      sessionStorage.removeItem('cp_pending_confirmation');
+    } catch (_) {}
     return res;
+  };
+
+  /**
+   * Resend confirmation verification code
+   */
+  const resendConfirmationCode = async (username) => {
+    return await authService.resendConfirmationCode(username);
+  };
+
+  /**
+   * Request password reset code
+   */
+  const forgotPassword = async (email) => {
+    return await authService.forgotPassword(email);
+  };
+
+  /**
+   * Confirm password reset
+   */
+  const confirmPassword = async (email, code, newPassword) => {
+    return await authService.confirmPassword(email, code, newPassword);
   };
 
   /**
@@ -126,8 +176,8 @@ export const RoleProvider = ({ children }) => {
     } catch (err) {
       console.warn('Cognito signOut error:', err);
     }
-    // Clear stale event/venue cache so no demo data leaks back in before the
-    // next API fetch on fresh login.
+    localStorage.removeItem('cp_logged_in');
+    localStorage.removeItem('cp_user');
     localStorage.removeItem('cp_events');
     localStorage.removeItem('cp_venues');
     setIsLoggedIn(false);
@@ -148,13 +198,22 @@ export const RoleProvider = ({ children }) => {
         currentRole,
         isLoggedIn,
         currentUser,
+        user: currentUser, // Alias for seamless compatibility across components
         authLoading,
         login,
+        completeNewPassword,
         signup,
         confirmSignup,
+        resendConfirmationCode,
+        forgotPassword,
+        confirmPassword,
         logout,
         testWhoAmI,
         checkSession,
+        isClubAdmin: currentRole === 'club_admin',
+        isPlatformAdmin: currentRole === 'admin',
+        isStudent: currentRole === 'student',
+        clubId: currentUser?.clubId || null,
       }}
     >
       {children}

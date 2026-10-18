@@ -6,17 +6,55 @@ import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { RsvpContext } from '../../context/RsvpContext';
 import { deleteEvent as apiDeleteEvent } from '../../services/apiService';
-import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Loader2 } from 'lucide-react';
+import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Edit2, RefreshCw, Loader2, Ban } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { events, clearAllLocalData, refreshEvents } = useContext(RsvpContext);
+  const { events, refreshEvents } = useContext(RsvpContext);
   const navigate = useNavigate();
-  const [deletingId, setDeletingId] = useState(null);
+  const [processingId, setProcessingId] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Compute metrics
+  // Authoritative metrics computation — handles newly created records cleanly without NaN
   const totalEvents = events.length;
-  const totalRsvps = events.reduce((acc, curr) => acc + curr.rsvpCount, 0);
-  const totalWaitlisted = events.reduce((acc, curr) => acc + curr.waitlistCount, 0);
+  const totalRsvps = events.reduce((acc, curr) => {
+    if (typeof curr.rsvpCount === 'number') return acc + curr.rsvpCount;
+    if (typeof curr.seatsTotal === 'number' && typeof curr.seatsAvailable === 'number') {
+      return acc + Math.max(0, curr.seatsTotal - curr.seatsAvailable);
+    }
+    return acc;
+  }, 0);
+
+  const totalWaitlisted = events.reduce((acc, curr) => {
+    return acc + (typeof curr.waitlistCount === 'number' ? curr.waitlistCount : 0);
+  }, 0);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshEvents();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleCancelOrDelete = async (evt, hard = false) => {
+    const promptMsg = hard 
+      ? `Permanently delete event "${evt.title}" from the database? This will remove all attendee records.`
+      : `Cancel event "${evt.title}"? The event will be marked as cancelled and attendee records will be preserved.`;
+
+    if (!window.confirm(promptMsg)) return;
+
+    setProcessingId(evt.id);
+    try {
+      await apiDeleteEvent(evt.id, hard);
+      await refreshEvents();
+    } catch (err) {
+      console.error('Failed to cancel/delete event:', err);
+      alert('Operation failed: ' + (err.message || 'Please check admin permissions.'));
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   return (
     <PageShell>
@@ -28,12 +66,14 @@ const AdminDashboard = () => {
             Admin Dashboard
           </h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <button
-            onClick={clearAllLocalData}
-            className="text-xs font-black uppercase tracking-wider text-red-500 hover:bg-red-50 border-2 border-red-200 py-2 px-4 transition-all active:translate-y-[1px]"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="text-xs font-black uppercase tracking-wider text-black bg-white hover:bg-pastel-yellow border-3 border-black py-2.5 px-4 transition-all shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center gap-1.5"
           >
-            Reset Database
+            <RefreshCw size={14} className={isRefreshing ? "animate-spin" : ""} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Live Data'}
           </button>
           <Button
             onClick={() => navigate('/admin/clubs/new')}
@@ -94,80 +134,90 @@ const AdminDashboard = () => {
         </h2>
 
         <div className="border-3 border-black bg-white neo-shadow overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[700px]">
+          <table className="w-full text-left border-collapse min-w-[750px]">
             <thead>
               <tr className="bg-black text-white font-display font-bold text-xs uppercase tracking-wider">
                 <th className="py-4 px-6 border-b border-black">Event Session</th>
                 <th className="py-4 px-6 border-b border-black">Faculty</th>
-                <th className="py-4 px-6 border-b border-black text-center">Seats Config</th>
-                <th className="py-4 px-6 border-b border-black text-center">RSVP</th>
+                <th className="py-4 px-6 border-b border-black text-center">Status</th>
+                <th className="py-4 px-6 border-b border-black text-center">Capacity</th>
+                <th className="py-4 px-6 border-b border-black text-center">Booked</th>
                 <th className="py-4 px-6 border-b border-black text-center">Waitlist</th>
                 <th className="py-4 px-6 border-b border-black text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="font-display font-bold text-xs uppercase tracking-wider text-black/80">
-              {events.map((evt) => (
-                <tr key={evt.id} className="border-b-2 border-black/10 hover:bg-black/5 transition-colors">
-                  <td className="py-4 px-6 flex items-center gap-4">
-                    <img
-                      src={evt.coverImage}
-                      alt={evt.title}
-                      className="w-12 h-12 object-cover border-2 border-black shrink-0"
-                    />
-                    <div>
-                      <span className="font-black text-sm text-black block leading-tight">{evt.title}</span>
-                      <span className="text-xxs text-black/50 block mt-1">{evt.date} • {evt.time}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <Badge variant={evt.category === 'Tech' ? 'mint' : 'white'}>
-                      {evt.faculty}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-6 text-center font-mono">{evt.seatsTotal}</td>
-                  <td className="py-4 px-6 text-center font-mono text-green-600 font-black">{evt.rsvpCount}</td>
-                  <td className="py-4 px-6 text-center font-mono text-red-500 font-black">{evt.waitlistCount}</td>
-                  <td className="py-4 px-6 text-right space-x-2">
-                    <button
-                      onClick={() => navigate(`/admin/event/${evt.id}/roster`)}
-                      className="p-2 border-2 border-black hover:bg-pastel-mint transition-all neo-shadow-sm active:translate-y-[1px] active:neo-shadow-sm inline-flex items-center gap-1"
-                      title="View Details & Roster"
-                    >
-                      <Eye size={12} />
-                      View Details
-                    </button>
-                    <button
-                      onClick={() => navigate(`/admin/venue-upload?eventId=${evt.id}`)}
-                      className="p-2 border-2 border-black bg-pastel-yellow hover:bg-accent-yellow transition-all neo-shadow-sm active:translate-y-[1px] active:neo-shadow-sm inline-flex items-center gap-1"
-                      title="Configure Waypoints"
-                    >
-                      <Navigation size={12} />
-                      Waypoints
-                    </button>
-                    <button
-                      disabled={deletingId === evt.id}
-                      onClick={async () => {
-                        if (!window.confirm('Are you sure you want to permanently delete this event from the database?')) return;
-                        setDeletingId(evt.id);
-                        try {
-                          await apiDeleteEvent(evt.id);
-                          await refreshEvents();
-                        } catch (err) {
-                          console.error('Failed to delete event:', err);
-                          alert('Delete failed: ' + err.message);
-                        } finally {
-                          setDeletingId(null);
-                        }
-                      }}
-                      className="p-2 border-2 border-black bg-red-100 hover:bg-red-500 hover:text-white transition-all neo-shadow-sm active:translate-y-[1px] active:neo-shadow-sm inline-flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Delete Event"
-                    >
-                      {deletingId === evt.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                      {deletingId === evt.id ? 'Deleting...' : 'Delete'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {events.map((evt) => {
+                const bookedCount = evt.rsvpCount ?? (evt.seatsTotal ? Math.max(0, evt.seatsTotal - (evt.seatsAvailable ?? evt.seatsTotal)) : 0);
+                const waitCount = evt.waitlistCount ?? 0;
+                const isCancelled = evt.status === 'cancelled';
+
+                return (
+                  <tr key={evt.id} className={`border-b-2 border-black/10 hover:bg-black/5 transition-colors ${isCancelled ? 'opacity-60 bg-red-50/30' : ''}`}>
+                    <td className="py-4 px-6 flex items-center gap-4">
+                      <img
+                        src={evt.coverImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=200&auto=format&fit=crop'}
+                        alt=""
+                        className="w-12 h-12 object-cover border-2 border-black shrink-0"
+                      />
+                      <div>
+                        <span className="font-black text-sm text-black block leading-tight">{evt.title}</span>
+                        <span className="text-xxs text-black/50 block mt-1">{evt.date} • {evt.time}</span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <Badge variant={evt.category === 'Tech' ? 'mint' : 'white'}>
+                        {evt.faculty || 'General'}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <span className={`px-2 py-0.5 border border-black text-[10px] font-black uppercase ${
+                        isCancelled ? 'bg-red-200 text-red-800' : 'bg-pastel-mint text-black'
+                      }`}>
+                        {evt.status || 'published'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center font-mono">{evt.seatsTotal}</td>
+                    <td className="py-4 px-6 text-center font-mono text-green-700 font-black">{bookedCount}</td>
+                    <td className="py-4 px-6 text-center font-mono text-amber-600 font-black">{waitCount}</td>
+                    <td className="py-4 px-6 text-right space-x-1.5 whitespace-nowrap">
+                      <button
+                        onClick={() => navigate(`/admin/event-form/${evt.id}`)}
+                        className="p-2 border-2 border-black bg-pastel-mint hover:bg-emerald-300 transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1"
+                        title="Edit Event Details"
+                      >
+                        <Edit2 size={12} />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => navigate(`/admin/event/${evt.id}/roster`)}
+                        className="p-2 border-2 border-black bg-white hover:bg-pastel-yellow transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1"
+                        title="View Attendee Roster"
+                      >
+                        <Eye size={12} />
+                        Roster
+                      </button>
+                      <button
+                        onClick={() => navigate(`/admin/venue-upload?eventId=${evt.id}`)}
+                        className="p-2 border-2 border-black bg-pastel-yellow hover:bg-amber-300 transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1"
+                        title="Configure Venue & Navigation"
+                      >
+                        <Navigation size={12} />
+                        Waypoints
+                      </button>
+                      <button
+                        disabled={processingId === evt.id}
+                        onClick={() => handleCancelOrDelete(evt, false)}
+                        className="p-2 border-2 border-black bg-red-100 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1 disabled:opacity-50"
+                        title="Cancel or Delete Event"
+                      >
+                        {processingId === evt.id ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
+                        {isCancelled ? 'Delete' : 'Cancel'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

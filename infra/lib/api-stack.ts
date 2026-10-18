@@ -5,6 +5,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as path from 'path';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 export interface ApiStackProps extends cdk.StackProps {
   readonly envName?: string;
@@ -21,6 +23,8 @@ export interface ApiStackProps extends cdk.StackProps {
   readonly membershipsTable: dynamodb.Table;
   readonly notificationsTable: dynamodb.Table;
   readonly rsvpsTable: dynamodb.Table;
+  readonly usersTable?: dynamodb.Table;
+  readonly userPool?: cognito.UserPool;
 }
 
 export class ApiStack extends cdk.Stack {
@@ -150,9 +154,11 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(5),
       environment: {
         MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
+        CLUBS_TABLE_NAME: props.clubsTable.tableName,
       },
     });
     props.membershipsTable.grantReadWriteData(joinClubLambda);
+    props.clubsTable.grantReadWriteData(joinClubLambda);
 
     const leaveClubLambda = new lambda.Function(this, 'LeaveClubFunction', {
       functionName: `EventTrail-LeaveClub-${envName}`,
@@ -162,9 +168,11 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(5),
       environment: {
         MEMBERSHIPS_TABLE_NAME: props.membershipsTable.tableName,
+        CLUBS_TABLE_NAME: props.clubsTable.tableName,
       },
     });
     props.membershipsTable.grantReadWriteData(leaveClubLambda);
+    props.clubsTable.grantReadWriteData(leaveClubLambda);
 
     const deleteClubLambda = new lambda.Function(this, 'DeleteClubFunction', {
       functionName: `EventTrail-DeleteClub-${envName}`,
@@ -292,9 +300,25 @@ export class ApiStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(10),
       environment: {
         RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+        EVENTS_TABLE_NAME: props.eventsTable.tableName,
       },
     });
     props.rsvpsTable.grantReadData(listEventRsvpsLambda);
+    props.eventsTable.grantReadData(listEventRsvpsLambda);
+
+    const checkInLambda = new lambda.Function(this, 'CheckInFunction', {
+      functionName: `EventTrail-CheckIn-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/rsvps/checkIn')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+        EVENTS_TABLE_NAME: props.eventsTable.tableName,
+      },
+    });
+    props.rsvpsTable.grantReadWriteData(checkInLambda);
+    props.eventsTable.grantReadData(checkInLambda);
 
     const promoteWaitlistLambda = new lambda.Function(this, 'PromoteWaitlistFunction', {
       functionName: `EventTrail-PromoteWaitlist-${envName}`,
@@ -305,10 +329,12 @@ export class ApiStack extends cdk.Stack {
       environment: {
         EVENTS_TABLE_NAME: props.eventsTable.tableName,
         RSVPS_TABLE_NAME: props.rsvpsTable.tableName,
+        NOTIFICATIONS_TABLE_NAME: props.notificationsTable.tableName,
       },
     });
     props.eventsTable.grantReadWriteData(promoteWaitlistLambda);
     props.rsvpsTable.grantReadWriteData(promoteWaitlistLambda);
+    props.notificationsTable.grantReadWriteData(promoteWaitlistLambda);
     props.rsvpsTable.grantStreamRead(promoteWaitlistLambda);
     
     promoteWaitlistLambda.addEventSourceMapping('RsvpsStream', {
@@ -380,6 +406,71 @@ export class ApiStack extends cdk.Stack {
     });
     props.venuesTable.grantReadWriteData(createVenueLambda);
 
+    // Multi-Role Governance Lambdas
+    const createOrganizerLambda = new lambda.Function(this, 'CreateOrganizerFunction', {
+      functionName: `EventTrail-CreateOrganizer-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/admin/createOrganizer')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        USER_POOL_ID: props.userPool?.userPoolId || '',
+        CLUBS_TABLE_NAME: props.clubsTable.tableName,
+        USERS_TABLE_NAME: props.usersTable?.tableName || '',
+      },
+    });
+    if (props.userPool) {
+      createOrganizerLambda.addToRolePolicy(new iam.PolicyStatement({
+        actions: [
+          'cognito-idp:AdminCreateUser',
+          'cognito-idp:AdminAddUserToGroup',
+          'cognito-idp:AdminSetUserPassword',
+          'cognito-idp:AdminGetUser',
+        ],
+        resources: [props.userPool.userPoolArn],
+      }));
+    }
+    props.clubsTable.grantReadData(createOrganizerLambda);
+    if (props.usersTable) props.usersTable.grantReadWriteData(createOrganizerLambda);
+
+    const manageOrganizerLambda = new lambda.Function(this, 'ManageOrganizerFunction', {
+      functionName: `EventTrail-ManageOrganizer-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/admin/manageOrganizer')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        USER_POOL_ID: props.userPool?.userPoolId || '',
+        USERS_TABLE_NAME: props.usersTable?.tableName || '',
+      },
+    });
+    if (props.userPool) {
+      manageOrganizerLambda.addToRolePolicy(new iam.PolicyStatement({
+        actions: [
+          'cognito-idp:AdminDisableUser',
+          'cognito-idp:AdminEnableUser',
+          'cognito-idp:AdminResetUserPassword',
+          'cognito-idp:AdminGetUser',
+        ],
+        resources: [props.userPool.userPoolArn],
+      }));
+    }
+    if (props.usersTable) props.usersTable.grantReadWriteData(manageOrganizerLambda);
+
+    const reviewEventLambda = new lambda.Function(this, 'ReviewEventFunction', {
+      functionName: `EventTrail-ReviewEvent-${envName}`,
+      runtime: lambda.Runtime.NODEJS_22_X,
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/api/events/reviewEvent')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.seconds(10),
+      environment: {
+        EVENTS_TABLE_NAME: props.eventsTable.tableName,
+        NOTIFICATIONS_TABLE_NAME: props.notificationsTable.tableName,
+      },
+    });
+    props.eventsTable.grantReadWriteData(reviewEventLambda);
+    props.notificationsTable.grantReadWriteData(reviewEventLambda);
+
     // API Gateway Integrations and Routes
 
     const addRoute = (routeKey: string, lambdaFn: lambda.Function) => {
@@ -440,21 +531,26 @@ export class ApiStack extends cdk.Stack {
     addAuthRoute('POST /events', createEventLambda);
     addAuthRoute('PUT /events/{id}', updateEventLambda);
     addAuthRoute('DELETE /events/{id}', deleteEventLambda);
+    addAuthRoute('POST /events/{id}/review', reviewEventLambda);
     addAuthRoute('POST /venues', createVenueLambda);
     addAuthRoute('GET /upload-url', getUploadUrlLambda);
+
+    // Admin Organizer Governance Routes
+    addAuthRoute('POST /admin/organizers', createOrganizerLambda);
+    addAuthRoute('PATCH /admin/organizers/{username}', manageOrganizerLambda);
     
     // RSVPs
     addAuthRoute('POST /events/{id}/rsvp', createRsvpLambda);
     addAuthRoute('DELETE /events/{id}/rsvp', cancelRsvpLambda);
     addAuthRoute('GET /users/{id}/rsvps', listMyRsvpsLambda);
     addAuthRoute('GET /events/{id}/rsvps', listEventRsvpsLambda);
+    addAuthRoute('POST /events/{id}/checkin', checkInLambda);
 
     // Clubs
     addAuthRoute('POST /clubs', createClubLambda);
     addAuthRoute('POST /clubs/{id}/join', joinClubLambda);
     addAuthRoute('DELETE /clubs/{id}/leave', leaveClubLambda);
     addAuthRoute('DELETE /clubs/{id}', deleteClubLambda);
-
 
     // Users / Notifications
     addAuthRoute('GET /users/{id}/notifications', getNotificationsLambda);

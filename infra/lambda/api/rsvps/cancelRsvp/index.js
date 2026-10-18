@@ -11,14 +11,22 @@ exports.handler = async (event) => {
   try {
     const claims = event.requestContext?.authorizer?.jwt?.claims;
     if (!claims) {
-      return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+      return {
+        statusCode: 401,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Unauthorized' })
+      };
     }
 
-    const userId = claims.sub;
+    const userId = claims.sub || claims.username;
     const eventId = event.pathParameters?.id;
 
     if (!eventId) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing event ID' }) };
+      return {
+        statusCode: 400,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Missing event ID' })
+      };
     }
 
     // 1. Get the current RSVP status
@@ -28,13 +36,18 @@ exports.handler = async (event) => {
     }));
 
     if (!getRes.Item) {
-      return { statusCode: 404, body: JSON.stringify({ error: 'RSVP not found' }) };
+      // Repeatable cancellation: already cancelled or not found
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ message: 'RSVP already cancelled or not found', cancelled: true })
+      };
     }
 
     const currentStatus = getRes.Item.status;
 
     if (currentStatus === 'confirmed') {
-      // 2. Transactionally delete RSVP and increment seats
+      // 2. Transactionally delete confirmed RSVP and increment available seats
       await docClient.send(new TransactWriteCommand({
         TransactItems: [
           {
@@ -57,27 +70,60 @@ exports.handler = async (event) => {
         ]
       }));
     } else {
-      // 3. Just delete the waitlisted RSVP
-      await docClient.send(new DeleteCommand({
-        TableName: RSVPS_TABLE,
-        Key: { eventId, userId }
-      }));
+      // 3. Conditional delete for waitlisted RSVP to guard against race with promotion
+      try {
+        await docClient.send(new DeleteCommand({
+          TableName: RSVPS_TABLE,
+          Key: { eventId, userId },
+          ConditionExpression: '#s = :waitlisted',
+          ExpressionAttributeNames: { '#s': 'status' },
+          ExpressionAttributeValues: { ':waitlisted': 'waitlisted' }
+        }));
+      } catch (delError) {
+        if (delError.name === 'ConditionalCheckFailedException') {
+          // User was promoted concurrently from waitlist to confirmed!
+          // Execute confirmed cancellation transaction so seat is cleanly restored
+          await docClient.send(new TransactWriteCommand({
+            TransactItems: [
+              {
+                Delete: {
+                  TableName: RSVPS_TABLE,
+                  Key: { eventId, userId },
+                  ConditionExpression: '#s = :confirmed',
+                  ExpressionAttributeNames: { '#s': 'status' },
+                  ExpressionAttributeValues: { ':confirmed': 'confirmed' }
+                }
+              },
+              {
+                Update: {
+                  TableName: EVENTS_TABLE,
+                  Key: { id: eventId },
+                  UpdateExpression: 'SET seatsAvailable = seatsAvailable + :inc',
+                  ExpressionAttributeValues: { ':inc': 1 }
+                }
+              }
+            ]
+          }));
+        } else {
+          throw delError;
+        }
+      }
     }
 
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ message: 'RSVP cancelled successfully' })
+      body: JSON.stringify({ message: 'RSVP cancelled successfully', cancelled: true })
     };
 
   } catch (error) {
     console.error('Error cancelling RSVP:', error);
     if (error.name === 'TransactionCanceledException') {
-        return {
-            statusCode: 409,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-            body: JSON.stringify({ error: 'Conflict cancelling RSVP' })
-        };
+      return {
+        statusCode: 409,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        body: JSON.stringify({ error: 'Conflict during RSVP cancellation. Please retry.' })
+      };
     }
     return {
       statusCode: 500,

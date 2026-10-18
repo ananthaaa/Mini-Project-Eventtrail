@@ -109,6 +109,38 @@ export const authService = {
   },
 
   /**
+   * Request password reset code
+   */
+  forgotPassword: async (email) => {
+    return new Promise((resolve, reject) => {
+      const user = new CognitoUser({
+        Username: email,
+        Pool: getUserPool(),
+      });
+      user.forgotPassword({
+        onSuccess: (data) => resolve(data),
+        onFailure: (err) => reject(err),
+      });
+    });
+  },
+
+  /**
+   * Confirm password reset with code and new password
+   */
+  confirmPassword: async (email, code, newPassword) => {
+    return new Promise((resolve, reject) => {
+      const user = new CognitoUser({
+        Username: email,
+        Pool: getUserPool(),
+      });
+      user.confirmPassword(code, newPassword, {
+        onSuccess: () => resolve({ success: true }),
+        onFailure: (err) => reject(err),
+      });
+    });
+  },
+
+  /**
    * Authenticate user with email and password
    */
   signIn: async (email, password) => {
@@ -132,12 +164,34 @@ export const authService = {
           reject(err);
         },
         newPasswordRequired: (userAttributes) => {
-          // In case admin created user and requires new password
-          delete userAttributes.email_verified;
-          user.completeNewPasswordChallenge(password, userAttributes, {
-            onSuccess: (session) => resolve(authService.formatSession(session)),
-            onFailure: (err) => reject(err),
+          // When an admin creates an account (e.g. Club Organizer), Cognito issues a temporary password
+          // and challenges the user to select a new permanent password on first sign-in.
+          resolve({
+            challengeName: 'NEW_PASSWORD_REQUIRED',
+            cognitoUser: user,
+            userAttributes,
           });
+        },
+      });
+    });
+  },
+
+  /**
+   * Complete the first-time password change challenge for admin-created users
+   */
+  completeNewPasswordChallenge: async (cognitoUser, newPassword, userAttributes = {}) => {
+    return new Promise((resolve, reject) => {
+      const cleanAttrs = { ...userAttributes };
+      delete cleanAttrs.email_verified;
+      delete cleanAttrs.phone_number_verified;
+
+      cognitoUser.completeNewPasswordChallenge(newPassword, cleanAttrs, {
+        onSuccess: (session) => {
+          resolve(authService.formatSession(session));
+        },
+        onFailure: (err) => {
+          console.error('completeNewPasswordChallenge error:', err);
+          reject(err);
         },
       });
     });
@@ -161,9 +215,13 @@ export const authService = {
     const accessToken = session.getAccessToken().getJwtToken();
     const claims = session.getIdToken().payload;
     const groups = claims['cognito:groups'] || [];
-    const role = (Array.isArray(groups) && groups.includes('admin')) || claims['custom:role'] === 'admin'
-      ? 'admin'
-      : 'student';
+    const groupList = Array.isArray(groups) ? groups : [groups];
+    let role = 'student';
+    if (groupList.includes('admin') || groupList.includes('Admin') || claims['custom:role'] === 'admin') {
+      role = 'admin';
+    } else if (groupList.includes('ClubAdmin') || claims['custom:role'] === 'club_admin') {
+      role = 'club_admin';
+    }
 
     let avatar = claims.picture;
     if (!avatar || avatar.includes('pravatar.cc')) {

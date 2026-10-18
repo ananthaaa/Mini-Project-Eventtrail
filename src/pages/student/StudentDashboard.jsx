@@ -1,6 +1,8 @@
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import CampusMap, { Marker, Popup } from '../../components/ui/CampusMap';
+import RouteLayer from '../../components/ui/RouteLayer';
+import CampusBuildingMarkers from '../../components/ui/CampusBuildingMarkers';
 import { RoleContext } from '../../context/RoleContext';
 import { RsvpContext } from '../../context/RsvpContext';
 import PageShell from '../../components/layout/PageShell';
@@ -24,7 +26,18 @@ const StudentDashboard = () => {
 
   // Events the user has RSVP'd for
   const rsvpEventIds = Object.keys(userRsvps || {});
-  const upcomingRsvps = (events || []).filter(e => rsvpEventIds.includes(e.id)).slice(0, 4);
+  const userBookedEvents = (events || []).filter(e => rsvpEventIds.includes(e.id));
+  
+  // Find the next upcoming booked event
+  const todayStr = new Date().toISOString().split('T')[0];
+  const nextBookedEvent = userBookedEvents
+    .filter(e => (e.startDate || e.date) >= todayStr)
+    .sort((a, b) => (a.startDate || a.date).localeCompare(b.startDate || b.date))[0] || userBookedEvents[0];
+  
+  const nextVenue = nextBookedEvent ? (venues || []).find(v => v.id === nextBookedEvent.venueId) : null;
+  const nextBooking = nextBookedEvent ? userRsvps[nextBookedEvent.id] : null;
+
+  const upcomingRsvps = userBookedEvents.slice(0, 4);
 
   // Recommended: events not yet RSVP'd, with available seats
   const recommended = (events || [])
@@ -67,6 +80,81 @@ const StudentDashboard = () => {
           )}
         </div>
 
+        {/* Next Booked Event Spotlight (Prompt Item 7) */}
+        {nextBookedEvent && (
+          <div className="bg-white border-4 border-black p-6 md:p-8 neo-shadow-lg rounded-xl relative overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b-3 border-black mb-6">
+              <div className="flex items-center gap-3">
+                <span className="inline-block p-2 bg-[#A3FFD6] border-2 border-black rounded-lg shadow-[2px_2px_0px_0px_#000]">
+                  <Ticket className="w-5 h-5 text-black" />
+                </span>
+                <div>
+                  <h3 className="font-black text-xs uppercase tracking-widest text-gray-500">Your Next Campus Activity</h3>
+                  <p className="font-black text-lg text-black uppercase">Next Booked Event</p>
+                </div>
+              </div>
+              <Badge variant={nextBooking?.status === 'waitlisted' ? 'yellow' : 'mint'}>
+                {nextBooking?.status === 'waitlisted' ? 'On Waitlist' : 'Confirmed Pass'}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+              <div className="md:col-span-1">
+                <img
+                  src={nextBookedEvent.coverImage}
+                  alt={nextBookedEvent.title}
+                  className="w-full h-44 object-cover border-3 border-black shadow-[4px_4px_0px_0px_#000] rounded-lg"
+                />
+              </div>
+
+              <div className="md:col-span-2 space-y-4">
+                <div>
+                  <span className="text-xs font-black uppercase tracking-wider px-2 py-0.5 bg-[#FFF066] border border-black rounded shadow-[1px_1px_0px_0px_#000]">
+                    {nextBookedEvent.category || 'Campus Event'}
+                  </span>
+                  <h2 className="font-black text-2xl uppercase tracking-tight text-black mt-2">
+                    {nextBookedEvent.title}
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 font-bold text-gray-800">
+                    <Calendar className="w-4 h-4 text-black shrink-0" />
+                    <span>{nextBookedEvent.date} {nextBookedEvent.time ? `• ${nextBookedEvent.time}` : ''}</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-bold text-gray-800">
+                    <MapPin className="w-4 h-4 text-black shrink-0" />
+                    <span>{nextVenue?.name || nextBookedEvent.location || 'Campus Venue'}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-2">
+                  <button
+                    onClick={() => navigate('/student/tickets')}
+                    className="px-4 py-2.5 bg-[#A3FFD6] border-2 border-black font-black uppercase text-xs rounded-lg shadow-[3px_3px_0px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all flex items-center gap-2"
+                  >
+                    <Ticket className="w-4 h-4" />
+                    View Ticket / Pass
+                  </button>
+                  <button
+                    onClick={() => navigate(`/student/navigate?venueId=${nextBookedEvent.venueId}`)}
+                    className="px-4 py-2.5 bg-[#FFEB3B] border-2 border-black font-black uppercase text-xs rounded-lg shadow-[3px_3px_0px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all flex items-center gap-2"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    Campus Directions
+                  </button>
+                  <button
+                    onClick={() => navigate(`/student/events/${nextBookedEvent.id}`)}
+                    className="px-4 py-2.5 bg-white border-2 border-black font-black uppercase text-xs rounded-lg shadow-[3px_3px_0px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all"
+                  >
+                    Event Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {quickStats.map((stat, i) => {
@@ -86,16 +174,69 @@ const StudentDashboard = () => {
         </div>
 
         {/* Campus Map with Events */}
-        <div className="bg-white border-3 border-black neo-shadow flex flex-col mb-10">
-          <div className="p-6 border-b-3 border-black flex items-center justify-between bg-pastel-yellow">
+        <div className="bg-white border-3 border-black neo-shadow flex flex-col mb-10 overflow-hidden">
+          <div className="p-6 border-b-3 border-black flex flex-wrap items-center justify-between gap-4 bg-pastel-yellow">
             <div className="flex items-center gap-3">
               <MapPin size={24} strokeWidth={2.5} className="text-black" />
-              <h2 className="font-display font-black text-xl uppercase tracking-tight m-0">Live Campus Map</h2>
+              <div>
+                <h2 className="font-display font-black text-xl uppercase tracking-tight m-0">Live Campus Map</h2>
+                <p className="text-xs font-bold text-black/70 uppercase">3D Extrusion • Building Names • A* Road Network Routing</p>
+              </div>
             </div>
-            <p className="text-xs font-bold text-black/70 uppercase">Click pins for live event details</p>
+            <Link
+              to="/student/campus-map"
+              className="px-3 py-1.5 bg-white border-2 border-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-mint hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all flex items-center gap-1.5"
+            >
+              Open Route Finder →
+            </Link>
           </div>
-          <div className="h-[500px] w-full relative z-0">
-            <CampusMap center={[10.1785, 76.4308]} zoom={16}>
+          <div className="h-[520px] w-full relative z-0">
+            <CampusMap center={[76.4302, 10.1780]} zoom={17.8} initialPitch={55} initialBearing={-25}>
+              {/* Verified Walking Path Route from Gate to CS Block */}
+              <RouteLayer
+                path={[
+                  'gate-main',
+                  '13998069845',
+                  '13998069856',
+                  '13998065967',
+                  '13998056174',
+                  '13998056173',
+                  '14008132989',
+                  '13998078223',
+                  '13998078224',
+                  'entrance-cs-block'
+                ]}
+                showBridgePoints={false}
+              />
+
+              {/* Standard Campus Building Name Labels */}
+              <CampusBuildingMarkers
+                onBuildingClick={(nodeId) => {
+                  navigate(`/student/campus-map?dest=${nodeId}`);
+                }}
+              />
+
+              {/* Green START Marker at Main Gate */}
+              <Marker longitude={76.4291012} latitude={10.177813} anchor="bottom">
+                <div className="flex flex-col items-center">
+                  <div className="bg-[#00B67A] text-white text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_#000] mb-1">
+                    START
+                  </div>
+                  <div className="w-5 h-5 bg-[#00B67A] border-3 border-black rounded-full shadow-[2px_2px_0px_0px_#000] animate-bounce" />
+                </div>
+              </Marker>
+
+              {/* Orange DEST Marker at CS Block */}
+              <Marker longitude={76.43053197142856} latitude={10.178252304761903} anchor="bottom">
+                <div className="flex flex-col items-center">
+                  <div className="bg-[#FF5A1F] text-white text-[10px] font-black uppercase px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_0px_#000] mb-1">
+                    DEST
+                  </div>
+                  <div className="w-5 h-5 bg-[#FF5A1F] border-3 border-black rounded-none shadow-[2px_2px_0px_0px_#000]" />
+                </div>
+              </Marker>
+
+              {/* Interactive Live Event Pins */}
               {(events || []).filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
                 const venue = (venues || []).find(v => v.id === evt.venueId);
                 if (!venue || !venue.outdoorCoordinates) return null;
@@ -110,7 +251,7 @@ const StudentDashboard = () => {
                       setSelectedMapEvent({ evt, venue });
                     }}
                   >
-                    <div className="w-8 h-8 bg-accent-yellow border-2 border-black rounded-full flex items-center justify-center shadow-[2px_2px_0px_0px_#000] cursor-pointer hover:scale-110 transition-transform font-black text-xs text-black">
+                    <div className="w-8 h-8 bg-accent-yellow border-2 border-black rounded-full flex items-center justify-center shadow-[2px_2px_0px_0px_#000] cursor-pointer hover:scale-110 transition-transform font-black text-xs text-black ring-2 ring-black">
                       ★
                     </div>
                   </Marker>
@@ -147,6 +288,29 @@ const StudentDashboard = () => {
                 </Popup>
               )}
             </CampusMap>
+          </div>
+
+          {/* Map Legend Bar matching FullCampusMap style */}
+          <div className="bg-white border-t-3 border-black p-3.5 flex flex-wrap items-center justify-between gap-4 text-xs font-black uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-5">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 bg-[#00B67A] border-2 border-black inline-block"></span>
+                <span>Start</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 bg-[#FF5A1F] border-2 border-black inline-block"></span>
+                <span>Destination</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3.5 h-3.5 bg-accent-yellow border-2 border-black rounded-full inline-block"></span>
+                <span>Bridge Point</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-6 h-1.5 bg-[#FF5A1F] border border-black inline-block"></span>
+                <span>A* Route</span>
+              </span>
+            </div>
+            <span className="text-black/60 font-bold">Click any building tag for details</span>
           </div>
         </div>
 

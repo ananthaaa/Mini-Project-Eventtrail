@@ -1,31 +1,54 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
-import { createEvent, fetchClubs } from '../../services/apiService';
+import { createEvent, updateEvent, fetchEventById, fetchClubs } from '../../services/apiService';
 import { RoleContext } from '../../context/RoleContext';
 import { RsvpContext } from '../../context/RsvpContext';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
-import { ArrowLeft, Save, Plus, X, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, MapPin, Building, Calendar, Clock, Layers, Users, RefreshCw } from 'lucide-react';
 import CampusMap, { Marker } from '../../components/ui/CampusMap';
 
 const AdminEventForm = () => {
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+
   const navigate = useNavigate();
   const { currentUser } = useContext(RoleContext);
-  const { refreshEvents } = useContext(RsvpContext);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { venues, refreshEvents } = useContext(RsvpContext);
 
+  const [isLoadingEvent, setIsLoadingEvent] = useState(isEditMode);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clubs, setClubs] = useState([]);
+
+  // Form Fields matching Event Contract
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState('2026-07-10');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('10:00 AM - 01:00 PM');
   const [category, setCategory] = useState('Tech');
   const [faculty, setFaculty] = useState('Science');
+  const [venueId, setVenueId] = useState('');
+  const [locationName, setLocationName] = useState('');
   const [seatsTotal, setSeatsTotal] = useState(50);
   const [description, setDescription] = useState('');
   const [coverImage, setCoverImage] = useState('');
-  const [organizerId, setOrganizerId] = useState('');
-  const [clubs, setClubs] = useState([]);
+  const [organizerId, setOrganizerId] = useState(currentUser?.clubId || '');
+  const [status, setStatus] = useState('published'); // 'draft' | 'published' | 'registration-closed' | 'completed' | 'cancelled'
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
 
+  const [scheduleItems, setScheduleItems] = useState([
+    { time: '10:00 AM', title: 'Opening Remarks', desc: 'Introductions and startup briefing.' },
+    { time: '11:00 AM', title: 'Main Panel Session', desc: 'Speaker presentations and open Q&A.' }
+  ]);
+
+  const [mapPosition, setMapPosition] = useState({ lat: 10.1780, lng: 76.4302 });
+  const [indoorSteps, setIndoorSteps] = useState([
+    'Enter main campus entrance',
+    'Follow corridor to ground floor lobby',
+    'Auditorium entrance on the right'
+  ]);
+
+  // Load Clubs for organizer dropdown
   useEffect(() => {
     const loadClubs = async () => {
       try {
@@ -34,25 +57,81 @@ const AdminEventForm = () => {
           setClubs(data);
         }
       } catch (err) {
-        console.error('Failed to load clubs for dropdown:', err);
+        console.warn('Failed to load clubs for dropdown:', err);
       }
     };
     loadClubs();
   }, []);
-  
-  const [scheduleItems, setScheduleItems] = useState([
-    { time: '10:00 AM', title: 'Opening Remarks', desc: 'Introductions and startup briefing.' },
-    { time: '11:00 AM', title: 'Main Panel Session', desc: 'Speaker presentations and open Q&A.' }
-  ]);
 
-  const [mapPosition, setMapPosition] = useState({ lat: 10.177975, lng: 76.431153 });
-  const [indoorSteps, setIndoorSteps] = useState([
-    'Enter main entrance',
-    'Turn left at reception desk',
-    'Take the staircase on the right to Floor 2',
-    'Walk to the end of the corridor',
-    'Room 204 is the third door on the right'
-  ]);
+  // Set default venue if not set
+  useEffect(() => {
+    if (!venueId && venues.length > 0) {
+      const first = venues[0];
+      setVenueId(first.id);
+      setLocationName(first.name || first.building);
+      if (first.lat && first.lng) {
+        setMapPosition({ lat: first.lat, lng: first.lng });
+      }
+      if (Array.isArray(first.indoorSteps) && first.indoorSteps.length > 0) {
+        setIndoorSteps(first.indoorSteps);
+      }
+    }
+  }, [venues, venueId]);
+
+  // If in Edit Mode, fetch existing event data
+  useEffect(() => {
+    if (isEditMode) {
+      setIsLoadingEvent(true);
+      fetchEventById(id)
+        .then(evt => {
+          if (evt) {
+            setTitle(evt.title || '');
+            setDate(evt.date || '');
+            setTime(evt.time || '');
+            setCategory(evt.category || 'Tech');
+            setFaculty(evt.faculty || 'General');
+            setVenueId(evt.venueId || '');
+            setLocationName(evt.location || '');
+            setSeatsTotal(evt.seatsTotal || 50);
+            setDescription(evt.description || '');
+            setCoverImage(evt.coverImage || '');
+            setOrganizerId(evt.organizerId || '');
+            setStatus(evt.status || 'published');
+            setRegistrationDeadline(evt.registrationDeadline || '');
+            if (Array.isArray(evt.schedule) && evt.schedule.length > 0) {
+              setScheduleItems(evt.schedule);
+            }
+            if (evt.locationDetails?.indoorSteps) {
+              setIndoorSteps(evt.locationDetails.indoorSteps);
+            }
+            if (evt.locationDetails?.entranceLat && evt.locationDetails?.entranceLng) {
+              setMapPosition({ lat: evt.locationDetails.entranceLat, lng: evt.locationDetails.entranceLng });
+            }
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load event for editing:', err);
+          alert('Could not load event: ' + err.message);
+        })
+        .finally(() => {
+          setIsLoadingEvent(false);
+        });
+    }
+  }, [id, isEditMode]);
+
+  const handleVenueChange = (selectedId) => {
+    setVenueId(selectedId);
+    const found = venues.find(v => v.id === selectedId);
+    if (found) {
+      setLocationName(found.name || found.building);
+      if (found.lat && found.lng) {
+        setMapPosition({ lat: found.lat, lng: found.lng });
+      }
+      if (Array.isArray(found.indoorSteps) && found.indoorSteps.length > 0) {
+        setIndoorSteps(found.indoorSteps);
+      }
+    }
+  };
 
   const handleAddIndoorStep = () => {
     setIndoorSteps((prev) => [...prev, '']);
@@ -71,7 +150,7 @@ const AdminEventForm = () => {
   const handleAddScheduleRow = () => {
     setScheduleItems((prev) => [
       ...prev,
-      { time: '12:00 PM', title: 'New Session Slot', desc: 'Describe session details here.' }
+      { time: '12:00 PM', title: 'Session Slot', desc: 'Describe session slot.' }
     ]);
   };
 
@@ -87,8 +166,14 @@ const AdminEventForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !date || !time) {
-      alert('Please fill out all required fields (Title, Date, Time).');
+    if (!title.trim() || !date || !time) {
+      alert('Please fill out all required fields: Title, Date, and Time.');
+      return;
+    }
+
+    const parsedSeats = parseInt(seatsTotal, 10);
+    if (isNaN(parsedSeats) || parsedSeats <= 0) {
+      alert('Total seats must be a positive number greater than 0.');
       return;
     }
 
@@ -96,242 +181,412 @@ const AdminEventForm = () => {
       "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop",
       "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=600&auto=format&fit=crop"
     ];
-    const finalCover = coverImage || randomCovers[Math.floor(Math.random() * randomCovers.length)];
+    const finalCover = coverImage || randomCovers[0];
 
-    const newEvent = {
-      title,
+    const selectedVenue = venues.find(v => v.id === venueId);
+
+    const eventPayload = {
+      title: title.trim(),
       coverImage: finalCover,
-      organizerId,
+      organizerId: organizerId || currentUser?.clubId || 'platform-admin',
       date,
       time,
       category,
       faculty,
-      seatsTotal: parseInt(seatsTotal),
+      venueId: venueId || 'campus-main',
+      location: locationName || selectedVenue?.name || 'Campus Grounds',
+      locationDetails: {
+        building: selectedVenue?.building || locationName,
+        entranceLat: mapPosition.lat,
+        entranceLng: mapPosition.lng,
+        indoorSteps: indoorSteps.filter(s => s.trim().length > 0)
+      },
+      seatsTotal: parsedSeats,
       description,
-      schedule: scheduleItems
+      schedule: scheduleItems.filter(s => s.title.trim().length > 0),
+      timezone: 'Asia/Kolkata',
+      registrationDeadline: registrationDeadline || `${date}T23:59:59`,
+      status
     };
 
     setIsSubmitting(true);
     try {
-      await createEvent(newEvent);
-      // Sync RsvpContext so the student home/discovery pages show the new event immediately
-      await refreshEvents();
-      alert('Event created successfully and published to live backend!');
-      navigate('/admin');
-    } catch (error) {
-      console.error('Error creating event:', error);
-      if (error.message?.includes('401') || error.message?.includes('403') || error.message?.includes('token') || error.message?.includes('authentication')) {
-        alert('Authentication failed (403). Please sign out and sign back in with your real Cognito Admin credentials.');
+      if (isEditMode) {
+        await updateEvent(id, eventPayload);
+        await refreshEvents();
+        alert('Event updated successfully!');
       } else {
-        alert('Failed to create event: ' + error.message);
+        await createEvent(eventPayload);
+        await refreshEvents();
+        alert('Event published successfully to campus network!');
       }
+      navigate('/admin');
+    } catch (err) {
+      console.error('Failed to save event:', err);
+      alert('Error saving event: ' + (err.message || 'Check administrator permissions.'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoadingEvent) {
+    return (
+      <PageShell>
+        <div className="max-w-md mx-auto text-center mt-20 bg-white border-3 border-black p-8 neo-shadow">
+          <div className="w-8 h-8 border-4 border-black border-t-pastel-mint rounded-full animate-spin mx-auto mb-3" />
+          <span className="font-display font-black text-sm uppercase">Loading Event Parameters...</span>
+        </div>
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell>
-      <div className="mb-6 flex">
-        <Link
-          to="/admin"
-          className="inline-flex items-center gap-2 text-sm text-text-tertiary hover:text-accent transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </Link>
+      {/* Title Header */}
+      <div className="mb-8 text-left border-b-3 border-black pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-black mb-3 hover:underline"
+          >
+            <ArrowLeft size={14} strokeWidth={3} />
+            Back to Dashboard
+          </Link>
+          <h1 className="font-display font-black text-4xl md:text-5xl uppercase tracking-tight text-black">
+            {isEditMode ? 'Edit Campus Event' : 'Create Campus Event'}
+          </h1>
+        </div>
+        <p className="text-black/70 font-bold text-sm max-w-sm md:text-right">
+          Standardized event schema with validated venue coordinates, schedule, and capacity.
+        </p>
       </div>
 
-      <div className="mb-12 bg-white border-3 border-black p-8 neo-shadow max-w-4xl">
-        <h1 className="font-display font-black text-4xl text-black tracking-tight uppercase mb-2">
-          Create New Event
-        </h1>
-        <p className="text-black/70 font-bold uppercase tracking-wider text-sm">Draft a new event to publish on the platform.</p>
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto text-left" noValidate>
+        {/* Core Event Parameters */}
+        <div className="bg-white border-3 border-black p-6 md:p-8 neo-shadow space-y-6">
+          <h2 className="font-display font-black text-xl uppercase border-b-2 border-black pb-2 flex items-center gap-2">
+            <Calendar size={18} strokeWidth={2.5} />
+            Event Overview & Timing
+          </h2>
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white border-3 border-black p-8 md:p-10 max-w-4xl neo-shadow"
-      >
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div>
-            <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Event Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Design Systems Workshop"
-              className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-              required
-            />
-          </div>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="evt-title" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                Event Title *
+              </label>
+              <input
+                id="evt-title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="ASIET Tech Innovation Summit 2026"
+                className="w-full border-3 border-black p-3 font-bold text-sm outline-none focus:bg-pastel-yellow transition-colors"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Host Club (Organizer)</label>
-            <select
-              value={organizerId}
-              onChange={(e) => setOrganizerId(e.target.value)}
-              className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-            >
-              <option value="">None (University Event)</option>
-              {clubs.map(club => (
-                <option key={club.id} value={club.id}>{club.name}</option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="evt-date" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                  Date (YYYY-MM-DD) *
+                </label>
+                <input
+                  id="evt-date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none focus:bg-pastel-yellow transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="evt-time" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                  Time Slot *
+                </label>
+                <input
+                  id="evt-time"
+                  type="text"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  placeholder="10:00 AM - 01:00 PM"
+                  className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none focus:bg-pastel-yellow transition-colors"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="evt-capacity" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                  Total Capacity (Seats) *
+                </label>
+                <input
+                  id="evt-capacity"
+                  type="number"
+                  min="1"
+                  value={seatsTotal}
+                  onChange={(e) => setSeatsTotal(e.target.value)}
+                  className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none focus:bg-pastel-yellow transition-colors"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label htmlFor="evt-category" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                  Category
+                </label>
+                <select
+                  id="evt-category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none bg-white"
+                >
+                  {['Tech', 'Sports', 'Academic', 'Arts', 'Workshop', 'Cultural'].map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="evt-faculty" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                  Faculty / Council
+                </label>
+                <select
+                  id="evt-faculty"
+                  value={faculty}
+                  onChange={(e) => setFaculty(e.target.value)}
+                  className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none bg-white"
+                >
+                  {['Science', 'Engineering', 'Medicine', 'Management', 'General'].map(f => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="evt-status" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                  Lifecycle Status
+                </label>
+                <select
+                  id="evt-status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none bg-white"
+                >
+                  <option value="published">Published (Open for RSVP)</option>
+                  <option value="draft">Draft (Unlisted)</option>
+                  <option value="registration-closed">Registration Closed</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Organizer Club Selection */}
+            <div>
+              <label htmlFor="evt-organizer" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                Organizing Club / Association
+              </label>
+              <select
+                id="evt-organizer"
+                value={organizerId}
+                onChange={(e) => setOrganizerId(e.target.value)}
+                className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none bg-white"
+              >
+                {clubs.length > 0 ? (
+                  clubs.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                  ))
+                ) : (
+                  <option value={currentUser?.clubId || 'platform-admin'}>
+                    {currentUser?.clubId || 'Platform Admin'}
+                  </option>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="evt-description" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                Event Description & Overview
+              </label>
+              <textarea
+                id="evt-description"
+                rows="4"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Comprehensive overview of agenda, prerequisites, and keynote speakers..."
+                className="w-full border-3 border-black p-3 font-medium text-sm outline-none focus:bg-pastel-yellow transition-colors"
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Venue Selection & Campus Waypoints */}
+        <div className="bg-white border-3 border-black p-6 md:p-8 neo-shadow space-y-6">
+          <h2 className="font-display font-black text-xl uppercase border-b-2 border-black pb-2 flex items-center gap-2">
+            <Building size={18} strokeWidth={2.5} />
+            Venue & Campus Navigation
+          </h2>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Date</label>
+              <label htmlFor="evt-venue" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                Select Campus Venue *
+              </label>
+              <select
+                id="evt-venue"
+                value={venueId}
+                onChange={(e) => handleVenueChange(e.target.value)}
+                className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none bg-white mb-4"
+              >
+                {venues.map(v => (
+                  <option key={v.id} value={v.id}>{v.name || v.building} ({v.category || 'Campus'})</option>
+                ))}
+              </select>
+
+              <label htmlFor="evt-locname" className="block text-xs font-black uppercase tracking-wider mb-1.5">
+                Venue Location Display Label
+              </label>
               <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Time Schedule</label>
-              <input
+                id="evt-locname"
                 type="text"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                placeholder="e.g. 10:00 AM - 01:00 PM"
-                className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-                required
+                value={locationName}
+                onChange={(e) => setLocationName(e.target.value)}
+                placeholder="Science Auditorium A"
+                className="w-full border-3 border-black p-2.5 font-bold text-sm outline-none focus:bg-pastel-yellow transition-colors mb-4"
               />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="p-3 bg-pastel-yellow/30 border-2 border-black text-xs font-bold space-y-1">
+                <p className="font-black uppercase">Coordinates:</p>
+                <p className="font-mono">Lat: {mapPosition.lat.toFixed(6)}, Lng: {mapPosition.lng.toFixed(6)}</p>
+              </div>
+            </div>
+
+            {/* Indoor Turn-by-Turn Steps */}
             <div>
-              <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Category</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-              >
-                {['Tech', 'Sports', 'Academic', 'Arts'].map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-black uppercase tracking-wider">
+                  Indoor Walking Steps
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAddIndoorStep}
+                  className="text-xs font-black uppercase tracking-wider text-black bg-pastel-mint px-2 py-1 border border-black shadow-[1px_1px_0px_0px_#000]"
+                >
+                  + Add Step
+                </button>
+              </div>
+
+              <div className="space-y-2 max-h-56 overflow-y-auto p-1">
+                {indoorSteps.map((step, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <span className="w-6 text-xs font-mono font-black">{idx + 1}.</span>
+                    <input
+                      type="text"
+                      value={step}
+                      onChange={(e) => handleIndoorStepChange(idx, e.target.value)}
+                      placeholder={`Step ${idx + 1} instruction...`}
+                      className="flex-1 border-2 border-black p-1.5 text-xs font-bold outline-none"
+                    />
+                    {indoorSteps.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveIndoorStep(idx)}
+                        className="p-1 hover:bg-red-100 text-red-600 border border-black"
+                        title="Remove Step"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
                 ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Faculty</label>
-              <select
-                value={faculty}
-                onChange={(e) => setFaculty(e.target.value)}
-                className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-              >
-                {['Science', 'Medicine', 'Engineering', 'All Faculties'].map((fac) => (
-                  <option key={fac} value={fac}>{fac}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Total Seat Capacity</label>
-              <input
-                type="number"
-                value={seatsTotal}
-                onChange={(e) => setSeatsTotal(e.target.value)}
-                className="w-full bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-                required
-                min="1"
-              />
+              </div>
             </div>
           </div>
+        </div>
 
-          <div>
-            <ImageUploadZone 
-              label="Cover Image" 
-              onUpload={setCoverImage} 
-              previewUrl={coverImage} 
-              onClear={() => setCoverImage('')} 
-            />
+        {/* Schedule Builder */}
+        <div className="bg-white border-3 border-black p-6 md:p-8 neo-shadow space-y-6">
+          <div className="flex items-center justify-between border-b-2 border-black pb-2">
+            <h2 className="font-display font-black text-xl uppercase flex items-center gap-2">
+              <Clock size={18} strokeWidth={2.5} />
+              Session Schedule
+            </h2>
+            <button
+              type="button"
+              onClick={handleAddScheduleRow}
+              className="text-xs font-black uppercase tracking-wider text-black bg-pastel-yellow px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_0px_#000] hover:translate-y-px transition-all"
+            >
+              + Add Session Slot
+            </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-black text-black uppercase tracking-wider mb-2">Event Description</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detailed description of the event..."
-              className="w-full h-32 bg-white border-3 border-black px-4 py-3 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors resize-none"
-            />
-          </div>
-
-          <div className="border-t border-border-subtle pt-8">
-            <div className="flex justify-between items-center mb-6">
-              <label className="block text-sm font-black text-black uppercase tracking-wider">Event Schedule</label>
-              <button
-                type="button"
-                onClick={handleAddScheduleRow}
-                className="flex items-center gap-2 text-sm font-black bg-pastel-mint border-3 border-black hover:-translate-y-1 text-black px-4 py-2 uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] transition-all"
-              >
-                <Plus size={14} /> Add Session
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {scheduleItems.map((item, idx) => (
-                <div key={idx} className="flex gap-4 items-start bg-white border-3 border-black p-4 relative shadow-[2px_2px_0px_0px_#000]">
-                  {scheduleItems.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveScheduleRow(idx)}
-                      className="absolute top-4 right-4 text-text-tertiary hover:text-red-500 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-
-                  <div className="w-1/4">
+          <div className="space-y-4">
+            {scheduleItems.map((item, idx) => (
+              <div key={idx} className="bg-gray-50 border-2 border-black p-4 relative shadow-[2px_2px_0px_0px_#000]">
+                {scheduleItems.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveScheduleRow(idx)}
+                    className="absolute top-2 right-2 p-1 text-red-600 hover:bg-red-50"
+                    title="Remove Session"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase text-black/60 mb-1">Time</label>
                     <input
                       type="text"
                       value={item.time}
                       onChange={(e) => handleScheduleChange(idx, 'time', e.target.value)}
-                      placeholder="Time"
-                      className="w-full bg-white border-3 border-black px-3 py-2 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
+                      className="w-full border-2 border-black p-1.5 font-bold text-xs"
                     />
                   </div>
-                  
-                  <div className="grow space-y-3 pr-8">
+                  <div className="md:col-span-2">
+                    <label className="block text-[10px] font-black uppercase text-black/60 mb-1">Session Title</label>
                     <input
                       type="text"
                       value={item.title}
                       onChange={(e) => handleScheduleChange(idx, 'title', e.target.value)}
-                      placeholder="Session Title"
-                      className="w-full bg-white border-3 border-black px-3 py-2 text-black font-medium focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
-                    />
-                    <input
-                      type="text"
-                      value={item.desc}
-                      onChange={(e) => handleScheduleChange(idx, 'desc', e.target.value)}
-                      placeholder="Session Description"
-                      className="w-full bg-white border-3 border-black px-3 py-2 text-black/70 font-bold focus:outline-none focus:bg-pastel-yellow shadow-[4px_4px_0px_0px_#000] transition-colors"
+                      className="w-full border-2 border-black p-1.5 font-bold text-xs"
                     />
                   </div>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-black/60 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={item.desc}
+                    onChange={(e) => handleScheduleChange(idx, 'desc', e.target.value)}
+                    className="w-full border-2 border-black p-1.5 text-xs font-medium"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div className="border-t border-border-subtle pt-8 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`bg-pastel-peach border-3 border-black text-black px-8 py-3 font-black uppercase tracking-wider shadow-[4px_4px_0px_0px_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] transition-all flex items-center justify-center gap-2 w-full sm:w-auto ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              <Save size={18} />
-              {isSubmitting ? 'Publishing...' : 'Publish Event'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
+        {/* Submit Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t-3 border-black">
+          <Link
+            to="/admin"
+            className="w-full sm:w-auto px-6 py-3 border-3 border-black font-black uppercase text-xs tracking-wider bg-white shadow-[2px_2px_0px_0px_#000] text-center"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full sm:w-auto px-8 py-3.5 bg-pastel-mint border-3 border-black font-black uppercase text-sm tracking-wider shadow-[4px_4px_0px_0px_#000] hover:translate-y-px transition-all flex items-center justify-center gap-2"
+          >
+            <Save size={16} strokeWidth={3} />
+            {isSubmitting ? 'Saving Event...' : (isEditMode ? 'Update Event Record' : 'Publish Live Event')}
+          </button>
+        </div>
+      </form>
     </PageShell>
   );
 };

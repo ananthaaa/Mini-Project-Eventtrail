@@ -12,7 +12,8 @@ import {
   X,
   Zap,
   Map as MapIcon,
-  MapPin
+  MapPin,
+  Ticket
 } from 'lucide-react';
 import Badge from '../ui/Badge';
 import { NotificationBell } from '../ui/NotificationBell';
@@ -21,6 +22,7 @@ import logoImg from '../../assets/logo.png';
 const navLinks = [
   { to: '/student', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/student/events', label: 'Events', icon: Calendar },
+  { to: '/student/tickets', label: 'My Tickets', icon: Ticket },
   { to: '/student/campus-map', label: 'Map', icon: MapIcon },
   { to: '/student/navigate', label: 'Navigate', icon: Compass },
   { to: '/student/clubs', label: 'Clubs', icon: Users },
@@ -28,7 +30,7 @@ const navLinks = [
 ];
 
 const StudentLayout = () => {
-  const { logout, currentUser } = useContext(RoleContext);
+  const { logout, currentUser, isClubAdmin, isPlatformAdmin } = useContext(RoleContext);
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -76,6 +78,22 @@ const StudentLayout = () => {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
+            {isPlatformAdmin && (
+              <NavLink
+                to="/admin"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-pastel-yellow hover:bg-yellow-300 border-3 border-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px]"
+              >
+                Admin Portal
+              </NavLink>
+            )}
+            {isClubAdmin && (
+              <NavLink
+                to="/organizer"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-pastel-yellow hover:bg-yellow-300 border-3 border-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px]"
+              >
+                Organizer Portal
+              </NavLink>
+            )}
             <NotificationBell />
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">

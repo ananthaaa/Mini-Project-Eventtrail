@@ -6,7 +6,7 @@ import { RsvpContext } from '../../context/RsvpContext';
 import { Map, Plus, Trash2, Edit2 } from 'lucide-react';
 
 const AdminVenueList = () => {
-  const { venues, deleteVenue } = useContext(RsvpContext);
+  const { venues, deleteVenue, events } = useContext(RsvpContext);
   const navigate = useNavigate();
 
   return (
@@ -64,8 +64,12 @@ const AdminVenueList = () => {
               <div className="flex gap-2">
                 <button 
                   onClick={() => {
-                    if (window.confirm(`Are you sure you want to delete building "${venue.name || venue.building}"? It will also be removed from the Student Campus Map.`)) {
-                      deleteVenue(venue.id);
+                    if (window.confirm(`Are you sure you want to delete building "${venue.name || venue.building}"?`)) {
+                      try {
+                        deleteVenue(venue.id);
+                      } catch (err) {
+                        alert(err.message || 'Cannot delete venue.');
+                      }
                     }
                   }}
                   className="w-full py-2 px-4 border-2 border-black bg-red-100 text-red-600 font-bold uppercase text-xs hover:bg-red-500 hover:text-white transition-colors flex justify-center items-center gap-1.5 shadow-[2px_2px_0px_0px_#000]"

@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
+    "test:verify": "node scripts/test-verification.mjs",
     "test:auth": "node src/scripts/testAuth.js",
     "create:admin": "node src/scripts/createAdminUser.js"
   },

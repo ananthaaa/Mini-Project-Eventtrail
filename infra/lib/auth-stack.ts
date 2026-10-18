@@ -84,7 +84,13 @@ export class AuthStack extends cdk.Stack {
     new cognito.CfnUserPoolGroup(this, 'AdminGroup', {
       userPoolId: this.userPool.userPoolId,
       groupName: 'admin',
-      description: 'EventTrail Platform and Club Admins',
+      description: 'EventTrail Platform Admins',
+    });
+
+    new cognito.CfnUserPoolGroup(this, 'ClubAdminGroup', {
+      userPoolId: this.userPool.userPoolId,
+      groupName: 'ClubAdmin',
+      description: 'EventTrail Club Organizers',
     });
 
     // 4. User Pool App Client
@@ -106,7 +112,7 @@ export class AuthStack extends cdk.Stack {
       protocolType: 'HTTP',
       corsConfiguration: {
         allowOrigins: ['*'],
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowHeaders: ['*'],
       },
     });
