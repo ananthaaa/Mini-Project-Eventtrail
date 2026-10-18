@@ -1,4 +1,4 @@
-const { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand } = require('@aws-sdk/client-cognito-identity-provider');
+const { CognitoIdentityProviderClient, AdminCreateUserCommand, AdminAddUserToGroupCommand, AdminUpdateUserAttributesCommand } = require('@aws-sdk/client-cognito-identity-provider');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, GetCommand } = require('@aws-sdk/lib-dynamodb');
 const crypto = require('crypto');
@@ -23,7 +23,7 @@ function getAdminAuth(event) {
     : (typeof rawGroups === 'string' ? rawGroups.split(',').map(s => s.trim()) : []);
 
   const role = claims['custom:role'];
-  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || role === 'admin';
+  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || groups.includes('platform-admin') || role === 'admin' || role === 'platform-admin';
 
   if (!isPlatformAdmin) {
     return { authorized: false, statusCode: 403, error: 'Forbidden: Platform Administrator privileges required' };
@@ -99,7 +99,7 @@ exports.handler = async (event) => {
     const normalizedEmail = email.trim().toLowerCase();
     const tempPassword = generateSecureTempPassword();
 
-    // 1. Create User in Cognito User Pool with temporary password
+    // 1. Create or Update User in Cognito User Pool
     try {
       await cognitoClient.send(new AdminCreateUserCommand({
         UserPoolId: USER_POOL_ID,
@@ -117,13 +117,22 @@ exports.handler = async (event) => {
       }));
     } catch (cognitoErr) {
       if (cognitoErr.name === 'UsernameExistsException') {
-        return {
-          statusCode: 409,
-          headers: corsHeaders,
-          body: JSON.stringify({ error: 'An account with this email address already exists in the system.' }),
-        };
+        // Upgrade existing user to club_admin with the assigned clubId
+        try {
+          await cognitoClient.send(new AdminUpdateUserAttributesCommand({
+            UserPoolId: USER_POOL_ID,
+            Username: normalizedEmail,
+            UserAttributes: [
+              { Name: 'custom:role', Value: 'club_admin' },
+              { Name: 'custom:clubId', Value: clubId.trim() },
+            ],
+          }));
+        } catch (updateErr) {
+          console.warn('Could not update existing user attributes:', updateErr.message);
+        }
+      } else {
+        throw cognitoErr;
       }
-      throw cognitoErr;
     }
 
     // 2. Add User to ClubAdmin Cognito group

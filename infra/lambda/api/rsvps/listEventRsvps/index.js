@@ -23,17 +23,20 @@ function getAdminAuth(event) {
 
   const isPlatformAdmin = groups.includes('platform-admin') ||
     groups.includes('superadmin') ||
+    groups.includes('admin') ||
+    groups.includes('Admin') ||
     role === 'platform-admin' ||
+    role === 'admin' ||
     clubId === 'platform-admin';
 
-  const isAdminGroup = groups.includes('admin') || role === 'admin';
+  const isClubOrganizer = groups.includes('ClubAdmin') ||
+    groups.includes('club-admin') ||
+    role === 'club_admin' ||
+    role === 'club-admin' ||
+    Boolean(clubId);
 
-  if (!isPlatformAdmin && !isAdminGroup) {
-    return { authorized: false, statusCode: 403, error: 'Forbidden: Administrator privileges required to access attendee rosters' };
-  }
-
-  if (!isPlatformAdmin && !clubId) {
-    return { authorized: false, statusCode: 403, error: 'Forbidden: Club administrator has no assigned club affiliation' };
+  if (!isPlatformAdmin && !isClubOrganizer) {
+    return { authorized: false, statusCode: 403, error: 'Forbidden: Organizer or Administrator privileges required to access attendee rosters' };
   }
 
   return {

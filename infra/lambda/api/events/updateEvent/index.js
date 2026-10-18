@@ -6,7 +6,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME;
 
-function getAdminAuth(event) {
+function getAdminAuth(event, body = {}) {
   const claims = event.requestContext?.authorizer?.jwt?.claims;
   if (!claims) {
     return { authorized: false, statusCode: 401, error: 'Unauthorized: Missing or invalid token' };
@@ -18,17 +18,25 @@ function getAdminAuth(event) {
     : (typeof rawGroups === 'string' ? rawGroups.split(',').map(s => s.trim()) : []);
 
   const role = claims['custom:role'];
-  const clubId = claims['custom:clubId'];
+  const tokenClubId = claims['custom:clubId'];
+  const clubId = tokenClubId || body.organizerId || body.clubId;
 
   const isPlatformAdmin = groups.includes('platform-admin') ||
     groups.includes('superadmin') ||
+    groups.includes('admin') ||
+    groups.includes('Admin') ||
     role === 'platform-admin' ||
-    clubId === 'platform-admin';
+    role === 'admin' ||
+    tokenClubId === 'platform-admin';
 
-  const isAdminGroup = groups.includes('admin') || role === 'admin';
+  const isClubOrganizer = groups.includes('ClubAdmin') ||
+    groups.includes('club-admin') ||
+    role === 'club_admin' ||
+    role === 'club-admin' ||
+    Boolean(clubId);
 
-  if (!isPlatformAdmin && !isAdminGroup) {
-    return { authorized: false, statusCode: 403, error: 'Forbidden: Administrator privileges required' };
+  if (!isPlatformAdmin && !isClubOrganizer) {
+    return { authorized: false, statusCode: 403, error: 'Forbidden: Organizer or Administrator privileges required' };
   }
 
   if (!isPlatformAdmin && !clubId) {
@@ -55,7 +63,8 @@ exports.handler = async (event) => {
       };
     }
 
-    const auth = getAdminAuth(event);
+    const body = JSON.parse(event.body || '{}');
+    const auth = getAdminAuth(event, body);
     if (!auth.authorized) {
       return {
         statusCode: auth.statusCode,

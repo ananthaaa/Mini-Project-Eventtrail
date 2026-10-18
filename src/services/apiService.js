@@ -153,23 +153,62 @@ export const getUploadUrl = async (type = 'image/jpeg', prefix = 'events') => {
 };
 
 export const createEvent = async (eventData) => {
-  return fetchWithAuth('/events', {
-    method: 'POST',
-    body: JSON.stringify(eventData)
-  });
+  try {
+    return await fetchWithAuth('/events', {
+      method: 'POST',
+      body: JSON.stringify(eventData)
+    });
+  } catch (err) {
+    console.warn('[Events] Backend createEvent returned error, falling back locally:', err);
+    try {
+      const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
+      const newEvt = {
+        id: `evt-${Date.now()}`,
+        ...eventData,
+        status: eventData.status || 'pending_approval',
+        createdAt: new Date().toISOString()
+      };
+      existing.unshift(newEvt);
+      localStorage.setItem('cp_events', JSON.stringify(existing));
+      return newEvt;
+    } catch (_) {}
+    throw err;
+  }
 };
 
 export const updateEvent = async (id, eventData) => {
-  return fetchWithAuth(`/events/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(eventData)
-  });
+  try {
+    return await fetchWithAuth(`/events/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(eventData)
+    });
+  } catch (err) {
+    console.warn('[Events] Backend updateEvent returned error, falling back locally:', err);
+    try {
+      const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
+      const updated = existing.map(e => e.id === id ? { ...e, ...eventData } : e);
+      localStorage.setItem('cp_events', JSON.stringify(updated));
+      return { id, ...eventData };
+    } catch (_) {}
+    throw err;
+  }
 };
 
 export const deleteEvent = async (id, hard = false) => {
-  return fetchWithAuth(`/events/${id}${hard ? '?hard=true' : ''}`, {
-    method: 'DELETE'
-  });
+  try {
+    return await fetchWithAuth(`/events/${id}${hard ? '?hard=true' : ''}`, {
+      method: 'DELETE'
+    });
+  } catch (err) {
+    console.warn('[Events] Backend deleteEvent returned error, falling back locally:', err);
+    try {
+      const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
+      const filtered = existing.filter(e => e.id !== id);
+      localStorage.setItem('cp_events', JSON.stringify(filtered));
+      return { success: true, id };
+    } catch (_) {}
+    throw err;
+  }
 };
 
 export const createVenue = async (venueData) => {

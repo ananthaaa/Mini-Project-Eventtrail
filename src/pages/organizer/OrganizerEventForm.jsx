@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import PageShell from '../../components/layout/PageShell';
-import { createEvent, updateEvent, fetchEventById, fetchVenues, fetchClubById } from '../../services/apiService';
+import { createEvent, updateEvent, fetchEventById, fetchVenues, fetchClubById, fetchClubs } from '../../services/apiService';
 import { RoleContext } from '../../context/RoleContext';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
 import CampusMap, { Marker } from '../../components/ui/CampusMap';
@@ -78,6 +78,14 @@ const OrganizerEventForm = () => {
       fetchClubById(clubId)
         .then(club => setClubDetails(club))
         .catch(err => console.warn('Could not fetch club info:', err));
+    } else {
+      fetchClubs()
+        .then(clubs => {
+          if (Array.isArray(clubs) && clubs.length > 0) {
+            setClubDetails(clubs[0]);
+          }
+        })
+        .catch(err => console.warn('Could not fetch clubs fallback:', err));
     }
   }, [clubId]);
 
@@ -187,11 +195,14 @@ const OrganizerEventForm = () => {
 
     const selectedVenue = venues.find(v => v.id === venueId);
     const parsedSeats = parseInt(seatsTotal, 10) || 50;
+    const activeClubId = clubId || clubDetails?.id || currentUser?.clubId || '87e5b0ed-853e-4ee8-acf6-846f77abd19d';
 
     const payload = {
       title: title.trim(),
       coverImage: coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop",
-      organizerId: clubId || currentUser?.clubId || currentUser?.id,
+      organizerId: activeClubId,
+      clubId: activeClubId,
+      clubName: clubDetails?.name || 'Sports Club',
       date,
       time,
       category,

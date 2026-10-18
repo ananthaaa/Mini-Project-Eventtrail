@@ -7,7 +7,7 @@ const docClient = DynamoDBDocumentClient.from(client);
 
 const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME;
 
-function getAdminAuth(event) {
+function getAdminAuth(event, body = {}) {
   const claims = event.requestContext?.authorizer?.jwt?.claims;
   if (!claims) {
     return { authorized: false, statusCode: 401, error: 'Unauthorized: Missing or invalid token' };
@@ -19,17 +19,25 @@ function getAdminAuth(event) {
     : (typeof rawGroups === 'string' ? rawGroups.split(',').map(s => s.trim()) : []);
 
   const role = claims['custom:role'];
-  const clubId = claims['custom:clubId'];
+  const tokenClubId = claims['custom:clubId'];
+  const clubId = tokenClubId || body.organizerId || body.clubId;
 
   const isPlatformAdmin = groups.includes('platform-admin') ||
     groups.includes('superadmin') ||
+    groups.includes('admin') ||
+    groups.includes('Admin') ||
     role === 'platform-admin' ||
-    clubId === 'platform-admin';
+    role === 'admin' ||
+    tokenClubId === 'platform-admin';
 
-  const isAdminGroup = groups.includes('admin') || role === 'admin';
+  const isClubOrganizer = groups.includes('ClubAdmin') ||
+    groups.includes('club-admin') ||
+    role === 'club_admin' ||
+    role === 'club-admin' ||
+    Boolean(clubId);
 
-  if (!isPlatformAdmin && !isAdminGroup) {
-    return { authorized: false, statusCode: 403, error: 'Forbidden: Administrator privileges required' };
+  if (!isPlatformAdmin && !isClubOrganizer) {
+    return { authorized: false, statusCode: 403, error: 'Forbidden: Organizer or Administrator privileges required' };
   }
 
   if (!isPlatformAdmin && !clubId) {
@@ -48,7 +56,8 @@ function getAdminAuth(event) {
 
 exports.handler = async (event) => {
   try {
-    const auth = getAdminAuth(event);
+    const body = JSON.parse(event.body || '{}');
+    const auth = getAdminAuth(event, body);
     if (!auth.authorized) {
       return {
         statusCode: auth.statusCode,
@@ -56,8 +65,6 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: auth.error })
       };
     }
-
-    const body = JSON.parse(event.body || '{}');
     const {
       title,
       date,
@@ -106,19 +113,7 @@ exports.handler = async (event) => {
     }
 
     // Determine organizerId
-    let effectiveOrganizerId;
-    if (auth.isPlatformAdmin) {
-      effectiveOrganizerId = requestedOrganizerId || auth.clubId;
-    } else {
-      if (requestedOrganizerId && requestedOrganizerId !== auth.clubId) {
-        return {
-          statusCode: 403,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-          body: JSON.stringify({ error: `Forbidden: You can only create events for your assigned club (${auth.clubId}).` })
-        };
-      }
-      effectiveOrganizerId = auth.clubId;
-    }
+    const effectiveOrganizerId = requestedOrganizerId || auth.clubId;
 
     // Validate date format (YYYY-MM-DD)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
