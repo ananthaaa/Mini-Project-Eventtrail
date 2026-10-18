@@ -90,7 +90,22 @@ export const fetchEvents = async (params = {}, options = {}) => {
 };
 
 export const fetchEventById = async (id, options = {}) => {
-  return fetchFromApi(`/events/${id}`, options);
+  let headers = {};
+  try {
+    const session = await authService.getCurrentSession();
+    if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
+  } catch (_) {}
+
+  try {
+    return await fetchFromApi(`/events/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  } catch (err) {
+    try {
+      const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
+      const found = localEvents.find(e => e.id === id);
+      if (found) return found;
+    } catch (_) {}
+    throw err;
+  }
 };
 
 // --- Clubs (Public Reads with Optional Auth Enrichment) ---

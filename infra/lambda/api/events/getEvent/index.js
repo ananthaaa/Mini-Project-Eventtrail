@@ -7,7 +7,24 @@ const docClient = DynamoDBDocumentClient.from(client);
 const EVENTS_TABLE = process.env.EVENTS_TABLE_NAME;
 
 function getCallerAuth(event) {
-  const claims = event.requestContext?.authorizer?.jwt?.claims;
+  let claims = event.requestContext?.authorizer?.jwt?.claims;
+
+  if (!claims) {
+    const authHeader = event.headers?.authorization || event.headers?.Authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7).trim();
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = Buffer.from(parts[1], 'base64').toString('utf8');
+          claims = JSON.parse(payload);
+        }
+      } catch (err) {
+        console.warn('Could not decode Bearer token header:', err.message);
+      }
+    }
+  }
+
   if (!claims) return { isAuthenticated: false, role: 'anonymous' };
 
   const rawGroups = claims['cognito:groups'] || [];
@@ -17,8 +34,8 @@ function getCallerAuth(event) {
 
   const role = claims['custom:role'];
   const clubId = claims['custom:clubId'];
-  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || role === 'admin';
-  const isClubOrganizer = (groups.includes('ClubAdmin') || role === 'club_admin') && Boolean(clubId);
+  const isPlatformAdmin = groups.includes('admin') || groups.includes('Admin') || groups.includes('platform-admin') || role === 'admin' || role === 'platform-admin';
+  const isClubOrganizer = groups.includes('ClubAdmin') || groups.includes('club-admin') || role === 'club_admin' || role === 'club-admin' || Boolean(clubId);
 
   return {
     isAuthenticated: true,
@@ -64,7 +81,7 @@ exports.handler = async (event) => {
     const auth = getCallerAuth(event);
 
     // If event is not published, only platform admins and the owning club can view it
-    if (item.status !== 'published') {
+    if (item.status && item.status !== 'published') {
       const isOwner = auth.isClubOrganizer && item.organizerId === auth.clubId;
       if (!auth.isPlatformAdmin && !isOwner) {
         return {

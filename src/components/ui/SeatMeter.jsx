@@ -1,15 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export default function SeatMeter({ total, available }) {
-  const filled = total - available;
-  const percentage = Math.max(0, Math.min(100, (filled / total) * 100));
+export default function SeatMeter({ total = 100, available = 100 }) {
+  const safeTotal = typeof total === 'number' && total > 0 ? total : 100;
+  const safeAvailable = typeof available === 'number' ? available : safeTotal;
+  const filled = Math.max(0, safeTotal - safeAvailable);
+  const percentage = Math.max(0, Math.min(100, (filled / safeTotal) * 100));
   
   return (
     <div className="w-full bg-bg-surface p-4 rounded-xl border border-border-subtle">
       <div className="flex justify-between items-end mb-2">
         <span className="text-text-secondary text-sm font-medium uppercase tracking-wider">Seats Filled</span>
-        <span className="text-text-primary text-xl font-display font-semibold">{filled} / {total}</span>
+        <span className="text-text-primary text-xl font-display font-semibold">{filled} / {safeTotal}</span>
       </div>
       <div className="h-3 w-full bg-bg-primary rounded-full overflow-hidden">
         <motion.div 

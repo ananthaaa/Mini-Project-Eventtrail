@@ -2,9 +2,10 @@ import React, { useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../components/layout/PageShell';
+import { RoleContext } from '../context/RoleContext';
 import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
-import { fetchSpeakers, fetchClubs, fetchEventById } from '../services/apiService';
+import { fetchSpeakers, fetchClubs, fetchEventById, fetchEvents } from '../services/apiService';
 import SeatMeter from '../components/ui/SeatMeter';
 import {
   Calendar, Clock, MapPin, ArrowLeft, Ticket, CheckCircle2,
@@ -32,7 +33,15 @@ const EventDetail = () => {
     setFetchError(null);
     try {
       // 1. Load essential event details independently
-      const apiEvent = await fetchEventById(id);
+      let apiEvent = null;
+      try {
+        apiEvent = await fetchEventById(id);
+      } catch (err) {
+        console.warn('Direct fetchEventById failed, trying events list fallback:', err.message);
+        const allEvts = await fetchEvents({ status: 'all', admin: 'true' });
+        apiEvent = allEvts.find(e => e.id === id);
+        if (!apiEvent) throw err;
+      }
       setEvent(apiEvent);
 
       // 2. Enrich with optional speaker and club info without failing the event
@@ -175,7 +184,11 @@ const EventDetail = () => {
             className="border-3 border-black neo-shadow-lg relative overflow-hidden bg-white mb-10 flex flex-col"
           >
             <div className="aspect-[21/9] w-full border-b-3 border-black">
-              <img src={event.coverImage} alt={event.title} className="w-full h-full object-cover" />
+              <img 
+                src={event.coverImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop'} 
+                alt={event.title || 'Event'} 
+                className="w-full h-full object-cover" 
+              />
             </div>
             
             <div className="p-8 md:p-12 w-full bg-pastel-mint">
