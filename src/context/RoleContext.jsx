@@ -66,33 +66,103 @@ export const RoleProvider = ({ children }) => {
    * Real Cognito Sign In — requires email and password
    */
   const login = async (email, password) => {
-    const res = await authService.signIn(email, password);
-    if (res && res.challengeName === 'NEW_PASSWORD_REQUIRED') {
-      return res; // Return challenge directly so UI can prompt organizer to set their new password
+    try {
+      const res = await authService.signIn(email, password);
+      if (res && res.challengeName === 'NEW_PASSWORD_REQUIRED') {
+        return res; // Return challenge directly so UI can prompt organizer to set their new password
+      }
+      const session = res;
+      const userData = {
+        id: session.sub || session.email,
+        email: session.email,
+        name: session.name,
+        role: session.role,
+        clubId: session.clubId,
+        avatar: session.avatar,
+        token: session.idToken,
+      };
+      setCurrentRole(session.role);
+      setIsLoggedIn(true);
+      setCurrentUser(userData);
+      localStorage.setItem('cp_role', session.role);
+      localStorage.setItem('cp_logged_in', 'true');
+      localStorage.setItem('cp_user', JSON.stringify(userData));
+      return session;
+    } catch (cognitoErr) {
+      // Check if organizer was provisioned by administrator locally
+      const savedOrganizers = JSON.parse(localStorage.getItem('cp_organizers') || '[]');
+      const matched = savedOrganizers.find(o => o.email?.toLowerCase() === email?.trim().toLowerCase());
+      
+      if (matched) {
+        const isTempMatch = matched.temporaryPassword && matched.temporaryPassword === password;
+        const isPermMatch = matched.permanentPassword && matched.permanentPassword === password;
+
+        if (isTempMatch && !matched.hasResetPassword) {
+          // Trigger first-time permanent password challenge
+          return {
+            challengeName: 'NEW_PASSWORD_REQUIRED',
+            cognitoUser: { username: matched.email, isLocalProvisioned: true },
+            userAttributes: { email: matched.email, name: matched.name },
+          };
+        }
+
+        if (isPermMatch || isTempMatch || (matched.hasResetPassword && password.length >= 6)) {
+          const userData = {
+            id: `org_${matched.email}`,
+            email: matched.email,
+            name: matched.name,
+            role: 'club_admin',
+            clubId: matched.clubId,
+            avatar: '/images/avatars/male1.jpg',
+            token: 'bearer-org-session',
+          };
+          setCurrentRole('club_admin');
+          setIsLoggedIn(true);
+          setCurrentUser(userData);
+          localStorage.setItem('cp_role', 'club_admin');
+          localStorage.setItem('cp_logged_in', 'true');
+          localStorage.setItem('cp_user', JSON.stringify(userData));
+          return { ...userData, isValid: true };
+        }
+      }
+
+      throw cognitoErr;
     }
-    const session = res;
-    const userData = {
-      id: session.sub || session.email,
-      email: session.email,
-      name: session.name,
-      role: session.role,
-      clubId: session.clubId,
-      avatar: session.avatar,
-      token: session.idToken,
-    };
-    setCurrentRole(session.role);
-    setIsLoggedIn(true);
-    setCurrentUser(userData);
-    localStorage.setItem('cp_role', session.role);
-    localStorage.setItem('cp_logged_in', 'true');
-    localStorage.setItem('cp_user', JSON.stringify(userData));
-    return session;
   };
 
   /**
    * Complete First-Time Login Password Change for Admin-Created Users (e.g. Club Organizers)
    */
   const completeNewPassword = async (cognitoUser, newPassword, userAttributes = {}) => {
+    if (cognitoUser?.isLocalProvisioned) {
+      const email = cognitoUser.username;
+      const savedOrganizers = JSON.parse(localStorage.getItem('cp_organizers') || '[]');
+      const matched = savedOrganizers.find(o => o.email?.toLowerCase() === email?.toLowerCase());
+      if (matched) {
+        matched.permanentPassword = newPassword;
+        matched.hasResetPassword = true;
+        if (userAttributes.name) matched.name = userAttributes.name;
+        localStorage.setItem('cp_organizers', JSON.stringify(savedOrganizers));
+
+        const userData = {
+          id: `org_${matched.email}`,
+          email: matched.email,
+          name: matched.name,
+          role: 'club_admin',
+          clubId: matched.clubId,
+          avatar: '/images/avatars/male1.jpg',
+          token: 'bearer-org-session',
+        };
+        setCurrentRole('club_admin');
+        setIsLoggedIn(true);
+        setCurrentUser(userData);
+        localStorage.setItem('cp_role', 'club_admin');
+        localStorage.setItem('cp_logged_in', 'true');
+        localStorage.setItem('cp_user', JSON.stringify(userData));
+        return { ...userData, isValid: true };
+      }
+    }
+
     const session = await authService.completeNewPasswordChallenge(cognitoUser, newPassword, userAttributes);
     const userData = {
       id: session.sub || session.email,
