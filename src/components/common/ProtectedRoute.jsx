@@ -1,11 +1,12 @@
 import React, { useContext } from 'react';
-import { Navigate, useLocation, Outlet } from 'react-router-dom';
+import { Navigate, useLocation, Outlet, Link, useNavigate } from 'react-router-dom';
 import { RoleContext } from '../../context/RoleContext';
-import { ShieldAlert, Loader2 } from 'lucide-react';
+import { ShieldAlert, Loader2, LogOut } from 'lucide-react';
 
 export default function ProtectedRoute({ requiredRole = null, children }) {
-  const { isLoggedIn, currentRole, authLoading } = useContext(RoleContext);
+  const { isLoggedIn, currentRole, authLoading, logout } = useContext(RoleContext);
   const location = useLocation();
+  const navigate = useNavigate();
 
   if (authLoading) {
     return (
@@ -39,7 +40,7 @@ export default function ProtectedRoute({ requiredRole = null, children }) {
       club_admin: 'Club Organizer',
       student: 'Student'
     };
-    const returnPath = currentRole === 'admin' ? '#/admin' : (currentRole === 'club_admin' ? '#/organizer' : '#/student');
+    const returnPath = currentRole === 'admin' ? '/admin' : (currentRole === 'club_admin' ? '/organizer' : '/student');
     const returnPortalName = currentRole === 'admin' ? 'Admin Portal' : (currentRole === 'club_admin' ? 'Organizer Portal' : 'Student Portal');
 
     return (
@@ -54,12 +55,24 @@ export default function ProtectedRoute({ requiredRole = null, children }) {
           <p className="font-bold text-sm text-gray-700 mb-6">
             You do not have permission to view this resource. You are currently signed in as {roleLabels[currentRole] || currentRole}.
           </p>
-          <a
-            href={returnPath}
-            className="inline-block w-full py-3 bg-pastel-mint border-3 border-black font-black uppercase text-sm shadow-[3px_3px_0px_0px_#000] hover:translate-y-px transition-all"
-          >
-            Return to {returnPortalName}
-          </a>
+          <div className="space-y-3">
+            <Link
+              to={returnPath}
+              className="inline-block w-full py-3 bg-pastel-mint border-3 border-black font-black uppercase text-sm shadow-[3px_3px_0px_0px_#000] hover:translate-y-px transition-all"
+            >
+              Return to {returnPortalName}
+            </Link>
+            <button
+              onClick={() => {
+                logout();
+                navigate('/login', { state: { from: location.pathname } });
+              }}
+              className="inline-flex items-center justify-center gap-2 w-full py-2.5 bg-pastel-yellow border-2 border-black font-black uppercase text-xs shadow-[2px_2px_0px_0px_#000] hover:translate-y-px transition-all"
+            >
+              <LogOut size={14} />
+              Switch Account (Login as Admin or Organizer)
+            </button>
+          </div>
         </div>
       </div>
     );
