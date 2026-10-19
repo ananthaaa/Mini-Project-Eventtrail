@@ -1,8 +1,17 @@
 import React, { useEffect } from 'react';
 import Map, { useMap } from 'react-map-gl/maplibre';
 import * as maplibregl from 'maplibre-gl';
+import { setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useNavigationStore } from '../../store/navigationStore';
+
+if (typeof setWorkerUrl === 'function') {
+  setWorkerUrl(maplibreWorkerUrl);
+} else if (maplibregl.setWorkerUrl) {
+  maplibregl.setWorkerUrl(maplibreWorkerUrl);
+}
+
 import { RouteLayer } from './RouteLayer';
 import { BuildingLayer } from './BuildingLayer';
 import { UserLocationMarker } from './UserLocationMarker';

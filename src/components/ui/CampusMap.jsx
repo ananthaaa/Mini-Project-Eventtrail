@@ -1,8 +1,18 @@
 import React, { useRef, useEffect, useState, useCallback, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import * as maplibregl from 'maplibre-gl';
+import { setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import campusData from '../../data/asiet-campus.json';
+
+// Configure MapLibre Web Worker URL for Vite production builds
+if (typeof setWorkerUrl === 'function') {
+  setWorkerUrl(maplibreWorkerUrl);
+} else if (maplibregl.setWorkerUrl) {
+  maplibregl.setWorkerUrl(maplibreWorkerUrl);
+}
+
 
 // ASIET Campus center [lng, lat]
 export const ASIET_CAMPUS_CENTER = [76.4302, 10.1780];
