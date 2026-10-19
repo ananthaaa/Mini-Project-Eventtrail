@@ -4,6 +4,8 @@ import PageShell from '../../components/layout/PageShell';
 import CampusMap, { Marker, Popup } from '../../components/ui/CampusMap';
 import RouteLayer from '../../components/ui/RouteLayer';
 import CampusBuildingMarkers from '../../components/ui/CampusBuildingMarkers';
+import { RsvpContext } from '../../context/RsvpContext';
+import { NavModeContext } from '../../context/NavModeContext';
 import { 
   Calendar, 
   MapPin, 

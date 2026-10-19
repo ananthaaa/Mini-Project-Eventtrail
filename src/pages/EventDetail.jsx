@@ -324,7 +324,7 @@ const EventDetail = () => {
           {club && (
             <div className="bg-pastel-peach border-3 border-black p-6 neo-shadow">
               <h3 className="text-black text-xs font-black uppercase tracking-widest mb-4 border-b-2 border-black pb-2">Hosted By</h3>
-              <Link to={`/club/${club.id}`} className="flex items-center gap-4 group cursor-pointer active:translate-x-[1px] active:translate-y-[1px]">
+              <Link to={`/student/clubs/${club.id}`} className="flex items-center gap-4 group cursor-pointer active:translate-x-[1px] active:translate-y-[1px]">
                 <div className={`w-14 h-14 bg-white border-2 border-black shadow-[2px_2px_0px_0px_#000] flex items-center justify-center font-display font-black text-xl text-black`}>
                   {club.logo}
                 </div>

@@ -15,11 +15,11 @@ import { buildAdjacencyList, findPathAStar } from '../utils/pathfinding';
 import Badge from '../components/ui/Badge';
 
 const CAMPUS_STARTING_POINTS = [
-  { id: 'main-gate', name: 'Campus Main Gate (South Entrance)', lat: 10.1768, lng: 76.4290 },
+  { id: 'main-gate', name: 'Campus Main Gate (South Entrance)', lat: 10.177813, lng: 76.4291012 },
   { id: 'library', name: 'Central Library Entrance', lat: 10.1778, lng: 76.4298 },
-  { id: 'canteen', name: 'Student Canteen & Plaza', lat: 10.1772, lng: 76.4308 },
-  { id: 'sports-field', name: 'Athletics Ground Pavillion', lat: 10.1776, lng: 76.4312 },
-  { id: 'cs-block', name: 'Computer Science Block Lobby', lat: 10.1785, lng: 76.4302 },
+  { id: 'canteen', name: 'Student Canteen & Plaza', lat: 10.1774514, lng: 76.4298325 },
+  { id: 'sports-field', name: 'Athletics Ground Pavillion', lat: 10.1777, lng: 76.4305 },
+  { id: 'cs-block', name: 'Computer Science Block Lobby', lat: 10.178252, lng: 76.430532 },
 ];
 
 const haversineDistance = (lat1, lon1, lat2, lon2) => {
@@ -37,6 +37,7 @@ const Navigate = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const destParam = searchParams.get('dest');
+  const venueIdParam = searchParams.get('venueId');
 
   const {
     activeEventId,
@@ -52,11 +53,13 @@ const Navigate = () => {
   const { addNotification } = useContext(NotificationContext);
 
   // Determine active event or fallback to first event with venue
+  // Supports: ?venueId= (from Dashboard campus directions) and ?dest= (from EventDetail)
   const activeEvent = useMemo(() => {
     if (activeEventId) return events.find(e => e.id === activeEventId);
+    if (venueIdParam) return events.find(e => e.venueId === venueIdParam) || events.find(e => e.id === venueIdParam) || events[0] || null;
     if (destParam) return events.find(e => e.id === destParam || e.venueId === destParam);
     return events[0] || null;
-  }, [events, activeEventId, destParam]);
+  }, [events, activeEventId, destParam, venueIdParam]);
 
   const venue = useMemo(() => {
     if (!activeEvent) return venues[0] || null;

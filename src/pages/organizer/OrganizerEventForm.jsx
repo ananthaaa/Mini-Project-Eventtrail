@@ -559,7 +559,7 @@ const OrganizerEventForm = () => {
               </div>
               <div className="h-64 w-full relative">
                 <CampusMap
-                  center={[mapPosition.lat, mapPosition.lng]}
+                  center={[mapPosition.lng, mapPosition.lat]}
                   zoom={17.5}
                   className="w-full h-full"
                   style={{ minHeight: '100%' }}
@@ -568,7 +568,8 @@ const OrganizerEventForm = () => {
                   }}
                 >
                   <Marker
-                    position={[mapPosition.lat, mapPosition.lng]}
+                    longitude={mapPosition.lng}
+                    latitude={mapPosition.lat}
                     title={locationName || 'Marked Venue'}
                     draggable={true}
                     anchor="bottom"
