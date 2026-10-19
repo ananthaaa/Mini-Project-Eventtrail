@@ -136,6 +136,8 @@ export default function AdminClubUpload() {
 
           <div>
             <ImageUploadZone 
+              value={formData.logoUrl}
+              onChange={handleImageUploaded}
               onUploadComplete={handleImageUploaded}
               prefix="clubs"
               label="Club Logo (Optional)"

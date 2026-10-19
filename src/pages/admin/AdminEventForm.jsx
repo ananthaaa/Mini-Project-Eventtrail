@@ -419,6 +419,16 @@ const AdminEventForm = () => {
                 className="w-full border-3 border-black p-3 font-medium text-sm outline-none focus:bg-pastel-yellow transition-colors"
               />
             </div>
+
+            {/* Event Artwork / Banner Image */}
+            <div className="pt-2">
+              <ImageUploadZone
+                label="Event Banner Artwork (PNG, JPG, WebP, SVG)"
+                prefix="events"
+                value={coverImage}
+                onChange={(url) => setCoverImage(url)}
+              />
+            </div>
           </div>
         </div>
 
