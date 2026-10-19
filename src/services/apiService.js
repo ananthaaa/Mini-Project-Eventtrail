@@ -237,13 +237,17 @@ export const deleteEvent = async (id, hard = false) => {
     console.warn('[Events] Backend deleteEvent returned error, falling back locally:', err);
     try {
       const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
-      const filtered = existing.filter(e => e.id !== id);
-      localStorage.setItem('cp_events', JSON.stringify(filtered));
+      const updated = hard 
+        ? existing.filter(e => e.id !== id)
+        : existing.map(e => e.id === id ? { ...e, status: 'cancelled' } : e);
+      localStorage.setItem('cp_events', JSON.stringify(updated));
       return { success: true, id };
     } catch (_) {}
     throw err;
   }
 };
+
+export const apiDeleteEvent = deleteEvent;
 
 export const createVenue = async (venueData) => {
   return fetchWithAuth('/venues', {

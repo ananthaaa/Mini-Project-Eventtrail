@@ -5,6 +5,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { RsvpContext } from '../../context/RsvpContext';
+import { deleteEvent } from '../../services/apiService';
 import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Edit2, RefreshCw, Loader2, Ban, Clock, CheckCircle } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -46,7 +47,7 @@ const AdminDashboard = () => {
 
     setProcessingId(evt.id);
     try {
-      await apiDeleteEvent(evt.id, hard);
+      await deleteEvent(evt.id, hard);
       await refreshEvents();
     } catch (err) {
       console.error('Failed to cancel/delete event:', err);
@@ -232,14 +233,25 @@ const AdminDashboard = () => {
                         <Navigation size={12} />
                         Waypoints
                       </button>
+                      {!isCancelled && (
+                        <button
+                          disabled={processingId === evt.id}
+                          onClick={() => handleCancelOrDelete(evt, false)}
+                          className="p-2 border-2 border-black bg-amber-100 hover:bg-amber-400 text-black transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1 disabled:opacity-50"
+                          title="Cancel Event (preserves records)"
+                        >
+                          {processingId === evt.id ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
+                          Cancel
+                        </button>
+                      )}
                       <button
                         disabled={processingId === evt.id}
-                        onClick={() => handleCancelOrDelete(evt, false)}
+                        onClick={() => handleCancelOrDelete(evt, true)}
                         className="p-2 border-2 border-black bg-red-100 hover:bg-red-500 hover:text-white transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1 disabled:opacity-50"
-                        title="Cancel or Delete Event"
+                        title="Permanently Delete Event"
                       >
-                        {processingId === evt.id ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
-                        {isCancelled ? 'Delete' : 'Cancel'}
+                        {processingId === evt.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                        Delete
                       </button>
                     </td>
                   </tr>
