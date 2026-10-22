@@ -98,11 +98,14 @@ const EventDiscovery = () => {
 
       // 2. Timeline Tab (Upcoming vs Past)
       const eventDate = evt.date || (evt.startsAt ? evt.startsAt.split('T')[0] : '');
+      const regDeadline = evt.registrationDeadline ? evt.registrationDeadline.split('T')[0] : '';
       let matchesTimeline = true;
       if (timelineTab === 'upcoming') {
-        matchesTimeline = eventDate >= todayStr && evt.status !== 'completed';
+        const isLiveOrUpcoming = (eventDate >= todayStr) || (regDeadline && regDeadline >= todayStr) || (!eventDate);
+        matchesTimeline = isLiveOrUpcoming && evt.status !== 'completed';
       } else if (timelineTab === 'past') {
-        matchesTimeline = eventDate < todayStr || evt.status === 'completed';
+        const isPast = Boolean(eventDate && eventDate < todayStr && (!regDeadline || regDeadline < todayStr));
+        matchesTimeline = isPast || evt.status === 'completed';
       }
 
       // 3. Date Filter (Today / This Week)

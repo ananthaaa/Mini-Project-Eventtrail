@@ -24,9 +24,12 @@ const StudentDashboard = () => {
   const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening';
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
+  // Events visible to students must be published
+  const publishedEvents = (events || []).filter(e => e.status === 'published' || !e.status);
+
   // Events the user has RSVP'd for
   const rsvpEventIds = Object.keys(userRsvps || {});
-  const userBookedEvents = (events || []).filter(e => rsvpEventIds.includes(e.id));
+  const userBookedEvents = publishedEvents.filter(e => rsvpEventIds.includes(e.id));
   
   // Find the next upcoming booked event
   const todayStr = new Date().toISOString().split('T')[0];
@@ -40,15 +43,15 @@ const StudentDashboard = () => {
   const upcomingRsvps = userBookedEvents.slice(0, 4);
 
   // Recommended: events not yet RSVP'd, with available seats
-  const recommended = (events || [])
+  const recommended = publishedEvents
     .filter(e => !rsvpEventIds.includes(e.id))
     .slice(0, 4);
 
   const quickStats = [
     { label: 'My RSVPs', value: rsvpEventIds.length, icon: Ticket, bg: 'mint' },
-    { label: 'Events Live', value: (events || []).filter(e => e.seatsAvailable > 0).length, icon: TrendingUp, bg: 'peach' },
+    { label: 'Events Live', value: publishedEvents.filter(e => e.seatsAvailable > 0).length, icon: TrendingUp, bg: 'peach' },
     { label: 'Active Clubs', value: '50+', icon: Users, bg: 'yellow' },
-    { label: 'This Week', value: (events || []).slice(0, 3).length, icon: Calendar, bg: 'white' },
+    { label: 'This Week', value: publishedEvents.slice(0, 3).length, icon: Calendar, bg: 'white' },
   ];
 
   return (
@@ -237,7 +240,7 @@ const StudentDashboard = () => {
               </Marker>
 
               {/* Interactive Live Event Pins */}
-              {(events || []).filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
+              publishedEvents.filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
                 const venue = (venues || []).find(v => v.id === evt.venueId) || {};
                 const lat = Number(evt.locationDetails?.entranceLat || evt.lat || (venue.outdoorCoordinates ? venue.outdoorCoordinates[0] : venue.lat));
                 const lng = Number(evt.locationDetails?.entranceLng || evt.lng || (venue.outdoorCoordinates ? venue.outdoorCoordinates[1] : venue.lng));

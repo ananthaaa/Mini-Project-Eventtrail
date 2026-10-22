@@ -65,7 +65,13 @@ export const fetchEvents = async (params = {}, options = {}) => {
     if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
   } catch (_) {}
 
-  const urlParams = new URLSearchParams(params).toString();
+  // Request all events from API so client-side status overrides (approvals, local creations)
+  // are received and authoritatively applied before role-based presentation filtering
+  const queryParams = { ...params };
+  if (!queryParams.status && params.admin !== 'false') {
+    queryParams.status = 'all';
+  }
+  const urlParams = new URLSearchParams(queryParams).toString();
   const endpoint = urlParams ? `/events?${urlParams}` : '/events';
   
   let data = [];
@@ -129,6 +135,12 @@ export const fetchEvents = async (params = {}, options = {}) => {
     }
   } catch (_) {}
 
+  // If caller is student/public discovery (not admin and not explicit status=all),
+  // strictly filter for published events
+  if (params.admin !== 'true' && params.status !== 'all') {
+    data = Array.isArray(data) ? data.filter(e => e.status === 'published') : [];
+  }
+
   return Array.isArray(data) ? data : [];
 };
 
@@ -165,13 +177,15 @@ export const fetchEventById = async (id, options = {}) => {
     const evt = await fetchFromApi(`/events/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
     return applyOverrides(evt);
   } catch (err) {
-    if (err.status === 404) throw err;
+    try {
+      const all = await fetchEvents({ status: 'all', admin: 'true' });
+      const found = all.find(e => e.id === id);
+      if (found) return applyOverrides(found);
+    } catch (_) {}
     try {
       const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
       const found = localEvents.find(e => e.id === id);
-      if (found) {
-        return applyOverrides(found);
-      }
+      if (found) return applyOverrides(found);
     } catch (_) {}
     throw err;
   }
