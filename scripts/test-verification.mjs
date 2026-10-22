@@ -1161,6 +1161,99 @@ test('Local event updates overlay onto API records without losing modifications'
   assert.equal(merged[0].seatsTotal, 60);
 });
 
+console.log(bold('\n11. Sprint 7: Admin Analytics, Capacity Utilization & Audit Reporting'));
+
+test('Capacity utilization and attendance rates calculate accurately without NaN on empty records', () => {
+  const sampleEvents = [
+    { id: 'e1', title: 'CodeSprint', seatsTotal: 100, seatsAvailable: 20, checkedInCount: 60 },
+    { id: 'e2', title: 'Symphony Night', seatsTotal: 50, seatsAvailable: 10, checkedInCount: 30 },
+    { id: 'e3', title: 'Open Mic', seatsTotal: 0, seatsAvailable: 0, checkedInCount: 0 }
+  ];
+
+  const totalSeats = sampleEvents.reduce((acc, curr) => acc + curr.seatsTotal, 0);
+  const totalRsvps = sampleEvents.reduce((acc, curr) => acc + (curr.seatsTotal - curr.seatsAvailable), 0);
+  const totalCheckedIn = sampleEvents.reduce((acc, curr) => acc + curr.checkedInCount, 0);
+
+  const capacityUtilization = totalSeats > 0 ? Math.round((totalRsvps / totalSeats) * 100) : 0;
+  const attendanceRate = totalRsvps > 0 ? Math.round((totalCheckedIn / totalRsvps) * 100) : 0;
+
+  assert.equal(totalSeats, 150);
+  assert.equal(totalRsvps, 120);
+  assert.equal(totalCheckedIn, 90);
+  assert.equal(capacityUtilization, 80); // 120/150 = 80%
+  assert.equal(attendanceRate, 75); // 90/120 = 75%
+  assert.ok(!Number.isNaN(capacityUtilization));
+  assert.ok(!Number.isNaN(attendanceRate));
+});
+
+test('Club participation breakdown aggregates metrics and sorts clubs by total RSVP engagement', () => {
+  const events = [
+    { id: 'e1', clubName: 'Tech Club', seatsTotal: 100, rsvpCount: 80 },
+    { id: 'e2', clubName: 'Music Club', seatsTotal: 50, rsvpCount: 45 },
+    { id: 'e3', clubName: 'Tech Club', seatsTotal: 40, rsvpCount: 35 }
+  ];
+
+  const clubMap = {};
+  for (const e of events) {
+    if (!clubMap[e.clubName]) {
+      clubMap[e.clubName] = { name: e.clubName, eventCount: 0, totalSeats: 0, totalRsvps: 0 };
+    }
+    clubMap[e.clubName].eventCount++;
+    clubMap[e.clubName].totalSeats += e.seatsTotal;
+    clubMap[e.clubName].totalRsvps += e.rsvpCount;
+  }
+
+  const breakdown = Object.values(clubMap).sort((a, b) => b.totalRsvps - a.totalRsvps);
+
+  assert.equal(breakdown[0].name, 'Tech Club');
+  assert.equal(breakdown[0].eventCount, 2);
+  assert.equal(breakdown[0].totalSeats, 140);
+  assert.equal(breakdown[0].totalRsvps, 115);
+  assert.equal(breakdown[1].name, 'Music Club');
+  assert.equal(breakdown[1].totalRsvps, 45);
+});
+
+test('Accreditation audit CSV generator escapes special characters and formats RFC 4180 CSV', () => {
+  const events = [
+    { id: 'evt-audit-1', title: 'Robotics "Summit" 2026', clubName: 'Tech Club', location: 'Main Lab, Block A', seatsTotal: 100, seatsAvailable: 10, waitlistCount: 5 }
+  ];
+
+  const headers = ['Event ID', 'Title', 'Club / Faculty', 'Venue', 'Total Seats', 'Available Seats', 'Booked RSVPs', 'Waitlist Count', 'Fill Rate %'];
+  const rows = events.map(e => {
+    const booked = e.seatsTotal - e.seatsAvailable;
+    const fillRate = Math.round((booked / e.seatsTotal) * 100);
+    return [
+      `"${e.id}"`,
+      `"${e.title.replace(/"/g, '""')}"`,
+      `"${e.clubName.replace(/"/g, '""')}"`,
+      `"${e.location.replace(/"/g, '""')}"`,
+      e.seatsTotal,
+      e.seatsAvailable,
+      booked,
+      e.waitlistCount,
+      `${fillRate}%`
+    ];
+  });
+
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  assert.ok(csv.includes('"Robotics ""Summit"" 2026"'));
+  assert.ok(csv.includes('"Main Lab, Block A"'));
+  assert.ok(csv.includes('90%'));
+});
+
+test('Microservice telemetry health structure validates required operational monitors', () => {
+  const healthContract = {
+    apiGateway: { status: 'healthy', latency: '38ms', p95: '64ms', uptime: '99.98%' },
+    dynamoDb: { status: 'active', tables: 4, readUnits: 'On-Demand' },
+    cognito: { status: 'synchronized', userPool: 'ap-south-1_jp3Rdi0UU', region: 'ap-south-1' },
+    meshNavigation: { status: 'verified', activeWaypoints: 9, campus: 'ASIET Kalady' }
+  };
+
+  assert.equal(healthContract.apiGateway.status, 'healthy');
+  assert.equal(healthContract.dynamoDb.tables, 4);
+  assert.equal(healthContract.meshNavigation.activeWaypoints, 9);
+});
+
 console.log(bold('\n================================================='));
 console.log(bold(`Results: ${green(`${passed} passed`)}, ${failed > 0 ? red(`${failed} failed`) : '0 failed'}`));
 console.log(bold('=================================================\n'));

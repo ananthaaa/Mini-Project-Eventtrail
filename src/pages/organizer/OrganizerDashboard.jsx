@@ -5,7 +5,7 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { RoleContext } from '../../context/RoleContext';
-import { fetchEvents, updateEvent, deleteEvent, fetchClubById } from '../../services/apiService';
+import { fetchEvents, updateEvent, deleteEvent, fetchClubById, exportAuditReportCsv } from '../../services/apiService';
 import {
   Calendar,
   Users,
@@ -19,7 +19,9 @@ import {
   Send,
   Trash2,
   RefreshCw,
-  Info
+  Info,
+  Download,
+  BarChart3
 } from 'lucide-react';
 
 const OrganizerDashboard = () => {
@@ -95,6 +97,17 @@ const OrganizerDashboard = () => {
   const needsChangesCount = events.filter(e => e.status === 'needs_changes').length;
   const publishedCount = events.filter(e => e.status === 'published').length;
 
+  const totalClubSeats = events.reduce((acc, curr) => acc + (Number(curr.seatsTotal) || 0), 0);
+  const totalClubRsvps = events.reduce((acc, curr) => {
+    if (typeof curr.rsvpCount === 'number') return acc + curr.rsvpCount;
+    if (typeof curr.seatsTotal === 'number' && typeof curr.seatsAvailable === 'number') {
+      return acc + Math.max(0, curr.seatsTotal - curr.seatsAvailable);
+    }
+    return acc;
+  }, 0);
+  const totalClubWaitlist = events.reduce((acc, curr) => acc + (Number(curr.waitlistCount) || 0), 0);
+  const clubFillRate = totalClubSeats > 0 ? Math.round((totalClubRsvps / totalClubSeats) * 100) : 0;
+
   const filteredEvents = events.filter(evt => {
     if (activeTab === 'all') return true;
     return evt.status === activeTab;
@@ -159,21 +172,35 @@ const OrganizerDashboard = () => {
       {/* Title Header */}
       <div className="mb-8 text-left border-b-3 border-black pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 select-none">
         <div>
-          <Badge variant="yellow" className="mb-3">
-            {clubInfo?.name || currentUser?.clubName || 'Club Organizer Portal'}
-          </Badge>
+          <div className="flex items-center gap-2 mb-3">
+            <Badge variant="yellow">
+              {clubInfo?.name || currentUser?.clubName || 'Club Organizer Portal'}
+            </Badge>
+            <Badge variant="mint" className="text-[10px] font-mono">
+              Sprint 7 Active
+            </Badge>
+          </div>
           <h1 className="font-display font-black text-4xl md:text-5xl uppercase tracking-tight">
             Organizer Dashboard
           </h1>
           <p className="text-sm font-bold text-black/60 mt-2 uppercase tracking-wider">
-            Plan club events, review feedback, and manage campus rosters
+            Plan club events, track capacity fill rates, and manage campus rosters
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={() => exportAuditReportCsv(events)}
+            disabled={events.length === 0}
+            className="text-xs font-black uppercase tracking-wider text-black bg-pastel-mint hover:bg-emerald-300 border-3 border-black py-2.5 px-3.5 transition-all shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center gap-1.5 disabled:opacity-50"
+            title="Export club events and attendance report (CSV)"
+          >
+            <Download size={14} />
+            Export Club CSV
+          </button>
           <button
             onClick={loadData}
             disabled={isLoading}
-            className="text-xs font-black uppercase tracking-wider text-black bg-white hover:bg-pastel-yellow border-3 border-black py-2.5 px-4 transition-all shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center gap-1.5"
+            className="text-xs font-black uppercase tracking-wider text-black bg-white hover:bg-pastel-yellow border-3 border-black py-2.5 px-3.5 transition-all shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center gap-1.5"
           >
             <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
             Refresh
@@ -181,16 +208,16 @@ const OrganizerDashboard = () => {
           <Button
             onClick={() => navigate('/organizer/events/new')}
             variant="primary"
-            className="py-2.5 px-5 bg-pastel-mint border-3 border-black shadow-[3px_3px_0px_0px_#000]"
+            className="py-2.5 px-4 bg-pastel-mint border-3 border-black shadow-[3px_3px_0px_0px_#000] text-xs"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             Create Event
           </Button>
         </div>
       </div>
 
       {/* Governance Explanation Alert */}
-      <div className="mb-8 bg-white border-3 border-black p-4 neo-shadow flex items-start gap-3">
+      <div className="mb-8 bg-white border-3 border-black p-4 neo-shadow flex items-start gap-3 text-left">
         <Info size={20} className="text-black shrink-0 mt-0.5" />
         <div className="text-xs font-bold text-black/80 space-y-1">
           <p className="font-black uppercase text-black">
@@ -203,41 +230,74 @@ const OrganizerDashboard = () => {
       </div>
 
       {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 select-none">
-        <Card variant="white" shadowSize="medium" className="p-5">
-          <span className="text-[10px] font-black uppercase tracking-wider text-black/50 block mb-1">
-            Total Events
-          </span>
-          <span className="font-display font-black text-3xl text-black">
-            {events.length}
-          </span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 select-none text-left">
+        <Card variant="white" shadowSize="medium" className="p-5 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-black/50 block mb-1">
+              Total Club Sessions
+            </span>
+            <span className="font-display font-black text-3xl text-black">
+              {events.length}
+            </span>
+          </div>
+          <div className="mt-2 text-[10px] font-bold text-black/50 uppercase">
+            {publishedCount} Published
+          </div>
         </Card>
 
-        <Card variant="yellow" shadowSize="medium" className="p-5">
-          <span className="text-[10px] font-black uppercase tracking-wider text-black/60 block mb-1">
-            Pending Review
-          </span>
-          <span className="font-display font-black text-3xl text-black">
-            {pendingCount}
-          </span>
+        <Card variant="white" shadowSize="medium" className="p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-black/60">
+                Claimed RSVPs
+              </span>
+              <span className="text-[10px] font-mono font-black text-emerald-700 bg-pastel-mint px-1 border border-black">
+                {clubFillRate}%
+              </span>
+            </div>
+            <span className="font-display font-black text-3xl text-black">
+              {totalClubRsvps}
+            </span>
+          </div>
+          <div className="mt-2">
+            <div className="w-full bg-neutral-200 h-1.5 border border-black overflow-hidden">
+              <div 
+                className="bg-emerald-400 h-full" 
+                style={{ width: `${Math.min(100, clubFillRate)}%` }}
+              ></div>
+            </div>
+            <span className="text-[9px] font-bold text-black/50 mt-1 block uppercase">
+              / {totalClubSeats} Total Seats
+            </span>
+          </div>
         </Card>
 
-        <Card variant="peach" shadowSize="medium" className="p-5">
-          <span className="text-[10px] font-black uppercase tracking-wider text-black/60 block mb-1">
-            Needs Revisions
-          </span>
-          <span className="font-display font-black text-3xl text-black">
-            {needsChangesCount}
-          </span>
+        <Card variant="yellow" shadowSize="medium" className="p-5 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-black/60 block mb-1">
+              Waitlist Queue
+            </span>
+            <span className="font-display font-black text-3xl text-black">
+              {totalClubWaitlist}
+            </span>
+          </div>
+          <div className="mt-2 text-[10px] font-bold text-black/60 uppercase">
+            Awaiting Seats
+          </div>
         </Card>
 
-        <Card variant="mint" shadowSize="medium" className="p-5">
-          <span className="text-[10px] font-black uppercase tracking-wider text-black/60 block mb-1">
-            Published & Live
-          </span>
-          <span className="font-display font-black text-3xl text-black">
-            {publishedCount}
-          </span>
+        <Card variant="peach" shadowSize="medium" className="p-5 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-wider text-black/60 block mb-1">
+              Pending Admin Review
+            </span>
+            <span className="font-display font-black text-3xl text-black">
+              {pendingCount}
+            </span>
+          </div>
+          <div className="mt-2 text-[10px] font-bold text-black/60 uppercase">
+            {needsChangesCount > 0 ? `${needsChangesCount} Needs Changes` : 'In Queue'}
+          </div>
         </Card>
       </div>
 
