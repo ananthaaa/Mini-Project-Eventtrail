@@ -74,20 +74,24 @@ const OrganizerEventForm = () => {
       })
       .catch(err => console.warn('Could not fetch venues:', err));
 
-    if (clubId) {
-      fetchClubById(clubId)
-        .then(club => setClubDetails(club))
-        .catch(err => console.warn('Could not fetch club info:', err));
-    } else {
-      fetchClubs()
-        .then(clubs => {
-          if (Array.isArray(clubs) && clubs.length > 0) {
-            setClubDetails(clubs[0]);
+    const activeCid = clubId || currentUser?.clubId;
+    if (activeCid) {
+      fetchClubById(activeCid)
+        .then(club => {
+          if (club) setClubDetails(club);
+          else if (currentUser?.clubName) {
+            setClubDetails({ id: activeCid, name: currentUser.clubName });
           }
         })
-        .catch(err => console.warn('Could not fetch clubs fallback:', err));
+        .catch(() => {
+          if (currentUser?.clubName) {
+            setClubDetails({ id: activeCid, name: currentUser.clubName });
+          }
+        });
+    } else if (currentUser?.clubName) {
+      setClubDetails({ id: currentUser?.id || 'club-custom', name: currentUser.clubName });
     }
-  }, [clubId]);
+  }, [clubId, currentUser]);
 
   // Load existing event data if editing
   useEffect(() => {
@@ -195,14 +199,17 @@ const OrganizerEventForm = () => {
 
     const selectedVenue = venues.find(v => v.id === venueId);
     const parsedSeats = parseInt(seatsTotal, 10) || 50;
-    const activeClubId = clubId || clubDetails?.id || currentUser?.clubId || '87e5b0ed-853e-4ee8-acf6-846f77abd19d';
+    const activeClubId = clubId || clubDetails?.id || currentUser?.clubId || (currentUser?.id ? `club_${currentUser.id}` : 'club-custom');
+    const activeClubName = clubDetails?.name || currentUser?.clubName || currentUser?.name || 'Campus Club';
 
     const payload = {
       title: title.trim(),
       coverImage: coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop",
       organizerId: activeClubId,
       clubId: activeClubId,
-      clubName: clubDetails?.name || 'Sports Club',
+      clubName: activeClubName,
+      organizer: activeClubName,
+      organizerEmail: currentUser?.email || '',
       date,
       time,
       category,
@@ -276,7 +283,7 @@ const OrganizerEventForm = () => {
           </Link>
           <div className="flex items-center gap-3">
             <Badge variant="yellow">
-              {clubDetails?.name || 'Club Organizer'}
+              {clubDetails?.name || currentUser?.clubName || 'Club Organizer'}
             </Badge>
             {isEditMode && (
               <Badge variant={existingStatus === 'published' ? 'mint' : 'peach'}>

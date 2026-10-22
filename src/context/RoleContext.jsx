@@ -38,6 +38,25 @@ function getTabRoleFromUrl() {
   return 'student';
 }
 
+function getStoredUserForRole(targetRole) {
+  try {
+    const raw = localStorage.getItem('cp_user');
+    if (!raw) return null;
+    const stored = JSON.parse(raw);
+    if (!stored || typeof stored !== 'object') return null;
+
+    // If target is club_admin and stored has role 'club_admin' or has a clubId, it's valid
+    if (targetRole === 'club_admin') {
+      if (stored.role === 'club_admin' || stored.clubId) {
+        return stored;
+      }
+    } else if (stored.role === targetRole) {
+      return stored;
+    }
+  } catch (_) {}
+  return null;
+}
+
 export const RoleProvider = ({ children }) => {
   const [currentRole, setCurrentRole] = useState(() => {
     return getTabRoleFromUrl();
@@ -46,28 +65,27 @@ export const RoleProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [currentUser, setCurrentUser] = useState(() => {
     const role = getTabRoleFromUrl();
-    let preservedToken = null;
-    try {
-      const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
-      preservedToken = stored.token;
-    } catch (_) {}
+    const stored = getStoredUserForRole(role);
     const profile = ROLE_PROFILES[role] || ROLE_PROFILES.student;
-    return { ...profile, token: preservedToken || profile.token };
+    if (stored) {
+      return { ...profile, ...stored, role };
+    }
+    return profile;
   });
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Synchronize role whenever URL changes in this tab
+  // Synchronize role whenever URL changes in this tab without erasing club-specific organizer context
   useEffect(() => {
     const handleUrlChange = () => {
       const urlRole = getTabRoleFromUrl();
       setCurrentRole(urlRole);
-      let preservedToken = null;
-      try {
-        const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
-        preservedToken = stored.token;
-      } catch (_) {}
+      const stored = getStoredUserForRole(urlRole);
       const profile = ROLE_PROFILES[urlRole] || ROLE_PROFILES.student;
-      setCurrentUser({ ...profile, token: preservedToken || profile.token });
+      if (stored) {
+        setCurrentUser({ ...profile, ...stored, role: urlRole });
+      } else {
+        setCurrentUser(profile);
+      }
     };
 
     window.addEventListener('hashchange', handleUrlChange);
@@ -84,17 +102,11 @@ export const RoleProvider = ({ children }) => {
   const switchRole = useCallback((newRole) => {
     const roleKey = newRole === 'organizer' ? 'club_admin' : newRole;
     const baseProfile = ROLE_PROFILES[roleKey] || ROLE_PROFILES.student;
+    const stored = getStoredUserForRole(roleKey);
 
-    let preservedToken = null;
-    try {
-      const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
-      preservedToken = stored.token;
-    } catch (_) {}
-
-    const updatedUser = {
-      ...baseProfile,
-      token: preservedToken || baseProfile.token,
-    };
+    const updatedUser = stored
+      ? { ...baseProfile, ...stored, role: roleKey }
+      : { ...baseProfile };
 
     setCurrentRole(roleKey);
     setCurrentUser(updatedUser);
@@ -110,13 +122,16 @@ export const RoleProvider = ({ children }) => {
       const baseProfile = ROLE_PROFILES[urlRole] || ROLE_PROFILES.student;
       const session = await authService.getCurrentSession();
       if (session && session.isValid) {
+        const stored = getStoredUserForRole(urlRole);
         const userData = {
           ...baseProfile,
+          ...(stored || {}),
           id: session.sub || session.email,
           email: session.email || baseProfile.email,
           name: session.name || baseProfile.name,
           role: urlRole,
-          clubId: session.clubId || baseProfile.clubId,
+          clubId: session.clubId || stored?.clubId || baseProfile.clubId,
+          clubName: session.clubName || stored?.clubName || baseProfile.clubName || '',
           avatar: session.avatar || baseProfile.avatar,
           token: session.idToken,
         };
@@ -124,21 +139,22 @@ export const RoleProvider = ({ children }) => {
         setIsLoggedIn(true);
         setCurrentUser(userData);
       } else {
-        let preservedToken = null;
-        try {
-          const stored = JSON.parse(localStorage.getItem('cp_user') || '{}');
-          preservedToken = stored.token;
-        } catch (_) {}
+        const stored = getStoredUserForRole(urlRole);
         setCurrentRole(urlRole);
-        setCurrentUser({ ...baseProfile, token: preservedToken || baseProfile.token });
+        if (stored) {
+          setCurrentUser({ ...baseProfile, ...stored, role: urlRole });
+        } else {
+          setCurrentUser(baseProfile);
+        }
         setIsLoggedIn(true);
       }
     } catch (err) {
       console.warn('Session check fallback:', err.message);
       const urlRole = getTabRoleFromUrl();
+      const stored = getStoredUserForRole(urlRole);
       const profile = ROLE_PROFILES[urlRole] || ROLE_PROFILES.student;
       setCurrentRole(urlRole);
-      setCurrentUser(profile);
+      setCurrentUser(stored ? { ...profile, ...stored, role: urlRole } : profile);
       setIsLoggedIn(true);
     } finally {
       setAuthLoading(false);
@@ -159,12 +175,22 @@ export const RoleProvider = ({ children }) => {
         return res; // Return challenge directly so UI can prompt organizer to set their new password
       }
       const session = res;
+      let orgClubName = session.clubName || session['custom:club_name'] || '';
+      if (!orgClubName && session.clubId) {
+        try {
+          const savedOrganizers = JSON.parse(localStorage.getItem('cp_organizers') || '[]');
+          const matched = savedOrganizers.find(o => o.email?.toLowerCase() === email?.trim().toLowerCase());
+          if (matched?.clubName) orgClubName = matched.clubName;
+        } catch (_) {}
+      }
+
       const userData = {
         id: session.sub || session.email,
         email: session.email,
         name: session.name,
         role: session.role,
         clubId: session.clubId,
+        clubName: orgClubName,
         avatar: session.avatar,
         token: session.idToken,
       };
@@ -200,6 +226,7 @@ export const RoleProvider = ({ children }) => {
             name: matched.name,
             role: 'club_admin',
             clubId: matched.clubId,
+            clubName: matched.clubName || '',
             avatar: '/images/avatars/male1.jpg',
             token: 'bearer-org-session',
           };
@@ -237,6 +264,7 @@ export const RoleProvider = ({ children }) => {
           name: matched.name,
           role: 'club_admin',
           clubId: matched.clubId,
+          clubName: matched.clubName || '',
           avatar: '/images/avatars/male1.jpg',
           token: 'bearer-org-session',
         };
@@ -335,8 +363,7 @@ export const RoleProvider = ({ children }) => {
     }
     localStorage.removeItem('cp_logged_in');
     localStorage.removeItem('cp_user');
-    localStorage.removeItem('cp_events');
-    localStorage.removeItem('cp_venues');
+    localStorage.removeItem('cp_role');
     setIsLoggedIn(false);
     setCurrentUser(null);
     setCurrentRole('student');

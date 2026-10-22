@@ -84,6 +84,7 @@ const AdminClubList = () => {
     try {
       const res = await createOrganizer({
         clubId: selectedClub.id,
+        clubName: selectedClub.name,
         name: organizerName.trim(),
         email: organizerEmail.trim(),
         temporaryPassword: tempPassword

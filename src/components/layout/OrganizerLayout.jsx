@@ -90,7 +90,7 @@ const OrganizerLayout = () => {
             </span>
             <div className="font-display font-black text-sm uppercase truncate text-black flex items-center gap-1.5 mt-0.5">
               <Sparkles size={14} className="text-yellow-600 shrink-0" />
-              <span className="truncate">{clubDetails?.name || currentUser?.clubId || 'Assigned Club'}</span>
+              <span className="truncate">{clubDetails?.name || currentUser?.clubName || currentUser?.clubId || 'Assigned Club'}</span>
             </div>
           </div>
         )}

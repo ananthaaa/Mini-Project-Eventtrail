@@ -38,13 +38,43 @@ const OrganizerRoster = () => {
     fetchEvents({ status: 'all' })
       .then(data => {
         if (Array.isArray(data)) {
-          const clubEvts = data.filter(e =>
-            e.organizerId === clubId || e.organizerId === currentUser?.id || e.organizerId === currentUser?.email
-          );
-          const list = clubEvts.length > 0 ? clubEvts : data;
-          setEvents(list);
-          if (!selectedEventId && list.length > 0) {
-            setSelectedEventId(list[0].id);
+          const targetClubId = clubId || currentUser?.clubId;
+          const targetEmail = currentUser?.email?.trim().toLowerCase();
+          const targetUserId = currentUser?.id;
+          const targetClubName = (currentUser?.clubName || '')?.trim().toLowerCase();
+
+          const clubEvts = data.filter(evt => {
+            if (!evt) return false;
+            // 1. Direct Club ID match
+            if (targetClubId) {
+              if (evt.clubId && String(evt.clubId) === String(targetClubId)) return true;
+              if (evt.organizerId && String(evt.organizerId) === String(targetClubId)) return true;
+            }
+            // 2. Organizer / User ID match
+            if (targetUserId && evt.organizerId && String(evt.organizerId) === String(targetUserId)) {
+              return true;
+            }
+            // 3. Organizer Email match
+            if (targetEmail) {
+              if (evt.organizerEmail && evt.organizerEmail.trim().toLowerCase() === targetEmail) return true;
+              if (evt.organizerId && typeof evt.organizerId === 'string' && evt.organizerId.trim().toLowerCase() === targetEmail) return true;
+            }
+            // 4. Club Name match (case-insensitive)
+            if (targetClubName && targetClubName.length > 0) {
+              if (evt.clubName && typeof evt.clubName === 'string' && evt.clubName.trim().toLowerCase() === targetClubName) return true;
+              if (evt.organizer && typeof evt.organizer === 'string' && evt.organizer.trim().toLowerCase() === targetClubName) return true;
+            }
+            return false;
+          });
+
+          setEvents(clubEvts);
+          if (clubEvts.length > 0) {
+            if (!selectedEventId || !clubEvts.some(e => e.id === selectedEventId)) {
+              setSelectedEventId(clubEvts[0].id);
+            }
+          } else {
+            setSelectedEventId('');
+            setRsvps([]);
           }
         }
       })
@@ -184,17 +214,24 @@ const OrganizerRoster = () => {
           </label>
           <select
             value={selectedEventId}
+            disabled={events.length === 0}
             onChange={(e) => {
               setSelectedEventId(e.target.value);
-              navigate(`/organizer/events/${e.target.value}/roster`, { replace: true });
+              if (e.target.value) {
+                navigate(`/organizer/events/${e.target.value}/roster`, { replace: true });
+              }
             }}
-            className="w-full border-3 border-black p-3 font-bold text-sm bg-pastel-mint/20 outline-none focus:bg-pastel-yellow"
+            className="w-full border-3 border-black p-3 font-bold text-sm bg-pastel-mint/20 outline-none focus:bg-pastel-yellow disabled:bg-neutral-100 disabled:cursor-not-allowed"
           >
-            {events.map(evt => (
-              <option key={evt.id} value={evt.id}>
-                {evt.title} ({evt.date}) — [{evt.status.toUpperCase()}]
-              </option>
-            ))}
+            {events.length === 0 ? (
+              <option value="">No events created by this club yet</option>
+            ) : (
+              events.map(evt => (
+                <option key={evt.id} value={evt.id}>
+                  {evt.title} ({evt.date}) — [{evt.status.toUpperCase()}]
+                </option>
+              ))
+            )}
           </select>
 
           {currentEvent && (
@@ -264,11 +301,23 @@ const OrganizerRoster = () => {
       ) : filteredRsvps.length === 0 ? (
         <div className="bg-white border-3 border-black p-12 text-center neo-shadow">
           <p className="font-display font-black text-xl uppercase text-black mb-1">
-            No attendees found
+            {events.length === 0 ? 'No Club Events Found' : 'No attendees found'}
           </p>
-          <p className="text-xs font-bold text-black/60 uppercase tracking-wider">
-            {rsvps.length === 0 ? 'No students have RSVPed to this event yet.' : 'No records match your search query.'}
+          <p className="text-xs font-bold text-black/60 uppercase tracking-wider mb-4">
+            {events.length === 0
+              ? 'This club has not created any events yet. Create an event to begin managing attendee rosters.'
+              : rsvps.length === 0
+              ? 'No students have RSVPed to this event yet.'
+              : 'No records match your search query.'}
           </p>
+          {events.length === 0 && (
+            <Link
+              to="/organizer/events/new"
+              className="inline-flex items-center gap-1.5 py-2.5 px-5 bg-pastel-mint border-3 border-black font-display font-black text-xs uppercase shadow-[2px_2px_0px_0px_#000] hover:bg-emerald-300"
+            >
+              Create First Event
+            </Link>
+          )}
         </div>
       ) : (
         <div className="border-3 border-black bg-white neo-shadow overflow-x-auto text-left">

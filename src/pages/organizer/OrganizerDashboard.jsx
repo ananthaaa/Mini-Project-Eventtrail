@@ -45,12 +45,38 @@ const OrganizerDashboard = () => {
       ]);
 
       if (Array.isArray(eventsData)) {
-        // Filter to events associated with this club/organizer
-        const clubEvents = eventsData.filter(evt =>
-          evt.organizerId === clubId || evt.organizerId === currentUser?.id || evt.organizerId === currentUser?.email
-        );
-        // If no events matched explicitly yet user has clubId, show all events returned from authorizer
-        setEvents(clubEvents.length > 0 ? clubEvents : eventsData);
+        const targetClubId = clubId || currentUser?.clubId;
+        const targetEmail = currentUser?.email?.trim().toLowerCase();
+        const targetUserId = currentUser?.id;
+        const targetClubName = (clubData?.name || currentUser?.clubName || '')?.trim().toLowerCase();
+
+        // Strictly match events created for/by this club only
+        const clubEvents = eventsData.filter(evt => {
+          if (!evt) return false;
+          // 1. Direct Club ID match
+          if (targetClubId) {
+            if (evt.clubId && String(evt.clubId) === String(targetClubId)) return true;
+            if (evt.organizerId && String(evt.organizerId) === String(targetClubId)) return true;
+          }
+          // 2. Organizer / User ID match
+          if (targetUserId && evt.organizerId && String(evt.organizerId) === String(targetUserId)) {
+            return true;
+          }
+          // 3. Organizer Email match
+          if (targetEmail) {
+            if (evt.organizerEmail && evt.organizerEmail.trim().toLowerCase() === targetEmail) return true;
+            if (evt.organizerId && typeof evt.organizerId === 'string' && evt.organizerId.trim().toLowerCase() === targetEmail) return true;
+          }
+          // 4. Club Name match (case-insensitive)
+          if (targetClubName && targetClubName.length > 0) {
+            if (evt.clubName && typeof evt.clubName === 'string' && evt.clubName.trim().toLowerCase() === targetClubName) return true;
+            if (evt.organizer && typeof evt.organizer === 'string' && evt.organizer.trim().toLowerCase() === targetClubName) return true;
+          }
+          return false;
+        });
+
+        // Strictly show only this club's events; if 0 events, show empty list (never leak other clubs' events)
+        setEvents(clubEvents);
       } else {
         setEvents([]);
       }
@@ -130,7 +156,7 @@ const OrganizerDashboard = () => {
       <div className="mb-8 text-left border-b-3 border-black pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4 select-none">
         <div>
           <Badge variant="yellow" className="mb-3">
-            {clubInfo?.name || 'Club Organizer Portal'}
+            {clubInfo?.name || currentUser?.clubName || 'Club Organizer Portal'}
           </Badge>
           <h1 className="font-display font-black text-4xl md:text-5xl uppercase tracking-tight">
             Organizer Dashboard

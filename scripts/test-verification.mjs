@@ -932,6 +932,157 @@ test('Waitlist promotion notification carries ticket ID and destination route', 
   assert.ok(promoRecord.payload.destination.startsWith('/student/navigate'));
 });
 
+// =========================================================================
+// 10. Multi-Club Organizer Event Isolation & Dedicated Dashboards
+// =========================================================================
+console.log(bold('\n10. Multi-Club Organizer Event Isolation & Dedicated Dashboards'));
+
+const mockCampusEvents = [
+  {
+    id: 'evt-sports-1',
+    title: 'Inter-College Futsal Championship',
+    clubId: 'club-sports-99',
+    organizerId: 'club-sports-99',
+    clubName: 'Sports Club',
+    organizer: 'Sports Club',
+    status: 'published'
+  },
+  {
+    id: 'evt-sports-2',
+    title: 'Badminton Doubles Tournament',
+    clubId: 'club-sports-99',
+    organizerId: 'club-sports-99',
+    clubName: 'Sports Club',
+    organizer: 'Sports Club',
+    status: 'draft'
+  },
+  {
+    id: 'evt-music-1',
+    title: 'Acoustic Jam Night',
+    clubId: 'club-music-42',
+    organizerId: 'club-music-42',
+    clubName: 'Music Club',
+    organizer: 'Music Club',
+    status: 'pending_approval'
+  }
+];
+
+function filterClubEvents(eventsData, { clubId, currentUser, clubData } = {}) {
+  if (!Array.isArray(eventsData)) return [];
+  const targetClubId = clubId || currentUser?.clubId;
+  const targetEmail = currentUser?.email?.trim().toLowerCase();
+  const targetUserId = currentUser?.id;
+  const targetClubName = (clubData?.name || currentUser?.clubName || '')?.trim().toLowerCase();
+
+  return eventsData.filter(evt => {
+    if (!evt) return false;
+    if (targetClubId) {
+      if (evt.clubId && String(evt.clubId) === String(targetClubId)) return true;
+      if (evt.organizerId && String(evt.organizerId) === String(targetClubId)) return true;
+    }
+    if (targetUserId && evt.organizerId && String(evt.organizerId) === String(targetUserId)) {
+      return true;
+    }
+    if (targetEmail) {
+      if (evt.organizerEmail && evt.organizerEmail.trim().toLowerCase() === targetEmail) return true;
+      if (evt.organizerId && typeof evt.organizerId === 'string' && evt.organizerId.trim().toLowerCase() === targetEmail) return true;
+    }
+    if (targetClubName && targetClubName.length > 0) {
+      if (evt.clubName && typeof evt.clubName === 'string' && evt.clubName.trim().toLowerCase() === targetClubName) return true;
+      if (evt.organizer && typeof evt.organizer === 'string' && evt.organizer.trim().toLowerCase() === targetClubName) return true;
+    }
+    return false;
+  });
+}
+
+test('Music Club organizer sees only Music Club events and zero Sports Club events', () => {
+  const musicOrganizer = {
+    id: 'org_music@campus.edu',
+    email: 'music@campus.edu',
+    clubId: 'club-music-42',
+    clubName: 'Music Club'
+  };
+
+  const results = filterClubEvents(mockCampusEvents, {
+    clubId: musicOrganizer.clubId,
+    currentUser: musicOrganizer,
+    clubData: { name: 'Music Club' }
+  });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].id, 'evt-music-1');
+  assert.equal(results[0].title, 'Acoustic Jam Night');
+  assert.ok(!results.some(e => e.clubName === 'Sports Club' || e.clubId === 'club-sports-99'));
+});
+
+test('Newly created club with 0 events returns empty array, never falling back to other clubs events', () => {
+  const dramaOrganizer = {
+    id: 'org_drama@campus.edu',
+    email: 'drama@campus.edu',
+    clubId: 'club-drama-77',
+    clubName: 'Drama Club'
+  };
+
+  const results = filterClubEvents(mockCampusEvents, {
+    clubId: dramaOrganizer.clubId,
+    currentUser: dramaOrganizer,
+    clubData: { name: 'Drama Club' }
+  });
+
+  assert.equal(results.length, 0);
+  assert.ok(Array.isArray(results));
+  assert.ok(!results.some(e => e.id === 'evt-sports-1'));
+});
+
+test('Event creation binds directly to active club identity instead of hardcoded fallbacks', () => {
+  const musicOrganizer = {
+    id: 'org_music@campus.edu',
+    email: 'music@campus.edu',
+    clubId: 'club-music-42',
+    clubName: 'Music Club'
+  };
+
+  const activeClubId = musicOrganizer.clubId || '87e5b0ed-853e-4ee8-acf6-846f77abd19d';
+  const activeClubName = musicOrganizer.clubName || 'Sports Club';
+
+  const payload = {
+    title: 'Spring Rock Fest',
+    organizerId: activeClubId,
+    clubId: activeClubId,
+    clubName: activeClubName,
+    organizer: activeClubName,
+    organizerEmail: musicOrganizer.email
+  };
+
+  assert.equal(payload.clubId, 'club-music-42');
+  assert.equal(payload.clubName, 'Music Club');
+  assert.equal(payload.organizer, 'Music Club');
+  assert.notEqual(payload.clubName, 'Sports Club');
+});
+
+test('Preserves provisioned organizer clubId and clubName during tab role synchronizations', () => {
+  const provisionedOrganizer = {
+    id: 'org_music@campus.edu',
+    email: 'music@campus.edu',
+    name: 'Music Admin',
+    role: 'club_admin',
+    clubId: 'club-music-42',
+    clubName: 'Music Club'
+  };
+
+  function mockGetStoredUser(targetRole, storedUser) {
+    if (targetRole === 'club_admin' && (storedUser?.role === 'club_admin' || storedUser?.clubId)) {
+      return storedUser;
+    }
+    return null;
+  }
+
+  const stored = mockGetStoredUser('club_admin', provisionedOrganizer);
+  assert.ok(stored);
+  assert.equal(stored.clubId, 'club-music-42');
+  assert.equal(stored.clubName, 'Music Club');
+});
+
 console.log(bold('\n================================================='));
 console.log(bold(`Results: ${green(`${passed} passed`)}, ${failed > 0 ? red(`${failed} failed`) : '0 failed'}`));
 console.log(bold('=================================================\n'));

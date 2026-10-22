@@ -117,7 +117,24 @@ export const fetchClubs = async (options = {}) => {
     if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
   } catch (_) {}
 
-  return fetchFromApi('/clubs', { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  let clubs = [];
+  try {
+    clubs = await fetchFromApi('/clubs', { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  } catch (err) {
+    console.warn('API fetchClubs failed, reading local clubs:', err.message);
+  }
+
+  try {
+    const localClubs = JSON.parse(localStorage.getItem('cp_clubs') || '[]');
+    if (Array.isArray(localClubs) && localClubs.length > 0) {
+      const apiList = Array.isArray(clubs) ? clubs : [];
+      const apiIds = new Set(apiList.map(c => c.id));
+      const localOnly = localClubs.filter(c => !apiIds.has(c.id));
+      clubs = [...apiList, ...localOnly];
+    }
+  } catch (_) {}
+
+  return Array.isArray(clubs) ? clubs : [];
 };
 
 export const fetchClubById = async (id, options = {}) => {
@@ -127,14 +144,43 @@ export const fetchClubById = async (id, options = {}) => {
     if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
   } catch (_) {}
 
-  return fetchFromApi(`/clubs/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  try {
+    return await fetchFromApi(`/clubs/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  } catch (err) {
+    try {
+      const localClubs = JSON.parse(localStorage.getItem('cp_clubs') || '[]');
+      const found = localClubs.find(c => c.id === id);
+      if (found) return found;
+    } catch (_) {}
+    throw err;
+  }
 };
 
 export const createClub = async (clubData) => {
-  return fetchWithAuth('/clubs', {
-    method: 'POST',
-    body: JSON.stringify(clubData)
-  });
+  try {
+    const res = await fetchWithAuth('/clubs', {
+      method: 'POST',
+      body: JSON.stringify(clubData)
+    });
+    try {
+      const localClubs = JSON.parse(localStorage.getItem('cp_clubs') || '[]');
+      localClubs.push(res);
+      localStorage.setItem('cp_clubs', JSON.stringify(localClubs));
+    } catch (_) {}
+    return res;
+  } catch (err) {
+    const newClub = {
+      id: `club_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      ...clubData,
+      createdAt: new Date().toISOString()
+    };
+    try {
+      const localClubs = JSON.parse(localStorage.getItem('cp_clubs') || '[]');
+      localClubs.push(newClub);
+      localStorage.setItem('cp_clubs', JSON.stringify(localClubs));
+    } catch (_) {}
+    return newClub;
+  }
 };
 
 export const joinClub = async (id) => {
@@ -438,11 +484,11 @@ export const reviewEvent = async (eventId, { action, reviewComment = '' }) => {
 
 // --- Governance: Organizer Account Provisioning & Management ---
 
-export const createOrganizer = async ({ email, name, clubId, temporaryPassword }) => {
+export const createOrganizer = async ({ email, name, clubId, clubName, temporaryPassword }) => {
   try {
     return await fetchWithAuth('/admin/organizers', {
       method: 'POST',
-      body: JSON.stringify({ email, name, clubId, temporaryPassword })
+      body: JSON.stringify({ email, name, clubId, clubName, temporaryPassword })
     });
   } catch (err) {
     console.warn('[Governance] Backend organizer API not available or route unmapped, saving organizer locally:', err);
@@ -455,6 +501,7 @@ export const createOrganizer = async ({ email, name, clubId, temporaryPassword }
         email: email.trim(),
         name: name.trim(),
         clubId,
+        clubName: clubName || '',
         temporaryPassword,
         createdAt: new Date().toISOString()
       });
@@ -470,6 +517,7 @@ export const createOrganizer = async ({ email, name, clubId, temporaryPassword }
       email,
       name,
       clubId,
+      clubName: clubName || '',
       temporaryPassword,
       simulated: true
     };
