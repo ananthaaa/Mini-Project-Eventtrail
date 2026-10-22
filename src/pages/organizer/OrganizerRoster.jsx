@@ -43,7 +43,7 @@ const OrganizerRoster = () => {
           const targetUserId = currentUser?.id;
           const targetClubName = (currentUser?.clubName || '')?.trim().toLowerCase();
 
-          const clubEvts = data.filter(evt => {
+          let clubEvts = data.filter(evt => {
             if (!evt) return false;
             // 1. Direct Club ID match
             if (targetClubId) {
@@ -67,20 +67,31 @@ const OrganizerRoster = () => {
             return false;
           });
 
+          // If navigated directly to a specific event URL (e.g. /organizer/events/:id/roster),
+          // ensure that event is present in the list
+          if (id) {
+            const urlEvt = data.find(e => e.id === id);
+            if (urlEvt && !clubEvts.some(e => e.id === id)) {
+              clubEvts = [urlEvt, ...clubEvts];
+            }
+          }
+
           setEvents(clubEvts);
-          if (clubEvts.length > 0) {
+          if (id && clubEvts.some(e => e.id === id)) {
+            setSelectedEventId(id);
+          } else if (clubEvts.length > 0) {
             if (!selectedEventId || !clubEvts.some(e => e.id === selectedEventId)) {
               setSelectedEventId(clubEvts[0].id);
             }
           } else {
-            setSelectedEventId('');
+            setSelectedEventId(id || '');
             setRsvps([]);
           }
         }
       })
       .catch(err => console.error('Failed to load organizer events:', err))
       .finally(() => setIsLoadingEvents(false));
-  }, [clubId, currentUser, selectedEventId]);
+  }, [clubId, currentUser, id, selectedEventId]);
 
   // Load RSVPs for the selected event
   const loadRsvps = useCallback(async (eventId) => {
@@ -368,7 +379,10 @@ const OrganizerRoster = () => {
                           type="button"
                           onClick={async () => {
                             try {
-                              await checkInAttendee(selectedEventId, { checkInCode: rsvp.checkInCode || rsvp.id });
+                              await checkInAttendee(selectedEventId, { 
+                                checkInCode: rsvp.checkInCode, 
+                                ticketId: rsvp.ticketId || rsvp.id 
+                              });
                               await loadRsvps(selectedEventId);
                             } catch (err) {
                               alert(err.message);
