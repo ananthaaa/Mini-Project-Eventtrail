@@ -5,6 +5,7 @@ import PageShell from '../components/layout/PageShell';
 import { RoleContext } from '../context/RoleContext';
 import { RsvpContext } from '../context/RsvpContext';
 import { NotificationContext } from '../context/NotificationContext';
+import { NavModeContext } from '../context/NavModeContext';
 import { fetchSpeakers, fetchClubs, fetchEventById, fetchEvents } from '../services/apiService';
 import SeatMeter from '../components/ui/SeatMeter';
 import {
@@ -20,6 +21,7 @@ const EventDetail = () => {
   const activeUser = currentUser || user;
   const { userRsvps, submitRsvp, venues } = useContext(RsvpContext);
   const { addNotification } = useContext(NotificationContext);
+  const { startNavigation } = useContext(NavModeContext);
 
   const [event, setEvent] = React.useState(null);
   const [speakers, setSpeakers] = React.useState([]);
@@ -133,6 +135,14 @@ const EventDetail = () => {
   const targetNodeId = VENUE_TO_NODE[event.venueId] || 'entrance-cs-block';
   const targetBuilding = BUILDING_INFO[targetNodeId];
 
+  const handleNavigateOnCampus = () => {
+    if (!event) return;
+    if (startNavigation) {
+      startNavigation(event.id);
+    }
+    navigate(`/student/navigate?eventId=${event.id}`);
+  };
+
   const handleRsvpAction = async () => {
     if (userRsvp) {
       navigate(`/student/rsvp-confirmation/${event.id}`);
@@ -205,9 +215,9 @@ const EventDetail = () => {
                 <div className="flex items-center gap-2"><Clock size={18} strokeWidth={2.5} /><span>{event.time}</span></div>
                 <button
                   type="button"
-                  onClick={() => navigate(`/student/campus-map?dest=${targetNodeId}`)}
+                  onClick={handleNavigateOnCampus}
                   className="flex items-center gap-2 hover:underline cursor-pointer group text-left"
-                  title="View walking route on Campus Map"
+                  title="Navigate directly to this event on Campus Map"
                 >
                   <MapPin size={18} strokeWidth={2.5} className="group-hover:text-red-600 transition-colors shrink-0" />
                   <span>{currentVenue.name}</span>
@@ -304,16 +314,16 @@ const EventDetail = () => {
 
             <div className="space-y-2 pt-2">
               <button
-                onClick={() => navigate(`/student/campus-map?dest=${targetNodeId}`)}
-                className="w-full bg-accent-yellow border-3 border-black text-black font-black uppercase tracking-wider py-3 shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] active:translate-y-px transition-all flex items-center justify-center gap-2 text-xs"
+                onClick={handleNavigateOnCampus}
+                className="w-full bg-accent-yellow border-3 border-black text-black font-black uppercase tracking-wider py-3 shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] active:translate-y-px transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
               >
                 <Navigation className="w-4 h-4" strokeWidth={3} />
                 Navigate on Campus Map
               </button>
 
               <button
-                onClick={() => navigate('/student/navigate')}
-                className="w-full bg-white border-2 border-black text-black font-black uppercase tracking-wider py-2 shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-yellow transition-all flex items-center justify-center gap-2 text-xs"
+                onClick={handleNavigateOnCampus}
+                className="w-full bg-white border-2 border-black text-black font-black uppercase tracking-wider py-2 shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-yellow transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" strokeWidth={3} />
                 Indoor Step-by-Step Guide

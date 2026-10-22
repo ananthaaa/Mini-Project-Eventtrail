@@ -137,8 +137,8 @@ const StudentDashboard = () => {
                     View Ticket / Pass
                   </button>
                   <button
-                    onClick={() => navigate(`/student/navigate?venueId=${nextBookedEvent.venueId}`)}
-                    className="px-4 py-2.5 bg-[#FFEB3B] border-2 border-black font-black uppercase text-xs rounded-lg shadow-[3px_3px_0px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all flex items-center gap-2"
+                    onClick={() => navigate(`/student/navigate?eventId=${nextBookedEvent.id}&venueId=${nextBookedEvent.venueId}`)}
+                    className="px-4 py-2.5 bg-[#FFEB3B] border-2 border-black font-black uppercase text-xs rounded-lg shadow-[3px_3px_0px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all flex items-center gap-2 cursor-pointer"
                   >
                     <MapPin className="w-4 h-4" />
                     Campus Directions

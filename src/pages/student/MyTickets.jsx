@@ -172,11 +172,11 @@ export default function MyTickets() {
                   </Link>
 
                   <Link
-                    to={`/student/campus-map?dest=${evt.venueId || 'campus-main'}`}
+                    to={`/student/navigate?eventId=${evt.id}`}
                     className="py-2 px-3 bg-white border-2 border-black font-black uppercase text-xs tracking-wider shadow-[2px_2px_0px_0px_#000] hover:bg-pastel-peach transition-all flex items-center justify-center gap-1"
                   >
                     <Navigation size={13} />
-                    Map
+                    Navigate
                   </Link>
                 </div>
               </div>

@@ -98,8 +98,6 @@ exports.handler = async (event) => {
       };
     }
 
-    const body = JSON.parse(event.body || '{}');
-
     // Supported fields for update
     const supportedFields = [
       'title', 'date', 'time', 'location', 'venueId', 'locationDetails',

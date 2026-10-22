@@ -28,3 +28,10 @@ dist-ssr
 *.zip
 *-extracted/
 
+# Agent / local tooling
+.agents
+.bob
+skills-lock.json
+.agent/plugins/
+.agent/skills/mapbox*
+

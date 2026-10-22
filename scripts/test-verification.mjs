@@ -620,6 +620,259 @@ test('First-time login challenge enforces permanent password establishment', () 
   assert.equal(res.isFirstTimeComplete, true);
 });
 
+// =========================================================================
+// 10. Live GPS Navigation, Path Snapping, and Arrival Verification
+// =========================================================================
+console.log(bold('10. Live GPS Navigation, Path Snapping, and Arrival Verification'));
+
+import {
+  isWithinCampusBounds,
+  distanceMeters,
+  projectPointToSegment,
+  getClosestConnectedNode,
+  matchGpsToCampusPath,
+  detectRouteDeviation,
+  checkArrivalDetection,
+  resolveDestination,
+} from '../src/utils/gpsPathMatcher.js';
+import { buildAdjacencyList, findPathAStar } from '../src/utils/pathfinding.js';
+import fs from 'node:fs';
+
+const roadGraph = JSON.parse(fs.readFileSync('./src/data/graph.json', 'utf8'));
+const campusAdjacency = buildAdjacencyList(roadGraph.edges);
+
+test('Campus boundary check admits ASIET campus and rejects distant GPS readings', () => {
+  // ASIET campus center
+  assert.equal(isWithinCampusBounds(10.1780, 76.4302), true);
+  // Main gate
+  assert.equal(isWithinCampusBounds(10.1778, 76.4291), true);
+  // Outside: Kochi City
+  assert.equal(isWithinCampusBounds(9.9312, 76.2673), false);
+  // Outside: New Delhi
+  assert.equal(isWithinCampusBounds(28.6139, 77.2090), false);
+});
+
+test('Connected node lookup strictly filters isolated and disconnected nodes', () => {
+  // "isolated-node" in graph.json has no edges
+  const closest = getClosestConnectedNode(10.185, 76.435, roadGraph.nodes, campusAdjacency);
+  assert.notEqual(closest, 'isolated-node');
+  assert.ok(campusAdjacency[closest] && campusAdjacency[closest].length > 0);
+});
+
+test('Inaccurate GPS near library snaps to the nearest valid campus walkway segment', () => {
+  // GPS point with ±12m noise near Central Library
+  const rawReading = { lat: 10.17782, lng: 76.42982, accuracy: 12 };
+  const matched = matchGpsToCampusPath(
+    rawReading,
+    { nodes: roadGraph.nodes, edges: roadGraph.edges, adjacency: campusAdjacency }
+  );
+
+  assert.equal(matched.isSnapped, true);
+  assert.equal(matched.status, 'matched');
+  assert.ok(matched.distanceToPath < 10, 'Must be within 10 meters of path segment');
+  assert.ok(matched.estimatedLat > 10.17 && matched.estimatedLng > 76.42);
+  assert.ok(matched.fromNode && matched.toNode, 'Must identify segment endpoints');
+});
+
+test('Far-off or out-of-campus GPS readings are rejected rather than silently snapped', () => {
+  // Out of campus
+  const outOfCampus = matchGpsToCampusPath(
+    { lat: 10.0150, lng: 76.3400, accuracy: 15 },
+    { nodes: roadGraph.nodes, edges: roadGraph.edges, adjacency: campusAdjacency }
+  );
+  assert.equal(outOfCampus.isSnapped, false);
+  assert.equal(outOfCampus.status, 'out_of_campus');
+
+  // Inside campus but in an unmapped building interior > 55m from any path
+  const offPath = matchGpsToCampusPath(
+    { lat: 10.1820, lng: 76.4260, accuracy: 10 },
+    { nodes: roadGraph.nodes, edges: roadGraph.edges, adjacency: campusAdjacency }
+  );
+  assert.equal(offPath.isSnapped, false);
+  assert.equal(offPath.status, 'off_path');
+});
+
+test('Anti-jumping hysteresis suppresses sudden path jumps caused by GPS multipath noise', () => {
+  const reading1 = { lat: 10.1778, lng: 76.4298, accuracy: 15, timestamp: 1000 };
+  const match1 = matchGpsToCampusPath(
+    reading1,
+    { nodes: roadGraph.nodes, edges: roadGraph.edges, adjacency: campusAdjacency }
+  );
+
+  // Unrealistic 65m jump in 1 second with poor accuracy
+  const noisyJump = { lat: 10.1784, lng: 76.4306, accuracy: 28, timestamp: 2000 };
+  const match2 = matchGpsToCampusPath(
+    noisyJump,
+    { nodes: roadGraph.nodes, edges: roadGraph.edges, adjacency: campusAdjacency },
+    { lastMatch: match1, consecutiveSwitchCount: 0 }
+  );
+
+  assert.equal(match2.status, 'smoothing', 'Must apply temporal smoothing instead of sudden jump');
+  assert.equal(match2.estimatedLat, match1.estimatedLat);
+});
+
+test('Route deviation detection triggers when student departs > 20m from recommended path', () => {
+  const routeLine = [
+    [76.42910, 10.17781],
+    [76.42980, 10.17784],
+    [76.43053, 10.17825],
+  ];
+
+  // Walking along path (3m off): no deviation
+  const onPathPos = { lat: 10.17782, lng: 76.42940 };
+  const onPathCheck = detectRouteDeviation(onPathPos, routeLine, 20);
+  assert.equal(onPathCheck.deviated, false);
+
+  // Walking away toward opposite quadrant (> 35m off): deviation detected
+  const deviatedPos = { lat: 10.17950, lng: 76.42940 };
+  const devCheck = detectRouteDeviation(deviatedPos, routeLine, 20);
+  assert.equal(devCheck.deviated, true);
+  assert.ok(devCheck.distanceToRoute > 20);
+});
+
+test('Arrival detection requires repeated reliable readings and rejects noisy hits', () => {
+  const destination = { lat: 10.17825, lng: 76.43053 };
+
+  // Reading 1: within 20m, good accuracy (10m) -> count = 1, isArrived = false (requires 2)
+  const hit1 = checkArrivalDetection(
+    { lat: 10.17826, lng: 76.43054, accuracy: 10 },
+    destination,
+    { radius: 20, maxAccuracy: 35, consecutiveRequired: 2, currentCount: 0 }
+  );
+  assert.equal(hit1.isArrived, false);
+  assert.equal(hit1.count, 1);
+
+  // Reading 2: second consecutive reliable hit -> isArrived = true
+  const hit2 = checkArrivalDetection(
+    { lat: 10.17826, lng: 76.43054, accuracy: 10 },
+    destination,
+    { radius: 20, maxAccuracy: 35, consecutiveRequired: 2, currentCount: 1 }
+  );
+  assert.equal(hit2.isArrived, true);
+
+  // Single noisy reading with poor accuracy (70m) is rejected
+  const noisyHit = checkArrivalDetection(
+    { lat: 10.17826, lng: 76.43054, accuracy: 70 },
+    destination,
+    { radius: 20, maxAccuracy: 35, consecutiveRequired: 2, currentCount: 0 }
+  );
+  assert.equal(noisyHit.isArrived, false);
+});
+
+// =========================================================================
+// 11. Event-Specific Campus Navigation & Dynamic Multi-Event Destination
+// =========================================================================
+console.log(bold('11. Event-Specific Campus Navigation & Dynamic Multi-Event Destination'));
+
+test('Navigation from EventDetail and Dashboard links directly to NAVIGATE section (/student/navigate)', () => {
+  const eventDetailCode = fs.readFileSync('./src/pages/EventDetail.jsx', 'utf8');
+  assert.ok(!eventDetailCode.includes('/student/campus-map?dest='), 'EventDetail must not redirect to general campus map');
+  assert.ok(eventDetailCode.includes('/student/navigate?eventId='), 'EventDetail must route directly to /student/navigate');
+
+  const dashboardCode = fs.readFileSync('./src/pages/student/StudentDashboard.jsx', 'utf8');
+  assert.ok(dashboardCode.includes('/student/navigate?eventId='), 'Dashboard must route directly to /student/navigate');
+
+  const myTicketsCode = fs.readFileSync('./src/pages/student/MyTickets.jsx', 'utf8');
+  assert.ok(myTicketsCode.includes('/student/navigate?eventId='), 'MyTickets must route directly to /student/navigate');
+});
+
+test('resolveDestination retrieves explicit event entrance coordinates over generic coordinates', () => {
+  const event = {
+    id: 'evt-entrance-test',
+    title: 'Entrance Test Event',
+    locationDetails: {
+      entranceLat: 10.17795,
+      entranceLng: 76.43045,
+      lat: 10.17600,
+      lng: 76.42800,
+      nodeId: 'entrance-cs-block'
+    }
+  };
+  const res = resolveDestination(event, null, null, roadGraph.nodes);
+  assert.equal(res.lat, 10.17795);
+  assert.equal(res.lng, 76.43045);
+  assert.equal(res.source, 'event.locationDetails.entrance');
+});
+
+test('Different campus events resolve to their respective distinct coordinates (no hardcoding)', () => {
+  // Event A: Futsal Championship at Campus Stadium
+  const eventA = {
+    id: 'evt-futsal-2026',
+    title: 'Inter-College Futsal Championship',
+    venueId: 'stadium-field-1',
+    locationDetails: {
+      entranceLat: 10.17772,
+      entranceLng: 76.43058,
+      nodeId: 'entrance-main-ground'
+    }
+  };
+
+  // Event B: Hackathon at Computer Science / Science Block
+  const eventB = {
+    id: 'evt-hackathon-2026',
+    title: 'CodeSprint Hackathon',
+    venueId: 'science-hall-a'
+  };
+
+  // Event C: Seminar at Hub Room 202
+  const eventC = {
+    id: 'evt-seminar-2026',
+    title: 'AI Future Seminar',
+    venueId: 'hub-room-202'
+  };
+
+  const resA = resolveDestination(eventA, null, null, roadGraph.nodes);
+  const resB = resolveDestination(eventB, { id: 'science-hall-a' }, null, roadGraph.nodes);
+  const resC = resolveDestination(eventC, { id: 'hub-room-202' }, null, roadGraph.nodes);
+
+  assert.ok(resA && resB && resC, 'All valid events must resolve');
+  assert.notEqual(resA.lat, resB.lat, 'Event A and Event B must have distinct latitude');
+  assert.notEqual(resA.lng, resB.lng, 'Event A and Event B must have distinct longitude');
+  assert.notEqual(resB.lat, resC.lat, 'Event B and Event C must have distinct latitude');
+
+  // Ensure none use old hardcoded default 10.1780, 76.4302
+  assert.equal(resA.lat, 10.17772);
+  assert.equal(resA.lng, 76.43058);
+});
+
+test('Switching from Event A to Event B dynamically generates new route coordinates without page reload', () => {
+  const startPt = { lat: 10.177813, lng: 76.4291012 }; // Campus Main Gate
+  const startNodeId = getClosestConnectedNode(startPt.lat, startPt.lng, roadGraph.nodes, campusAdjacency);
+
+  // Event A: Stadium
+  const eventA = {
+    id: 'evt-a',
+    locationDetails: { entranceLat: 10.17772, entranceLng: 76.43058 }
+  };
+  const destA = resolveDestination(eventA, null, null, roadGraph.nodes);
+  const targetNodeA = getClosestConnectedNode(destA.lat, destA.lng, roadGraph.nodes, campusAdjacency);
+  const pathA = findPathAStar(startNodeId, targetNodeA, campusAdjacency, roadGraph.nodes);
+
+  // Event B: Science / CS Block
+  const eventB = {
+    id: 'evt-b',
+    venueId: 'science-hall-a'
+  };
+  const destB = resolveDestination(eventB, { id: 'science-hall-a' }, null, roadGraph.nodes);
+  const targetNodeB = getClosestConnectedNode(destB.lat, destB.lng, roadGraph.nodes, campusAdjacency);
+  const pathB = findPathAStar(startNodeId, targetNodeB, campusAdjacency, roadGraph.nodes);
+
+  assert.ok(pathA && pathA.length > 0, 'Path A must exist');
+  assert.ok(pathB && pathB.length > 0, 'Path B must exist');
+  assert.notDeepEqual(pathA, pathB, 'Paths to Event A and Event B must be distinct');
+  assert.notEqual(pathA[pathA.length - 1], pathB[pathB.length - 1], 'Final destination node must differ');
+});
+
+test('Event without valid location or venue returns null (guards against faulty routing)', () => {
+  const unlocatedEvent = {
+    id: 'evt-online-webinar',
+    title: 'Virtual Webinar',
+    locationDetails: {}
+  };
+  const res = resolveDestination(unlocatedEvent, null, null, roadGraph.nodes);
+  assert.equal(res, null, 'Unlocated event must resolve to null, triggering warning UI instead of incorrect path');
+});
+
 console.log(bold('\n================================================='));
 console.log(bold(`Results: ${green(`${passed} passed`)}, ${failed > 0 ? red(`${failed} failed`) : '0 failed'}`));
 console.log(bold('=================================================\n'));

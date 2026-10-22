@@ -1,4 +1,4 @@
-# CampusPulse — Interactive Campus Event Navigator
+# EventTrail — Interactive Campus Event Navigator
 ## Complete Map Feature Documentation
 
 ---
@@ -20,7 +20,7 @@
 13. [Multi-Floor Handling](#13-multi-floor-handling)
 14. [ASIET Campus Specific Setup](#14-asiet-campus-specific-setup)
 15. [Complete Navigation Flow](#15-complete-navigation-flow)
-16. [Viva Questions and Answers](#16-viva-questions-and-answers)
+
 
 ---
 
@@ -1196,68 +1196,3 @@ STEP 10 — Day before event
 ```
 
 ---
-
-## 16. Viva Questions and Answers
-
-**Q: What is the map feature in CampusPulse?**
-
-"The Interactive Campus Event Navigator is a Leaflet.js powered map that shows all ASIET buildings as clickable markers. Students can see events at each location, check live seat availability, and get walking directions to any venue. Navigation works in two phases — outdoor routing via OpenRouteService and indoor floor plan guidance."
-
----
-
-**Q: Why Leaflet instead of Google Maps?**
-
-"Google Maps charges money beyond a free usage limit. For a college project with hundreds of students, this would become expensive. Leaflet is completely free and open-source. OpenStreetMap, which Leaflet uses, already has all ASIET buildings mapped, so there is no extra setup needed."
-
----
-
-**Q: How does navigation work?**
-
-"When a student taps Navigate, the browser's GPS captures their current location. OpenRouteService receives the student's coordinates and the building entrance coordinates, calculates the shortest walking path following real campus footpaths, and returns the route. Leaflet Routing Machine draws this as a blue line on the map with turn-by-turn instructions."
-
----
-
-**Q: How do you handle multi-floor buildings?**
-
-"GPS does not work reliably inside buildings so we handle it in two phases. Outdoor navigation takes the student to the building entrance. When they arrive within 20 metres, the app switches to indoor mode, showing a floor plan image uploaded by the admin. The correct floor is highlighted automatically and text directions guide the student to the exact room."
-
----
-
-**Q: How are markers loaded on the map?**
-
-"Markers are not hardcoded in the frontend. Admins save location records in DynamoDB with GPS coordinates, building, floor, and category. When the map loads, the frontend calls our API which fetches all active locations and places markers dynamically. When an admin adds a new location from the dashboard, it appears on the map immediately."
-
----
-
-**Q: How does the admin add locations?**
-
-"The admin goes to the Locations section in the dashboard. They click directly on the campus map and Leaflet automatically captures the latitude and longitude of that click. The admin fills in the name, category, building, floor, room, indoor directions, and floor plan image, then saves. No code changes are needed."
-
----
-
-**Q: How does live seat availability work?**
-
-"Each marker popup shows seats remaining. The frontend polls the backend every 10 seconds for updated RSVP counts. Every time a student RSVPs or cancels, the Lambda function updates the registered count in DynamoDB. The next poll fetches this new count and updates the popup automatically. When fewer than 10 seats remain the number turns red."
-
----
-
-**Q: What happens when a venue changes?**
-
-"When an admin updates a location, all events linked via locationId automatically reflect the new coordinates on the map. AWS SNS sends notifications to all registered students with the old and new venue details and a link to open the updated location on the map."
-
----
-
-**Q: Why store locationId in events instead of venue name?**
-
-"Storing a venue name as plain text causes inconsistency — different admins might type Workshop Hall, workshop hall, or Wrkshp Hall differently. By storing a locationId reference, all events point to one location record. If the location is updated, every event linked to it reflects the change automatically. The map always shows the correct, current position."
-
----
-
-**One Ultimate Answer (If Teacher Asks Everything Together):**
-
-"Our map uses Leaflet.js with OpenStreetMap as the base. Since ASIET is already mapped on OpenStreetMap, all buildings appear automatically without any custom image. Location markers are loaded dynamically from DynamoDB so admins can add or edit locations from the dashboard without touching code. Clicking a marker shows event details and live seat counts updated every 10 seconds. Navigation works in two phases — OpenRouteService handles outdoor walking directions to the building entrance, and floor plan image overlays handle indoor navigation since GPS is unreliable inside buildings. The entire map system is free, serverless, and requires no special hardware."
-
----
-
-*Document prepared for CampusPulse — Academic Year 2024–2025*
-*Adi Shankara Institute of Engineering and Technology*
