@@ -279,6 +279,7 @@ const OrganizerRoster = () => {
                 <th className="py-4 px-6 border-b border-black">Campus Email</th>
                 <th className="py-4 px-6 border-b border-black">Check-In Code</th>
                 <th className="py-4 px-6 border-b border-black text-center">Status</th>
+                <th className="py-4 px-6 border-b border-black text-center">Action</th>
                 <th className="py-4 px-6 border-b border-black text-right">RSVP Date</th>
               </tr>
             </thead>
@@ -306,6 +307,29 @@ const OrganizerRoster = () => {
                       <Badge variant={isCheckedIn ? 'mint' : 'yellow'}>
                         {isCheckedIn ? 'Checked In' : 'Confirmed'}
                       </Badge>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      {isCheckedIn ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-800">
+                          <CheckCircle2 size={13} className="text-emerald-700" />
+                          Admitted
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await checkInAttendee(selectedEventId, { checkInCode: rsvp.checkInCode || rsvp.id });
+                              await loadRsvps(selectedEventId);
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-pastel-mint border border-black font-black uppercase text-[10px] shadow-[1px_1px_0px_0px_#000] hover:bg-emerald-300 cursor-pointer"
+                        >
+                          Check In
+                        </button>
+                      )}
                     </td>
                     <td className="py-4 px-6 text-right text-black/50 font-mono text-[11px]">
                       {rsvp.createdAt ? new Date(rsvp.createdAt).toLocaleDateString() : '—'}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNotifications, markNotificationRead } from '../../services/apiService';
+import { getNotifications, markNotificationRead, markAllNotificationsRead } from '../../services/apiService';
 import { RoleContext } from '../../context/RoleContext';
-import { Bell, Check, ExternalLink, Calendar, Ticket } from 'lucide-react';
+import { Bell, Check, ExternalLink, Calendar, Ticket, MapPin, CheckCircle2, Compass } from 'lucide-react';
 
 export function NotificationBell() {
   const { currentUser, user } = useContext(RoleContext);
@@ -18,9 +18,7 @@ export function NotificationBell() {
 
     const fetchNotifs = async () => {
       try {
-        const userId = activeUser.id || activeUser.sub || activeUser.email;
-        if (!userId) return;
-
+        const userId = activeUser.id || activeUser.sub || activeUser.email || 'student';
         const data = await getNotifications(userId);
         if (Array.isArray(data)) {
           setNotifications(data);
@@ -50,11 +48,12 @@ export function NotificationBell() {
 
   const handleNotificationClick = async (notif) => {
     setIsOpen(false);
-    if (!notif.read && notif.SK) {
+    const notifKey = notif.SK || notif.id;
+    if (!notif.read && notifKey) {
       try {
-        await markNotificationRead(notif.SK);
+        await markNotificationRead(notifKey, activeUser?.id || 'student');
         setNotifications(prev =>
-          prev.map(n => n.SK === notif.SK ? { ...n, read: true } : n)
+          prev.map(n => (n.SK === notifKey || n.id === notifKey) ? { ...n, read: true } : n)
         );
       } catch (err) {
         console.warn('Failed to mark notification read:', err.message);
@@ -62,10 +61,33 @@ export function NotificationBell() {
     }
 
     const dest = notif.payload?.destination || 
-      (notif.payload?.eventId ? `/student/events/${notif.payload.eventId}` : null);
+      (notif.payload?.eventId ? `/student/navigate?eventId=${notif.payload.eventId}` : null);
     
     if (dest) {
       navigate(dest);
+    }
+  };
+
+  const handleMarkAllRead = async (e) => {
+    e.stopPropagation();
+    try {
+      await markAllNotificationsRead(activeUser?.id || 'student');
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.warn('Failed to mark all as read:', err.message);
+    }
+  };
+
+  const getNotifIcon = (type) => {
+    switch (type) {
+      case 'reminder':
+        return <Calendar size={14} className="text-blue-600 shrink-0" />;
+      case 'waitlist_promoted':
+        return <Ticket size={14} className="text-emerald-600 shrink-0" />;
+      case 'venue_changed':
+        return <MapPin size={14} className="text-orange-600 shrink-0" />;
+      default:
+        return <Bell size={14} className="text-black shrink-0" />;
     }
   };
 
@@ -90,15 +112,27 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white border-3 border-black shadow-[6px_6px_0px_0px_#000] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white border-3 border-black shadow-[6px_6px_0px_0px_#000] overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-100 text-left">
           <div className="p-3 border-b-2 border-black bg-pastel-yellow flex items-center justify-between">
-            <h3 className="font-display font-black text-xs uppercase tracking-wider text-black">
-              Campus Notifications
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-display font-black text-xs uppercase tracking-wider text-black">
+                Campus Notifications
+              </h3>
+              {unreadCount > 0 && (
+                <span className="bg-white border border-black text-[10px] font-black px-1.5 py-0.2 shadow-[1px_1px_0px_0px_#000]">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
+
             {unreadCount > 0 && (
-              <span className="bg-white border border-black text-[10px] font-black px-2 py-0.5">
-                {unreadCount} new
-              </span>
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                className="text-[10px] font-black uppercase underline hover:text-black/70 cursor-pointer"
+              >
+                Mark all read
+              </button>
             )}
           </div>
 
@@ -108,33 +142,47 @@ export function NotificationBell() {
                 No notifications right now. You're all caught up!
               </div>
             ) : (
-              notifications.map((notif) => (
-                <div
-                  key={notif.SK || notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleNotificationClick(notif); }}
-                  className={`p-3.5 hover:bg-pastel-mint/30 transition-colors cursor-pointer text-left ${
-                    !notif.read ? 'bg-pastel-mint/15 font-bold' : 'bg-white opacity-80'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-black text-black">
-                      {notif.title || 'Campus Update'}
-                    </span>
-                    {!notif.read && (
-                      <span className="w-2 h-2 rounded-full bg-accent-green shrink-0 mt-1 border border-black"></span>
-                    )}
+              notifications.map((notif) => {
+                const hasNav = Boolean(notif.payload?.destination || notif.payload?.eventId);
+                return (
+                  <div
+                    key={notif.SK || notif.id}
+                    onClick={() => handleNotificationClick(notif)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleNotificationClick(notif); }}
+                    className={`p-3.5 hover:bg-pastel-mint/30 transition-colors cursor-pointer text-left ${
+                      !notif.read ? 'bg-pastel-mint/15 font-bold' : 'bg-white opacity-85'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-1.5">
+                        {getNotifIcon(notif.type)}
+                        <span className="text-xs font-black text-black">
+                          {notif.title || 'Campus Update'}
+                        </span>
+                      </div>
+                      {!notif.read && (
+                        <span className="w-2 h-2 rounded-full bg-accent-green shrink-0 mt-1 border border-black"></span>
+                      )}
+                    </div>
+                    <p className="text-xs text-black/80 font-medium line-clamp-2 mb-2 pl-5">
+                      {notif.message || notif.body}
+                    </p>
+                    <div className="flex items-center justify-between pl-5">
+                      <span className="text-[10px] text-black/50 font-mono">
+                        {notif.createdAt ? new Date(notif.createdAt).toLocaleDateString() : 'Recent'}
+                      </span>
+                      {hasNav && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase bg-pastel-yellow border border-black px-1.5 py-0.5 shadow-[1px_1px_0px_0px_#000]">
+                          <Compass size={10} />
+                          Navigate →
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-black/80 font-medium line-clamp-2 mb-1.5">
-                    {notif.message || notif.body}
-                  </p>
-                  <span className="text-[10px] text-black/50 font-mono">
-                    {notif.createdAt ? new Date(notif.createdAt).toLocaleDateString() : 'Recent'}
-                  </span>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -144,3 +192,4 @@ export function NotificationBell() {
 }
 
 export default NotificationBell;
+

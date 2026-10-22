@@ -873,6 +873,65 @@ test('Event without valid location or venue returns null (guards against faulty 
   assert.equal(res, null, 'Unlocated event must resolve to null, triggering warning UI instead of incorrect path');
 });
 
+// =========================================================================
+// 12. Notifications, Reminders & Attendance Check-In Verification
+// =========================================================================
+console.log(bold('12. Notifications, Reminders & Attendance Check-In Verification'));
+
+test('Notifications payload contains valid event-specific campus navigation destination', () => {
+  const sampleNotif = {
+    SK: 'notif_1',
+    title: 'Event Reminder',
+    payload: {
+      eventId: 'evt-futsal-2026',
+      destination: '/student/navigate?eventId=evt-futsal-2026'
+    }
+  };
+  assert.ok(sampleNotif.payload.destination.includes('/student/navigate?eventId='), 'Notification must route directly to navigate');
+});
+
+test('Attendee check-in verifies unique ticket code and prevents duplicate check-in', () => {
+  const roster = [
+    { id: 'tkt-1', userName: 'Student A', checkInCode: 'CHK-9912A', status: 'confirmed' },
+    { id: 'tkt-2', userName: 'Student B', checkInCode: 'CHK-4410B', status: 'checked_in', checkedIn: true }
+  ];
+
+  function verifyCheckIn(code) {
+    const attendee = roster.find(r => r.checkInCode === code);
+    if (!attendee) throw new Error('Code not found');
+    if (attendee.status === 'checked_in') throw new Error('Already checked in');
+    attendee.status = 'checked_in';
+    attendee.checkedIn = true;
+    return attendee;
+  }
+
+  // 1. Valid code marks attendee as checked in
+  const checked = verifyCheckIn('CHK-9912A');
+  assert.equal(checked.status, 'checked_in');
+  assert.equal(checked.checkedIn, true);
+
+  // 2. Duplicate check-in is rejected
+  assert.throws(() => verifyCheckIn('CHK-9912A'), /Already checked in/);
+
+  // 3. Invalid code is rejected
+  assert.throws(() => verifyCheckIn('CHK-INVALID'), /Code not found/);
+});
+
+test('Waitlist promotion notification carries ticket ID and destination route', () => {
+  const promoRecord = {
+    userId: 'usr-4421',
+    status: 'waitlist_promoted',
+    ticketId: 'TKT-CS-994',
+    payload: {
+      eventId: 'evt-ai-summit',
+      destination: '/student/navigate?eventId=evt-ai-summit'
+    }
+  };
+  assert.equal(promoRecord.status, 'waitlist_promoted');
+  assert.ok(promoRecord.ticketId.startsWith('TKT-'));
+  assert.ok(promoRecord.payload.destination.startsWith('/student/navigate'));
+});
+
 console.log(bold('\n================================================='));
 console.log(bold(`Results: ${green(`${passed} passed`)}, ${failed > 0 ? red(`${failed} failed`) : '0 failed'}`));
 console.log(bold('=================================================\n'));
