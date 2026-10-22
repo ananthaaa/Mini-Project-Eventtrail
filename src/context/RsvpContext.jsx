@@ -244,6 +244,22 @@ export const RsvpProvider = ({ children }) => {
     });
   };
 
+  const updateEventStatus = useCallback((id, status, extra = {}) => {
+    setEvents(prev => prev.map(e => e.id === id ? { ...e, status, ...extra } : e));
+  }, []);
+
+  // Listen to external review updates dispatched across tabs or service modules
+  useEffect(() => {
+    const handleEventReviewed = (e) => {
+      const { eventId, status, reviewComment } = e.detail || {};
+      if (eventId && status) {
+        setEvents(prev => prev.map(evt => evt.id === eventId ? { ...evt, status, ...(reviewComment !== undefined ? { reviewComment } : {}) } : evt));
+      }
+    };
+    window.addEventListener('eventtrail:event_reviewed', handleEventReviewed);
+    return () => window.removeEventListener('eventtrail:event_reviewed', handleEventReviewed);
+  }, []);
+
   const refreshAllData = () => {
     return refreshEvents();
   };
@@ -254,6 +270,7 @@ export const RsvpProvider = ({ children }) => {
       submitRsvp, cancelUserRsvp,
       addVenue, updateVenue, deleteVenue,
       removeEvent,
+      updateEventStatus,
       refreshAllData,
       refreshEvents,
     }}>

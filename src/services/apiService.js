@@ -81,8 +81,36 @@ export const fetchEvents = async (params = {}, options = {}) => {
     if (Array.isArray(localEvents) && localEvents.length > 0) {
       const apiList = Array.isArray(data) ? data : [];
       const apiIds = new Set(apiList.map(e => e.id));
+      const localMap = new Map(localEvents.map(e => [e.id, e]));
+
+      // Merge local updates (like status changes or edits) onto existing API records
+      data = apiList.map(e => {
+        if (localMap.has(e.id)) {
+          return { ...e, ...localMap.get(e.id) };
+        }
+        return e;
+      });
+
+      // Append local-only events
       const localOnly = localEvents.filter(e => !apiIds.has(e.id));
-      data = [...apiList, ...localOnly];
+      data = [...data, ...localOnly];
+    }
+  } catch (_) {}
+
+  // Authoritatively apply persistent review status overrides (approvals, rejections, change requests)
+  try {
+    const statusOverrides = JSON.parse(localStorage.getItem('cp_event_statuses') || '{}');
+    if (statusOverrides && typeof statusOverrides === 'object' && Array.isArray(data)) {
+      data = data.map(e => {
+        if (statusOverrides[e.id]) {
+          return {
+            ...e,
+            ...statusOverrides[e.id],
+            status: statusOverrides[e.id].status || e.status
+          };
+        }
+        return e;
+      });
     }
   } catch (_) {}
 
@@ -118,22 +146,31 @@ export const fetchEventById = async (id, options = {}) => {
     throw notFoundErr;
   }
 
+  const applyOverrides = (evt) => {
+    if (!evt) return evt;
+    try {
+      const statusOverrides = JSON.parse(localStorage.getItem('cp_event_statuses') || '{}');
+      if (statusOverrides[id]) {
+        evt = { ...evt, ...statusOverrides[id], status: statusOverrides[id].status || evt.status };
+      }
+      const cancelledIds = new Set(JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]'));
+      if (cancelledIds.has(id)) {
+        evt = { ...evt, status: 'cancelled' };
+      }
+    } catch (_) {}
+    return evt;
+  };
+
   try {
     const evt = await fetchFromApi(`/events/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
-    const cancelledIds = new Set(JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]'));
-    if (cancelledIds.has(id)) {
-      return { ...evt, status: 'cancelled' };
-    }
-    return evt;
+    return applyOverrides(evt);
   } catch (err) {
     if (err.status === 404) throw err;
     try {
       const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
       const found = localEvents.find(e => e.id === id);
       if (found) {
-        const cancelledIds = new Set(JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]'));
-        if (cancelledIds.has(id)) return { ...found, status: 'cancelled' };
-        return found;
+        return applyOverrides(found);
       }
     } catch (_) {}
     throw err;
@@ -289,6 +326,20 @@ export const createEvent = async (eventData) => {
 };
 
 export const updateEvent = async (id, eventData) => {
+  // Synchronize status overrides immediately if status is part of the payload
+  try {
+    if (eventData.status) {
+      const statusOverrides = JSON.parse(localStorage.getItem('cp_event_statuses') || '{}');
+      statusOverrides[id] = {
+        ...(statusOverrides[id] || {}),
+        status: eventData.status,
+        ...(eventData.reviewComment !== undefined ? { reviewComment: eventData.reviewComment } : {}),
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('cp_event_statuses', JSON.stringify(statusOverrides));
+    }
+  } catch (_) {}
+
   try {
     return await fetchWithAuth(`/events/${id}`, {
       method: 'PUT',
@@ -318,6 +369,8 @@ export const deleteEvent = async (id, hard = false) => {
 
   // Authoritatively synchronize persistent state across all storage tiers
   try {
+    const statusOverrides = JSON.parse(localStorage.getItem('cp_event_statuses') || '{}');
+
     if (hard) {
       // 1. Permanently delete: record ID in cp_deleted_events
       const deletedIds = JSON.parse(localStorage.getItem('cp_deleted_events') || '[]');
@@ -335,6 +388,10 @@ export const deleteEvent = async (id, hard = false) => {
       const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
       const updated = existing.filter(e => e.id !== id);
       localStorage.setItem('cp_events', JSON.stringify(updated));
+
+      // Clean up status overrides
+      delete statusOverrides[id];
+      localStorage.setItem('cp_event_statuses', JSON.stringify(statusOverrides));
     } else {
       // 2. Soft Cancel: record ID in cp_cancelled_events
       const cancelledIds = JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]');
@@ -347,6 +404,14 @@ export const deleteEvent = async (id, hard = false) => {
       const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
       const updated = existing.map(e => e.id === id ? { ...e, status: 'cancelled' } : e);
       localStorage.setItem('cp_events', JSON.stringify(updated));
+
+      // Update in status overrides
+      if (statusOverrides[id]) {
+        statusOverrides[id].status = 'cancelled';
+      } else {
+        statusOverrides[id] = { status: 'cancelled' };
+      }
+      localStorage.setItem('cp_event_statuses', JSON.stringify(statusOverrides));
     }
   } catch (storageErr) {
     console.warn('Failed to update local event state:', storageErr);
@@ -525,19 +590,71 @@ export const markAllNotificationsRead = async (userId = 'student') => {
 // --- Governance: Event Review & Approval ---
 
 export const reviewEvent = async (eventId, { action, reviewComment = '' }) => {
+  const newStatus = action === 'approve' 
+    ? 'published' 
+    : (action === 'request_changes' ? 'needs_changes' : 'rejected');
+
+  // 1. Authoritatively persist status override locally across all pages and tabs
   try {
-    return await fetchWithAuth(`/events/${eventId}/review`, {
+    const statuses = JSON.parse(localStorage.getItem('cp_event_statuses') || '{}');
+    statuses[eventId] = {
+      status: newStatus,
+      reviewComment: reviewComment ? reviewComment.trim() : '',
+      reviewedAt: new Date().toISOString()
+    };
+    localStorage.setItem('cp_event_statuses', JSON.stringify(statuses));
+
+    // Also update in cp_events if present, or add/update record
+    const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
+    const existingIdx = localEvents.findIndex(e => e.id === eventId);
+    if (existingIdx >= 0) {
+      localEvents[existingIdx] = {
+        ...localEvents[existingIdx],
+        status: newStatus,
+        reviewComment: reviewComment ? reviewComment.trim() : ''
+      };
+    } else {
+      localEvents.push({
+        id: eventId,
+        status: newStatus,
+        reviewComment: reviewComment ? reviewComment.trim() : ''
+      });
+    }
+    localStorage.setItem('cp_events', JSON.stringify(localEvents));
+  } catch (storageErr) {
+    console.warn('Error saving review status to localStorage:', storageErr);
+  }
+
+  // 2. Dispatch custom window event so open tabs/components synchronize immediately
+  try {
+    window.dispatchEvent(new CustomEvent('eventtrail:event_reviewed', {
+      detail: { eventId, action, status: newStatus, reviewComment }
+    }));
+  } catch (_) {}
+
+  // 3. Attempt backend review endpoint
+  try {
+    const res = await fetchWithAuth(`/events/${eventId}/review`, {
       method: 'POST',
       body: JSON.stringify({ action, reviewComment })
     });
+    return res;
   } catch (err) {
     console.warn('[Governance] Backend event review route fallback:', eventId, action, err);
-    await new Promise(r => setTimeout(r, 400));
+    // Also try updating event directly via PUT /events/:id if review route is unmapped
+    try {
+      await fetchWithAuth(`/events/${eventId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus, reviewComment })
+      });
+    } catch (_) {}
+
+    await new Promise(r => setTimeout(r, 200));
     return {
       success: true,
       eventId,
       action,
-      status: action === 'approve' ? 'published' : (action === 'request_changes' ? 'needs_changes' : 'rejected'),
+      status: newStatus,
       reviewComment,
       simulated: true
     };

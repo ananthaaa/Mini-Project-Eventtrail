@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import PageShell from '../../components/layout/PageShell';
 import { fetchEvents, reviewEvent } from '../../services/apiService';
+import { RsvpContext } from '../../context/RsvpContext';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 
 const AdminReviewQueue = () => {
+  const { updateEventStatus, refreshEvents } = useContext(RsvpContext) || {};
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +70,17 @@ const AdminReviewQueue = () => {
 
     setIsSubmitting(true);
     try {
+      const newStatus = reviewAction === 'approve'
+        ? 'published'
+        : (reviewAction === 'reject' ? 'rejected' : 'needs_changes');
+
+      // Optimistically update global context immediately
+      if (typeof updateEventStatus === 'function') {
+        updateEventStatus(selectedEvent.id, newStatus, {
+          reviewComment: reviewComment.trim()
+        });
+      }
+
       await reviewEvent(selectedEvent.id, {
         action: reviewAction,
         reviewComment: reviewComment.trim()
@@ -79,16 +92,12 @@ const AdminReviewQueue = () => {
           : `Event "${selectedEvent.title}" updated and feedback sent to club organizer.`
       );
 
-      // Update local storage fallback if present
-      try {
-        const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
-        const updated = localEvents.map(e => e.id === selectedEvent.id ? { ...e, status: reviewAction === 'approve' ? 'published' : (reviewAction === 'reject' ? 'rejected' : 'needs_changes') } : e);
-        localStorage.setItem('cp_events', JSON.stringify(updated));
-      } catch (_) {}
-
       setSelectedEvent(null);
       setReviewAction(null);
       await loadQueue();
+      if (typeof refreshEvents === 'function') {
+        refreshEvents();
+      }
     } catch (err) {
       console.error('Failed to execute review action:', err);
       alert('Review action failed: ' + (err.message || 'Check administrator permissions.'));

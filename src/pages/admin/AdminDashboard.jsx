@@ -5,11 +5,11 @@ import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import { RsvpContext } from '../../context/RsvpContext';
-import { deleteEvent } from '../../services/apiService';
+import { deleteEvent, reviewEvent } from '../../services/apiService';
 import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Edit2, RefreshCw, Loader2, Ban, Clock, CheckCircle } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { events, refreshEvents, removeEvent } = useContext(RsvpContext);
+  const { events, refreshEvents, removeEvent, updateEventStatus } = useContext(RsvpContext);
   const navigate = useNavigate();
   const [processingId, setProcessingId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -35,6 +35,25 @@ const AdminDashboard = () => {
       await refreshEvents();
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const handleQuickApprove = async (evt) => {
+    if (!window.confirm(`Approve and publish event "${evt.title}" immediately to student discovery?`)) return;
+
+    setProcessingId(evt.id);
+    try {
+      if (typeof updateEventStatus === 'function') {
+        updateEventStatus(evt.id, 'published');
+      }
+      await reviewEvent(evt.id, { action: 'approve' });
+      await refreshEvents();
+    } catch (err) {
+      console.error('Failed to quick approve event:', err);
+      alert('Approval failed: ' + (err.message || 'Please check admin permissions.'));
+      await refreshEvents();
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -194,9 +213,13 @@ const AdminDashboard = () => {
                           ? 'bg-red-200 text-red-800' 
                           : (evt.status === 'pending_approval' || evt.status === 'pending_review' 
                             ? 'bg-pastel-yellow text-black animate-pulse' 
-                            : 'bg-pastel-mint text-black')
+                            : (evt.status === 'needs_changes'
+                              ? 'bg-amber-200 text-black'
+                              : (evt.status === 'rejected' ? 'bg-red-200 text-black' : 'bg-pastel-mint text-black')))
                       }`}>
-                        {evt.status === 'pending_approval' ? 'Pending Review' : (evt.status || 'published')}
+                        {evt.status === 'pending_approval' || evt.status === 'pending_review' 
+                          ? 'Pending Review' 
+                          : (evt.status === 'needs_changes' ? 'Needs Changes' : (evt.status || 'published'))}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center font-mono">{evt.seatsTotal}</td>
@@ -204,14 +227,25 @@ const AdminDashboard = () => {
                     <td className="py-4 px-6 text-center font-mono text-amber-600 font-black">{waitCount}</td>
                     <td className="py-4 px-6 text-right space-x-1.5 whitespace-nowrap">
                       {(evt.status === 'pending_approval' || evt.status === 'pending_review') && (
-                        <button
-                          onClick={() => navigate('/admin/review-queue')}
-                          className="p-2 border-2 border-black bg-pastel-yellow hover:bg-amber-300 font-black transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1"
-                          title="Review Event"
-                        >
-                          <Clock size={12} />
-                          Review
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleQuickApprove(evt)}
+                            disabled={processingId === evt.id}
+                            className="p-2 border-2 border-black bg-pastel-mint hover:bg-emerald-300 font-black transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1 disabled:opacity-50"
+                            title="Approve & Publish Immediately"
+                          >
+                            {processingId === evt.id ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => navigate('/admin/review-queue')}
+                            className="p-2 border-2 border-black bg-pastel-yellow hover:bg-amber-300 font-black transition-all shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px] inline-flex items-center gap-1"
+                            title="Review Event Proposal"
+                          >
+                            <Clock size={12} />
+                            Review
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={() => navigate(`/admin/event-form/${evt.id}`)}

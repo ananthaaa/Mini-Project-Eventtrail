@@ -1113,6 +1113,54 @@ test('Admin permanent deletion authoritatively purges event from all active view
   assert.ok(!remaining.some(e => e.id === 'evt-futsal'));
 });
 
+test('Admin approval authoritatively updates event status from pending to published', () => {
+  const apiList = [
+    { id: 'evt-music-101', title: 'Music Club Live', status: 'pending_approval' },
+    { id: 'evt-ai-102', title: 'AI Summit', status: 'published' }
+  ];
+
+  const statusOverrides = {
+    'evt-music-101': {
+      status: 'published',
+      reviewComment: 'Approved by admin',
+      reviewedAt: '2026-10-23T00:30:00Z'
+    }
+  };
+
+  const processed = apiList.map(e => {
+    if (statusOverrides[e.id]) {
+      return { ...e, ...statusOverrides[e.id], status: statusOverrides[e.id].status || e.status };
+    }
+    return e;
+  });
+
+  const musicEvent = processed.find(e => e.id === 'evt-music-101');
+  assert.equal(musicEvent.status, 'published');
+  assert.equal(musicEvent.reviewComment, 'Approved by admin');
+
+  // Verify dashboard metrics and filters
+  const pendingCount = processed.filter(e => e.status === 'pending_approval' || e.status === 'pending_review').length;
+  assert.equal(pendingCount, 0);
+
+  const publishedCount = processed.filter(e => e.status === 'published').length;
+  assert.equal(publishedCount, 2);
+});
+
+test('Local event updates overlay onto API records without losing modifications', () => {
+  const apiList = [
+    { id: 'evt-symp', title: 'Campus Symphony', status: 'pending_approval', seatsTotal: 50 }
+  ];
+  const localEvents = [
+    { id: 'evt-symp', title: 'Campus Symphony', status: 'published', seatsTotal: 60 }
+  ];
+
+  const localMap = new Map(localEvents.map(e => [e.id, e]));
+  const merged = apiList.map(e => localMap.has(e.id) ? { ...e, ...localMap.get(e.id) } : e);
+
+  assert.equal(merged[0].status, 'published');
+  assert.equal(merged[0].seatsTotal, 60);
+});
+
 console.log(bold('\n================================================='));
 console.log(bold(`Results: ${green(`${passed} passed`)}, ${failed > 0 ? red(`${failed} failed`) : '0 failed'}`));
 console.log(bold('=================================================\n'));
