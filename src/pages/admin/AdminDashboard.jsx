@@ -9,7 +9,7 @@ import { deleteEvent } from '../../services/apiService';
 import { Calendar, Users, Eye, Plus, ArrowUpRight, Navigation, Trash2, Edit2, RefreshCw, Loader2, Ban, Clock, CheckCircle } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { events, refreshEvents } = useContext(RsvpContext);
+  const { events, refreshEvents, removeEvent } = useContext(RsvpContext);
   const navigate = useNavigate();
   const [processingId, setProcessingId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -47,11 +47,15 @@ const AdminDashboard = () => {
 
     setProcessingId(evt.id);
     try {
+      if (typeof removeEvent === 'function') {
+        removeEvent(evt.id, hard);
+      }
       await deleteEvent(evt.id, hard);
       await refreshEvents();
     } catch (err) {
       console.error('Failed to cancel/delete event:', err);
       alert('Operation failed: ' + (err.message || 'Please check admin permissions.'));
+      await refreshEvents();
     } finally {
       setProcessingId(null);
     }

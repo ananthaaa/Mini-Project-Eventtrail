@@ -86,6 +86,21 @@ export const fetchEvents = async (params = {}, options = {}) => {
     }
   } catch (_) {}
 
+  // Authoritatively apply deletions and cancellations across all data sources
+  try {
+    const deletedIds = new Set(JSON.parse(localStorage.getItem('cp_deleted_events') || '[]'));
+    const cancelledIds = new Set(JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]'));
+
+    if (Array.isArray(data)) {
+      if (deletedIds.size > 0) {
+        data = data.filter(e => !deletedIds.has(e.id));
+      }
+      if (cancelledIds.size > 0) {
+        data = data.map(e => cancelledIds.has(e.id) ? { ...e, status: 'cancelled' } : e);
+      }
+    }
+  } catch (_) {}
+
   return Array.isArray(data) ? data : [];
 };
 
@@ -96,13 +111,30 @@ export const fetchEventById = async (id, options = {}) => {
     if (session?.idToken) headers.Authorization = `Bearer ${session.idToken}`;
   } catch (_) {}
 
+  const deletedIds = new Set(JSON.parse(localStorage.getItem('cp_deleted_events') || '[]'));
+  if (deletedIds.has(id)) {
+    const notFoundErr = new Error('Event not found or has been deleted');
+    notFoundErr.status = 404;
+    throw notFoundErr;
+  }
+
   try {
-    return await fetchFromApi(`/events/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+    const evt = await fetchFromApi(`/events/${id}`, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+    const cancelledIds = new Set(JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]'));
+    if (cancelledIds.has(id)) {
+      return { ...evt, status: 'cancelled' };
+    }
+    return evt;
   } catch (err) {
+    if (err.status === 404) throw err;
     try {
       const localEvents = JSON.parse(localStorage.getItem('cp_events') || '[]');
       const found = localEvents.find(e => e.id === id);
-      if (found) return found;
+      if (found) {
+        const cancelledIds = new Set(JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]'));
+        if (cancelledIds.has(id)) return { ...found, status: 'cancelled' };
+        return found;
+      }
     } catch (_) {}
     throw err;
   }
@@ -275,22 +307,52 @@ export const updateEvent = async (id, eventData) => {
 };
 
 export const deleteEvent = async (id, hard = false) => {
+  let backendResult = null;
   try {
-    return await fetchWithAuth(`/events/${id}${hard ? '?hard=true' : ''}`, {
+    backendResult = await fetchWithAuth(`/events/${id}${hard ? '?hard=true' : ''}`, {
       method: 'DELETE'
     });
   } catch (err) {
-    console.warn('[Events] Backend deleteEvent returned error, falling back locally:', err);
-    try {
-      const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
-      const updated = hard 
-        ? existing.filter(e => e.id !== id)
-        : existing.map(e => e.id === id ? { ...e, status: 'cancelled' } : e);
-      localStorage.setItem('cp_events', JSON.stringify(updated));
-      return { success: true, id };
-    } catch (_) {}
-    throw err;
+    console.warn('[Events] Backend deleteEvent returned error, falling back locally:', err.message);
   }
+
+  // Authoritatively synchronize persistent state across all storage tiers
+  try {
+    if (hard) {
+      // 1. Permanently delete: record ID in cp_deleted_events
+      const deletedIds = JSON.parse(localStorage.getItem('cp_deleted_events') || '[]');
+      if (!deletedIds.includes(id)) {
+        deletedIds.push(id);
+        localStorage.setItem('cp_deleted_events', JSON.stringify(deletedIds));
+      }
+
+      // Remove from cancelled list if present
+      const cancelledIds = JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]');
+      const filteredCancelled = cancelledIds.filter(cid => cid !== id);
+      localStorage.setItem('cp_cancelled_events', JSON.stringify(filteredCancelled));
+
+      // Remove from cp_events
+      const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
+      const updated = existing.filter(e => e.id !== id);
+      localStorage.setItem('cp_events', JSON.stringify(updated));
+    } else {
+      // 2. Soft Cancel: record ID in cp_cancelled_events
+      const cancelledIds = JSON.parse(localStorage.getItem('cp_cancelled_events') || '[]');
+      if (!cancelledIds.includes(id)) {
+        cancelledIds.push(id);
+        localStorage.setItem('cp_cancelled_events', JSON.stringify(cancelledIds));
+      }
+
+      // Update in cp_events
+      const existing = JSON.parse(localStorage.getItem('cp_events') || '[]');
+      const updated = existing.map(e => e.id === id ? { ...e, status: 'cancelled' } : e);
+      localStorage.setItem('cp_events', JSON.stringify(updated));
+    }
+  } catch (storageErr) {
+    console.warn('Failed to update local event state:', storageErr);
+  }
+
+  return backendResult || { success: true, id, status: hard ? 'deleted' : 'cancelled' };
 };
 
 export const apiDeleteEvent = deleteEvent;

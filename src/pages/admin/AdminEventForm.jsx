@@ -2,11 +2,11 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import PageShell from '../../components/layout/PageShell';
-import { createEvent, updateEvent, fetchEventById, fetchClubs } from '../../services/apiService';
+import { createEvent, updateEvent, fetchEventById, fetchClubs, deleteEvent } from '../../services/apiService';
 import { RoleContext } from '../../context/RoleContext';
 import { RsvpContext } from '../../context/RsvpContext';
 import ImageUploadZone from '../../components/ui/ImageUploadZone';
-import { ArrowLeft, Save, Plus, X, MapPin, Building, Calendar, Clock, Layers, Users, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Save, Plus, X, MapPin, Building, Calendar, Clock, Layers, Users, RefreshCw, Trash2 } from 'lucide-react';
 import CampusMap, { Marker } from '../../components/ui/CampusMap';
 
 const AdminEventForm = () => {
@@ -225,6 +225,21 @@ const AdminEventForm = () => {
       console.error('Failed to save event:', err);
       alert('Error saving event: ' + (err.message || 'Check administrator permissions.'));
     } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Permanently delete event "${title || 'this event'}"? All attendee records and bookings will be removed.`)) return;
+    setIsSubmitting(true);
+    try {
+      await deleteEvent(id, true);
+      await refreshEvents();
+      alert('Event deleted successfully.');
+      navigate('/admin');
+    } catch (err) {
+      console.error('Failed to delete event:', err);
+      alert('Failed to delete event: ' + (err.message || 'Check administrator permissions.'));
       setIsSubmitting(false);
     }
   };
@@ -581,12 +596,26 @@ const AdminEventForm = () => {
 
         {/* Submit Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t-3 border-black">
-          <Link
-            to="/admin"
-            className="w-full sm:w-auto px-6 py-3 border-3 border-black font-black uppercase text-xs tracking-wider bg-white shadow-[2px_2px_0px_0px_#000] text-center"
-          >
-            Cancel
-          </Link>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Link
+              to="/admin"
+              className="w-full sm:w-auto px-6 py-3 border-3 border-black font-black uppercase text-xs tracking-wider bg-white shadow-[2px_2px_0px_0px_#000] text-center"
+            >
+              Cancel
+            </Link>
+            {isEditMode && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-6 py-3 border-3 border-black font-black uppercase text-xs tracking-wider bg-red-100 hover:bg-red-500 hover:text-white shadow-[2px_2px_0px_0px_#000] text-center flex items-center justify-center gap-1.5 transition-colors"
+                title="Permanently Delete Event"
+              >
+                <Trash2 size={14} />
+                Delete Event
+              </button>
+            )}
+          </div>
           <button
             type="submit"
             disabled={isSubmitting}

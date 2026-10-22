@@ -234,6 +234,16 @@ export const RsvpProvider = ({ children }) => {
     });
   };
 
+  const removeEvent = (id, hard = false) => {
+    setEvents(prev => {
+      if (hard) {
+        return prev.filter(e => e.id !== id);
+      } else {
+        return prev.map(e => e.id === id ? { ...e, status: 'cancelled' } : e);
+      }
+    });
+  };
+
   const refreshAllData = () => {
     return refreshEvents();
   };
@@ -243,6 +253,7 @@ export const RsvpProvider = ({ children }) => {
       events, venues, userRsvps, isLoading,
       submitRsvp, cancelUserRsvp,
       addVenue, updateVenue, deleteVenue,
+      removeEvent,
       refreshAllData,
       refreshEvents,
     }}>

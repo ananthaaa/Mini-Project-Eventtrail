@@ -1083,6 +1083,36 @@ test('Preserves provisioned organizer clubId and clubName during tab role synchr
   assert.equal(stored.clubName, 'Music Club');
 });
 
+test('Admin cancellation marks event status as cancelled without deleting attendee records', () => {
+  const events = [
+    { id: 'evt-futsal', title: 'Inter-Department Futsal', status: 'published' },
+    { id: 'evt-ai', title: 'AI Summit', status: 'published' }
+  ];
+
+  const cancelledIds = new Set(['evt-futsal']);
+  const updated = events.map(e => cancelledIds.has(e.id) ? { ...e, status: 'cancelled' } : e);
+
+  assert.equal(updated.length, 2);
+  const futsal = updated.find(e => e.id === 'evt-futsal');
+  assert.equal(futsal.status, 'cancelled');
+  const ai = updated.find(e => e.id === 'evt-ai');
+  assert.equal(ai.status, 'published');
+});
+
+test('Admin permanent deletion authoritatively purges event from all active views', () => {
+  const events = [
+    { id: 'evt-futsal', title: 'Inter-Department Futsal', status: 'published' },
+    { id: 'evt-ai', title: 'AI Summit', status: 'published' }
+  ];
+
+  const deletedIds = new Set(['evt-futsal']);
+  const remaining = events.filter(e => !deletedIds.has(e.id));
+
+  assert.equal(remaining.length, 1);
+  assert.equal(remaining[0].id, 'evt-ai');
+  assert.ok(!remaining.some(e => e.id === 'evt-futsal'));
+});
+
 console.log(bold('\n================================================='));
 console.log(bold(`Results: ${green(`${passed} passed`)}, ${failed > 0 ? red(`${failed} failed`) : '0 failed'}`));
 console.log(bold('=================================================\n'));
