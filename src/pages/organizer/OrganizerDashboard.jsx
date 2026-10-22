@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import PageShell from '../../components/layout/PageShell';
 import Card from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -9,9 +9,7 @@ import { fetchEvents, updateEvent, deleteEvent, fetchClubById } from '../../serv
 import {
   Calendar,
   Users,
-  Eye,
   Plus,
-  ArrowUpRight,
   Clock,
   MapPin,
   AlertTriangle,
@@ -21,8 +19,6 @@ import {
   Send,
   Trash2,
   RefreshCw,
-  HelpCircle,
-  Sparkles,
   Info
 } from 'lucide-react';
 
@@ -147,6 +143,14 @@ const OrganizerDashboard = () => {
       case 'draft':
       default:
         return <Badge variant="white" className="border-black shadow-[1px_1px_0px_0px_#000]">Draft</Badge>;
+    }
+  };
+
+  const handleEventCardClick = (evt) => {
+    if (evt.status === 'published') {
+      navigate(`/organizer/events/${evt.id}/roster`);
+    } else {
+      navigate(`/organizer/events/${evt.id}/edit`);
     }
   };
 
@@ -289,13 +293,18 @@ const OrganizerDashboard = () => {
               key={evt.id}
               className="bg-white border-3 border-black neo-shadow flex flex-col justify-between overflow-hidden"
             >
-              <div>
+              {/* Clickable Card Body (Routes inside Organizer Portal) */}
+              <div
+                onClick={() => handleEventCardClick(evt)}
+                className="cursor-pointer group flex-1"
+                title={evt.status === 'published' ? 'Manage Attendee Roster & Check-In' : 'Edit Event Details'}
+              >
                 {/* Event Image Banner */}
                 <div className="h-44 border-b-3 border-black relative overflow-hidden bg-neutral-100">
                   <img
                     src={evt.coverImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=600&auto=format&fit=crop"}
                     alt={evt.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                   />
                   <div className="absolute top-2.5 right-2.5">
                     {getStatusBadge(evt.status)}
@@ -306,7 +315,7 @@ const OrganizerDashboard = () => {
                 </div>
 
                 <div className="p-5">
-                  <h3 className="font-display font-black text-lg uppercase tracking-tight text-black line-clamp-2 mb-3">
+                  <h3 className="font-display font-black text-lg uppercase tracking-tight text-black line-clamp-2 mb-3 group-hover:underline">
                     {evt.title}
                   </h3>
 
@@ -353,7 +362,7 @@ const OrganizerDashboard = () => {
                 </div>
               </div>
 
-              {/* Action Buttons Footer */}
+              {/* Action Buttons Footer (Strictly Organizer Portal Navigation) */}
               <div className="p-4 bg-neutral-50 border-t-3 border-black flex flex-wrap gap-2">
                 {evt.status === 'draft' && (
                   <>
@@ -394,36 +403,34 @@ const OrganizerDashboard = () => {
                 )}
 
                 {evt.status === 'pending_approval' && (
-                  <div className="w-full py-2 px-3 bg-neutral-200 border-2 border-black/40 text-center font-black text-xs uppercase text-black/70 flex items-center justify-center gap-1.5">
+                  <button
+                    onClick={() => navigate(`/organizer/events/${evt.id}/edit`)}
+                    className="w-full py-2 px-3 bg-neutral-200 hover:bg-neutral-300 border-2 border-black font-black text-xs uppercase text-black/80 flex items-center justify-center gap-1.5 shadow-[1px_1px_0px_0px_#000] active:translate-y-[1px]"
+                    title="View Submitted Event Draft"
+                  >
                     <Clock size={13} />
-                    Under Admin Review
-                  </div>
+                    Under Admin Review (Click to View)
+                  </button>
                 )}
 
                 {evt.status === 'published' && (
                   <div className="w-full flex gap-2">
                     <button
                       onClick={() => navigate(`/organizer/events/${evt.id}/roster`)}
-                      className="flex-1 py-2 px-3 bg-pastel-mint border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center justify-center gap-1.5"
+                      className="flex-1 py-2 px-3 bg-pastel-mint hover:bg-emerald-300 border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center justify-center gap-1.5"
+                      title="Manage Attendee Roster & Check-In"
                     >
                       <Users size={13} />
                       Attendees ({evt.rsvpCount || 0})
                     </button>
                     <button
                       onClick={() => navigate(`/organizer/events/${evt.id}/edit`)}
-                      className="py-2 px-3 bg-white hover:bg-neutral-100 border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px]"
-                      title="Edit Event"
+                      className="py-2 px-3 bg-white hover:bg-pastel-yellow border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center gap-1.5"
+                      title="Edit Event Details"
                     >
                       <FileEdit size={14} />
+                      <span>Edit</span>
                     </button>
-                    <Link
-                      to={`/student/events/${evt.id}`}
-                      target="_blank"
-                      className="py-2 px-3 bg-pastel-yellow border-2 border-black font-black text-xs uppercase tracking-wider shadow-[2px_2px_0px_0px_#000] active:translate-y-[1px] flex items-center justify-center"
-                      title="View Student Listing"
-                    >
-                      <ArrowUpRight size={14} />
-                    </Link>
                   </div>
                 )}
               </div>
