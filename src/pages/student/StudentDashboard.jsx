@@ -240,7 +240,7 @@ const StudentDashboard = () => {
               </Marker>
 
               {/* Interactive Live Event Pins */}
-              publishedEvents.filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
+              {publishedEvents.filter(e => e.seatsAvailable > 0 || rsvpEventIds.includes(e.id)).map(evt => {
                 const venue = (venues || []).find(v => v.id === evt.venueId) || {};
                 const lat = Number(evt.locationDetails?.entranceLat || evt.lat || (venue.outdoorCoordinates ? venue.outdoorCoordinates[0] : venue.lat));
                 const lng = Number(evt.locationDetails?.entranceLng || evt.lng || (venue.outdoorCoordinates ? venue.outdoorCoordinates[1] : venue.lng));
